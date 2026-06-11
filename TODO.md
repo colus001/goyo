@@ -54,6 +54,8 @@
 - [x] Add library-first book selection.
 - [x] Add Quick Drafts for writing without choosing a book.
 - [x] Allow empty book workspaces without forcing a placeholder document.
+- [x] Support book-level episodes with `chapterId: null` inside normal books.
+- [x] Keep Quick Drafts as a separate system book and inbox chapter for bookless writing.
 - [x] Add local autosave status.
 - [x] Persist editor content locally without relying on a server.
 - [ ] Verify that a document survives app restart.
@@ -65,11 +67,13 @@
 - [ ] Keep the local store behind `packages/core` interfaces.
 - [x] Store local document metadata separately from document content updates.
 - [x] Store local book metadata separately from document content updates.
+- [x] Store local chapter metadata separately from document content updates.
 - [x] Store Yjs incremental updates locally.
 - [ ] Add local document snapshots or compacted state.
 - [ ] Add a local unsynced update queue.
 - [ ] Add document list indexing.
 - [ ] Add archive or soft-delete state.
+- [x] Add archive or soft-delete state for books, chapters, and documents.
 - [ ] Verify that a document can be restored from local metadata plus local Yjs data.
 - [ ] Verify that local writes remain safe while offline.
 
@@ -120,17 +124,37 @@
 
 - [x] Add left-side document or project navigation.
 - [x] Add move up/down document ordering controls.
+- [x] Add move up/down chapter ordering controls.
 - [x] Add calm central writing surface.
 - [ ] Add quiet toolbar or command surface.
 - [ ] Add keyboard shortcuts for primary writing actions.
 - [x] Add word count.
 - [x] Add document status metadata.
 - [x] Add focused writing mode.
+- [x] Add collapsible sidebar navigation.
+- [x] Add library-first book grid with book creation and accent color selection.
+- [x] Add chapter creation modal and chapter delete confirmation.
+- [x] Add book delete confirmation and soft archive flow.
+- [x] Add shared context menu UI for sidebar empty space, chapters, and episodes.
+- [x] Add empty-sidebar context menu actions for new episode, new chapter, expand all, and collapse all.
+- [x] Keep chapter expansion state independent from chapter or episode selection.
+- [x] Focus titled episodes into the editor body and untitled episodes into the title input.
+- [x] Protect Korean/IME title entry from Enter composition bugs.
 - [ ] Add search.
 - [ ] Add basic tags or labels.
 - [ ] Support essay-style document workflows.
 - [x] Support basic fiction chapter workflows.
-- [ ] Support fiction scene workflows.
+- [x] Support fiction episode workflows inside and outside chapters.
+
+## Recent Implementation Notes
+
+- [x] Implemented `Book -> top-level episodes -> Chapter -> episodes` navigation.
+- [x] Migrated desktop SQLite `documents.chapter_id` to support nullable chapter ids.
+- [x] Split reusable UI pieces including shared `ContextMenu`, book episode list, chapter dialogs, and chapter expansion state.
+- [x] Added core tests for book-level episodes and chapter reordering.
+- [ ] Manually verify desktop restart restores books, chapters, book-level episodes, chapter episodes, ordering, archived state, and Yjs content.
+- [ ] Manually verify context menus open and close consistently via outside click and Escape across sidebar empty space, chapters, and episodes.
+- [ ] Manually verify sidebar hover affordances only appear for the row/card being hovered.
 
 ## Milestone 9: Recovery And Version Safety
 

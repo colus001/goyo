@@ -12,8 +12,11 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 - Keep the architecture web-compatible, but do not prioritize the browser web app in the first milestone.
 - Support essays and fiction without forcing one rigid writing model.
 - Use books/projects as the top-level writing container and documents as chapter/note/draft units inside a book.
+- The current writing hierarchy is `Book -> optional top-level episodes -> Chapter -> episodes`. A document always belongs to a book, but `DocumentMetadata.chapterId` may be `null` for book-level episodes.
+- Do not force every episode into a chapter. Chapterless episodes inside a normal book are valid writing units, not Quick Drafts or orphaned data.
 - Start writers in a library view where they can select a book, create a book, or start writing without choosing a book.
 - Treat bookless writing as a product concept backed by a non-destructive `Quick Drafts` system book until a true nullable-book model is needed.
+- Keep Quick Drafts backed by the system book and inbox chapter. This is separate from normal book-level episodes with `chapterId: null`.
 - Preserve user writing above all else.
 - Avoid destructive conflict handling.
 - Keep the editor fast, quiet, and keyboard-friendly.
@@ -42,6 +45,7 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 - Keep book, chapter, note, and draft metadata behavior in `packages/core`; app layers should compose these concepts rather than redefining them.
 - Allow books to exist without documents; empty book workspaces should show creation actions instead of forcing a placeholder document.
 - Keep document ordering explicit with metadata and prefer simple move up/down behavior before drag-and-drop.
+- Keep chapter ordering explicit with metadata and simple move up/down behavior.
 - Keep shared IDs, API contracts, and cross-runtime TypeScript types in `packages/shared`.
 - Prefer Tailwind utility classes for styling. Avoid adding separate CSS files unless they are needed for global styles, editor-specific resets, or third-party integration.
 - Prefer the relevant CLI for workspace/package operations instead of hand-editing generated package metadata when the CLI can do the job safely.
@@ -125,6 +129,15 @@ D1 should store durable document data and update history. Snapshots may be used 
 - The editor should feel like a writing surface, not an admin dashboard.
 - Empty space in the writing surface should behave like editable paper: show a text cursor and focus the editor instead of becoming dead space.
 - Keep primary writing actions close and secondary actions quiet.
+- Keep sidebar insertion affordances quiet. Prefer contextual floating insert buttons and context menus over large persistent add buttons in the chapter tree.
+- Book-level episode creation belongs in the empty-sidebar context menu or book empty state, not as a floating `+` above the first chapter. That UI was noisy and should not be reintroduced.
+- Empty chapter episode insertion should reuse the existing floating insert `+` affordance anchored to the chapter card, not a large `+ New episode` row.
+- Sidebar chapter expansion is local UI state, not the same as selection. Chapter clicks should toggle that chapter open/closed without collapsing other chapters. Selecting an episode may expand its parent chapter, but must not collapse unrelated chapters.
+- Context menus in `packages/ui` should use the shared `ContextMenu` component so icons, spacing, separators, destructive styling, and close behavior remain consistent.
+- Context menus should close on outside pointer down and Escape. Do not attach a global `contextmenu` close handler that races with opening a new context menu.
+- Dropdowns, popovers, and non-context menus must also close on outside pointer down and Escape. The outside check must include the trigger plus the floating panel, otherwise clicking the trigger can close and immediately reopen the menu.
+- Tailwind named groups must be scoped carefully. Do not reuse the same named group for nested sidebar rows; chapter and episode rows need distinct group names so hovering an episode does not reveal chapter controls.
+- Row move arrows should not appear just because a row is selected or focus is inside an expanded section. They should be quiet hover affordances or available through context menus.
 - Support keyboard-first desktop usage.
 - Make sync status visible but not distracting; prefer subtle indicators over prominent status text.
 - Support a collapsible navigation/sidebar so writers can focus on the current draft.
@@ -135,6 +148,11 @@ D1 should store durable document data and update history. Snapshots may be used 
 
 - Make the smallest correct change.
 - Prefer readable code over clever abstractions.
+- When refining UI, avoid introducing new layout space for an affordance unless that is explicitly desired. Floating controls should be anchored to the intended row/card, not placed in arbitrary wrapper heights.
+- Before adding a new UI pattern, check whether an existing component already expresses the same interaction. Reuse existing affordances such as the floating insert button and shared context menu instead of creating near-duplicates.
+- For React IME-sensitive text inputs, do not blur or submit on Enter while composition is active. Check `event.nativeEvent.isComposing` or `event.keyCode === 229` before handling Enter.
+- Focus behavior for episodes: newly selected titled episodes should focus the editor body at the end; untitled episodes should focus the title input. Pressing Enter from an episode title should focus the editor body.
+- When changing hover behavior in nested UI, remember that CSS `:hover` applies to ancestors. Scope hover groups to the exact card/row that owns the control.
 - Keep frontend, Worker, D1, KV, and Durable Object responsibilities clear.
 - Do not add compatibility layers unless persisted data, external consumers, or explicit requirements make them necessary.
 - Do not introduce new frameworks, services, or storage layers without documenting why.
