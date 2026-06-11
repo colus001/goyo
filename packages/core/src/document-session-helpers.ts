@@ -8,6 +8,10 @@ export function ensureChaptersForDocuments(
   const chaptersById = new Map(chapters.map((chapter) => [chapter.id, chapter]));
 
   for (const document of documents) {
+    if (!document.chapterId) {
+      continue;
+    }
+
     if (chaptersById.has(document.chapterId)) {
       continue;
     }
@@ -46,8 +50,11 @@ export function sortDocuments(documents: DocumentMetadata[]): DocumentMetadata[]
       return first.bookId.localeCompare(second.bookId);
     }
 
-    if (first.chapterId !== second.chapterId) {
-      return first.chapterId.localeCompare(second.chapterId);
+    const firstChapterId = first.chapterId ?? '';
+    const secondChapterId = second.chapterId ?? '';
+
+    if (firstChapterId !== secondChapterId) {
+      return firstChapterId.localeCompare(secondChapterId);
     }
 
     if (first.order !== second.order) {

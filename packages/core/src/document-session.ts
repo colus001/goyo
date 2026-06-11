@@ -15,6 +15,10 @@ import {
 } from './documents';
 
 export {
+  reorderChapter,
+  reorderDocument,
+} from './document-session-reorder';
+export {
   getActiveBook,
   getActiveDocumentOrNull,
 } from './document-session-selectors';
@@ -28,23 +32,25 @@ export interface DocumentSession {
   documents: DocumentMetadata[];
 }
 
-export type ReorderDocumentDirection = 'down' | 'up';
-
 export function createDocumentSession(input: CreateDocumentMetadataInput): DocumentSession {
   const document = createDocumentMetadata(input);
   const book = createBookMetadata({ id: document.bookId, now: input.now });
-  const chapter = createChapterMetadata({
-    bookId: document.bookId,
-    id: document.chapterId,
-    now: input.now,
-  });
+  const chapters = document.chapterId
+    ? [
+        createChapterMetadata({
+          bookId: document.bookId,
+          id: document.chapterId,
+          now: input.now,
+        }),
+      ]
+    : [];
 
   return {
     activeBookId: document.bookId,
     activeChapterId: document.chapterId,
     activeDocumentId: document.id,
     books: [book],
-    chapters: [chapter],
+    chapters,
     documents: [document],
   };
 }
@@ -68,8 +74,9 @@ export function createDocumentSessionFromBooksChaptersAndDocuments(
   const sortedDocuments = sortDocuments(documents);
   const sortedChapters = sortChapters(ensureChaptersForDocuments(chapters, sortedDocuments));
   const activeDocument = sortedDocuments[0];
-  const activeChapter =
-    sortedChapters.find((chapter) => chapter.id === activeDocument?.chapterId) ?? sortedChapters[0];
+  const activeChapter = activeDocument
+    ? sortedChapters.find((chapter) => chapter.id === activeDocument.chapterId)
+    : sortedChapters[0];
 
   if (!activeDocument && !activeChapter && books.length === 0) {
     throw new Error('Document session needs at least one book, chapter, or document');
@@ -224,55 +231,17 @@ export function selectActiveBook(session: DocumentSession, bookId: BookId): Docu
     return session;
   }
 
-  const activeChapter = sortChapters(session.chapters).find((chapter) => chapter.bookId === bookId);
   const activeDocument = sortDocuments(session.documents).find(
-    (document) => document.chapterId === activeChapter?.id,
+    (document) => document.bookId === bookId,
   );
+  const activeChapter = activeDocument?.chapterId
+    ? sortChapters(session.chapters).find((chapter) => chapter.id === activeDocument.chapterId)
+    : sortChapters(session.chapters).find((chapter) => chapter.bookId === bookId);
 
   return {
     ...session,
     activeBookId: bookId,
-    activeChapterId: activeChapter?.id ?? null,
+    activeChapterId: activeDocument?.chapterId ?? activeChapter?.id ?? null,
     activeDocumentId: activeDocument?.id ?? null,
-  };
-}
-
-export function reorderDocument(
-  session: DocumentSession,
-  documentId: DocumentId,
-  direction: ReorderDocumentDirection,
-): DocumentSession {
-  const document = session.documents.find((candidate) => candidate.id === documentId);
-
-  if (!document) {
-    return session;
-  }
-
-  const sectionDocuments = sortDocuments(session.documents).filter(
-    (candidate) => candidate.chapterId === document.chapterId && candidate.kind === document.kind,
-  );
-  const currentIndex = sectionDocuments.findIndex((candidate) => candidate.id === documentId);
-  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-  const targetDocument = sectionDocuments[targetIndex];
-
-  if (!targetDocument) {
-    return session;
-  }
-
-  return {
-    ...session,
-    documents: sortDocuments(
-      session.documents.map((candidate) => {
-        if (candidate.id === document.id) {
-          return { ...candidate, order: targetDocument.order };
-        }
-
-        if (candidate.id === targetDocument.id) {
-          return { ...candidate, order: document.order };
-        }
-
-        return candidate;
-      }),
-    ),
   };
 }

@@ -145,7 +145,8 @@ export function archiveDocument(
 
     const remainingDocuments = session.documents.filter((candidate) => candidate.id !== documentId);
     const nextDocument = remainingDocuments.find(
-      (candidate) => candidate.chapterId === document.chapterId,
+      (candidate) =>
+        candidate.bookId === document.bookId && candidate.chapterId === document.chapterId,
     );
     const nextSession = {
       ...session,
@@ -161,7 +162,14 @@ export function archiveDocument(
       return selectActiveDocument(nextSession, nextDocument.id);
     }
 
-    return selectActiveChapter(nextSession, document.chapterId);
+    if (document.chapterId) {
+      return selectActiveChapter(nextSession, document.chapterId);
+    }
+
+    return {
+      ...nextSession,
+      activeChapterId: null,
+    };
   });
 
   if (archivedDocument) {

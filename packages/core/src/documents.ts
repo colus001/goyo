@@ -4,7 +4,7 @@ const DEFAULT_DOCUMENT_TITLE = '';
 
 export interface DocumentMetadata {
   bookId: BookId;
-  chapterId: ChapterId;
+  chapterId: ChapterId | null;
   kind: DocumentKind;
   id: DocumentId;
   order: number;
@@ -18,7 +18,7 @@ export type DocumentKind = 'draft' | 'episode' | 'note';
 
 export interface CreateDocumentMetadataInput {
   bookId: BookId;
-  chapterId?: ChapterId;
+  chapterId?: ChapterId | null;
   id: DocumentId;
   kind?: DocumentKind;
   now: string;
@@ -35,7 +35,7 @@ export function createDocumentMetadata(input: CreateDocumentMetadataInput): Docu
   return {
     archivedAt: null,
     bookId: input.bookId,
-    chapterId: input.chapterId ?? `chapter_${input.bookId}_default`,
+    chapterId: input.chapterId ?? null,
     createdAt: input.now,
     id: input.id,
     kind: input.kind ?? 'episode',

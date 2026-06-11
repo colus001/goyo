@@ -72,7 +72,7 @@ export async function persistDocumentUpdate(
 
 export function createUntitledDocument(
   bookId: string,
-  chapterId: string,
+  chapterId: string | null,
   order: number,
   kind: DocumentKind,
 ): DocumentMetadata {

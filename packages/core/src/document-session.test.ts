@@ -22,15 +22,15 @@ describe('document session creation from a new document', () => {
     });
 
     expect(session.activeBookId).toBe('book_1');
-    expect(session.activeChapterId).toBe('chapter_book_1_default');
+    expect(session.activeChapterId).toBeNull();
     expect(session.activeDocumentId).toBe('doc_1');
     expect(session.books.map((book) => book.id)).toEqual(['book_1']);
-    expect(session.chapters.map((chapter) => chapter.id)).toEqual(['chapter_book_1_default']);
+    expect(session.chapters).toEqual([]);
     expect(session.documents).toEqual([
       {
         archivedAt: null,
         bookId: 'book_1',
-        chapterId: 'chapter_book_1_default',
+        chapterId: null,
         createdAt: '2026-06-11T10:00:00.000Z',
         id: 'doc_1',
         kind: 'episode',
@@ -59,10 +59,10 @@ describe('document session creation from existing data', () => {
 
     expect(createDocumentSessionFromDocuments([firstDocument, secondDocument])).toEqual({
       activeBookId: 'book_1',
-      activeChapterId: 'chapter_book_1_default',
+      activeChapterId: null,
       activeDocumentId: 'doc_1',
       books: [expect.objectContaining({ id: 'book_1' })],
-      chapters: [expect.objectContaining({ id: 'chapter_book_1_default' })],
+      chapters: [],
       documents: [firstDocument, secondDocument],
     });
   });
@@ -181,6 +181,27 @@ describe('document session document mutation', () => {
     expect(updatedSession.activeDocumentId).toBe('doc_2');
     expect(updatedSession.documents.map((document) => document.id)).toEqual(['doc_1', 'doc_2']);
   });
+
+  it('supports chapter and book-level episodes in the same book', () => {
+    const bookLevelDocument = createDocumentSession({
+      id: 'doc_loose',
+      bookId: 'book_1',
+      now: '2026-06-11T10:00:00.000Z',
+      title: 'Loose opening',
+    }).documents[0];
+    const chapterDocument = createDocumentSession({
+      id: 'doc_chapter',
+      bookId: 'book_1',
+      chapterId: 'chapter_1',
+      now: '2026-06-11T10:01:00.000Z',
+      title: 'Chapter scene',
+    }).documents[0];
+
+    const session = createDocumentSessionFromDocuments([chapterDocument, bookLevelDocument]);
+
+    expect(session.documents.map((document) => document.id)).toEqual(['doc_loose', 'doc_chapter']);
+    expect(session.chapters.map((chapter) => chapter.id)).toEqual(['chapter_1']);
+  });
 });
 
 describe('document session selection within a book', () => {
@@ -233,6 +254,7 @@ describe('document session selection across books', () => {
     const selected = selectActiveDocument(session, 'doc_2');
 
     expect(selected.activeBookId).toBe('book_2');
+    expect(selected.activeChapterId).toBeNull();
     expect(selected.activeDocumentId).toBe('doc_2');
   });
 

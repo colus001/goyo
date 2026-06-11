@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createDocumentMetadata, renameDocument } from './documents';
 
 describe('document metadata creation', () => {
-  it('creates a draft document with normalized title and stable timestamps', () => {
+  it('creates a book-level episode with normalized title and stable timestamps', () => {
     const document = createDocumentMetadata({
       id: 'doc_1',
       bookId: 'book_1',
@@ -13,7 +13,7 @@ describe('document metadata creation', () => {
     expect(document).toEqual({
       archivedAt: null,
       bookId: 'book_1',
-      chapterId: 'chapter_book_1_default',
+      chapterId: null,
       createdAt: '2026-06-11T10:00:00.000Z',
       id: 'doc_1',
       kind: 'episode',
@@ -23,6 +23,25 @@ describe('document metadata creation', () => {
     });
   });
 
+  it('creates a chapter episode when a chapter id is provided', () => {
+    expect(
+      createDocumentMetadata({
+        id: 'doc_chapter_1',
+        bookId: 'book_1',
+        chapterId: 'chapter_1',
+        now: '2026-06-11T10:00:00.000Z',
+        title: 'Scene',
+      }),
+    ).toMatchObject({
+      bookId: 'book_1',
+      chapterId: 'chapter_1',
+      kind: 'episode',
+      title: 'Scene',
+    });
+  });
+});
+
+describe('document metadata title defaults', () => {
   it('uses a safe title when a new draft title is blank', () => {
     const document = createDocumentMetadata({
       id: 'doc_2',
@@ -45,7 +64,7 @@ describe('document metadata creation', () => {
       }),
     ).toMatchObject({
       bookId: 'book_1',
-      chapterId: 'chapter_book_1_default',
+      chapterId: null,
       id: 'doc_6',
       kind: 'note',
       order: 3,

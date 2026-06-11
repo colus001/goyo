@@ -16,7 +16,7 @@ export {
   QUICK_DRAFTS_INBOX_CHAPTER_TITLE,
   renameChapter,
 } from './chapters';
-export type { DocumentSession, ReorderDocumentDirection } from './document-session';
+export type { DocumentSession } from './document-session';
 export {
   addChapterToSession,
   addDocumentToSession,
@@ -27,11 +27,12 @@ export {
   createDraftInSession,
   renameActiveChapter,
   renameActiveDocument,
-  reorderDocument,
   selectActiveBook,
   selectActiveChapter,
   selectActiveDocument,
 } from './document-session';
+export type { ReorderDocumentDirection } from './document-session-reorder';
+export { reorderChapter, reorderDocument } from './document-session-reorder';
 export {
   getActiveBook,
   getActiveChapter,

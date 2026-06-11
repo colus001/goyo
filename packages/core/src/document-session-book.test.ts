@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createBookMetadata, createQuickDraftsBook, QUICK_DRAFTS_BOOK_ID } from './books';
+import { createChapterMetadata } from './chapters';
 import {
   createDocumentSession,
   createDocumentSessionFromBooksAndDocuments,
+  createDocumentSessionFromBooksChaptersAndDocuments,
   createDocumentSessionFromDocuments,
   getActiveBook,
+  reorderChapter,
   reorderDocument,
   selectActiveBook,
 } from './document-session';
@@ -35,7 +38,7 @@ describe('document session book selection', () => {
     const selected = selectActiveBook(session, 'book_2');
 
     expect(selected.activeBookId).toBe('book_2');
-    expect(selected.activeChapterId).toBe('chapter_book_2_default');
+    expect(selected.activeChapterId).toBeNull();
     expect(selected.activeDocumentId).toBe('doc_2');
   });
 
@@ -76,7 +79,38 @@ describe('document session quick drafts', () => {
   });
 });
 
-describe('document session ordering', () => {
+describe('document session chapter ordering', () => {
+  it('moves chapters up and down within the same book', () => {
+    const session = createDocumentSessionFromBooksChaptersAndDocuments(
+      [createBookMetadata({ id: 'book_1', now: '2026-06-11T10:00:00.000Z' })],
+      [
+        createChapterMetadata({
+          id: 'chapter_1',
+          bookId: 'book_1',
+          now: '2026-06-11T10:00:00.000Z',
+          order: 0,
+        }),
+        createChapterMetadata({
+          id: 'chapter_2',
+          bookId: 'book_1',
+          now: '2026-06-11T10:01:00.000Z',
+          order: 1,
+        }),
+      ],
+      [],
+    );
+
+    const reordered = reorderChapter(session, 'chapter_2', 'up');
+
+    expect(reordered.chapters.map((chapter) => chapter.id)).toEqual(['chapter_2', 'chapter_1']);
+    expect(reorderChapter(reordered, 'chapter_2', 'up')).toBe(reordered);
+    expect(
+      reorderChapter(reordered, 'chapter_2', 'down').chapters.map((chapter) => chapter.id),
+    ).toEqual(['chapter_1', 'chapter_2']);
+  });
+});
+
+describe('document session document ordering', () => {
   it('moves documents up and down within the same book and kind', () => {
     const first = createDocumentSession({
       id: 'doc_1',

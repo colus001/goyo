@@ -38,7 +38,7 @@ interface ChapterMetadataRow {
 interface DocumentMetadataRow {
   id: string;
   book_id: string;
-  chapter_id: string;
+  chapter_id: string | null;
   title: string;
   kind: string;
   sort_order: number;
@@ -119,7 +119,8 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
   `);
 
   ensureDocumentColumn(database, 'book_id', `TEXT NOT NULL DEFAULT '${DEFAULT_BOOK_ID}'`);
-  ensureDocumentColumn(database, 'chapter_id', `TEXT NOT NULL DEFAULT '${DEFAULT_CHAPTER_ID}'`);
+  ensureDocumentColumn(database, 'chapter_id', 'TEXT');
+  ensureNullableDocumentChapterId(database);
   ensureDocumentColumn(database, 'kind', "TEXT NOT NULL DEFAULT 'episode'");
   ensureDocumentColumn(database, 'sort_order', 'INTEGER NOT NULL DEFAULT 0');
   ensureBookColumn(
@@ -127,8 +128,7 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     'accent_color',
     `TEXT NOT NULL DEFAULT '${DEFAULT_BOOK_ACCENT_COLOR}'`,
   );
-  ensureDefaultBook(database);
-  ensureDefaultChapter(database);
+  ensureDefaultContainers(database);
 
   const listBooksStatement = database.prepare(`
     SELECT id, title, accent_color, created_at, updated_at, archived_at
@@ -223,6 +223,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
   };
 }
 
+function ensureDefaultContainers(database: Database.Database) {
+  ensureDefaultBook(database);
+  ensureDefaultChapter(database);
+}
+
 function ensureDocumentColumn(
   database: Database.Database,
   columnName: string,
@@ -235,6 +240,41 @@ function ensureDocumentColumn(
   }
 
   database.exec(`ALTER TABLE documents ADD COLUMN ${columnName} ${columnDefinition};`);
+}
+
+function ensureNullableDocumentChapterId(database: Database.Database) {
+  const columns = database.pragma('table_info(documents)') as Array<{
+    name: string;
+    notnull: number;
+  }>;
+  const chapterColumn = columns.find(({ name }) => name === 'chapter_id');
+
+  if (!chapterColumn || chapterColumn.notnull === 0) {
+    return;
+  }
+
+  database.exec(`
+    PRAGMA foreign_keys = OFF;
+    CREATE TABLE documents_migration (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      archived_at TEXT,
+      book_id TEXT NOT NULL DEFAULT '${DEFAULT_BOOK_ID}',
+      chapter_id TEXT,
+      kind TEXT NOT NULL DEFAULT 'episode',
+      sort_order INTEGER NOT NULL DEFAULT 0
+    );
+    INSERT INTO documents_migration (
+      id, title, created_at, updated_at, archived_at, book_id, chapter_id, kind, sort_order
+    )
+    SELECT id, title, created_at, updated_at, archived_at, book_id, chapter_id, kind, sort_order
+    FROM documents;
+    DROP TABLE documents;
+    ALTER TABLE documents_migration RENAME TO documents;
+    PRAGMA foreign_keys = ON;
+  `);
 }
 
 function ensureBookColumn(

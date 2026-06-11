@@ -24,6 +24,7 @@ import {
   updateBookAccentColor,
 } from './document-workspace-actions';
 import { createBookWithDetails } from './document-workspace-book-actions';
+import { moveChapter } from './document-workspace-chapter-actions';
 import { archiveBook, archiveChapter, archiveDocument } from './document-workspace-delete-actions';
 import { createEpisodeAfter } from './document-workspace-episode-actions';
 import type {
@@ -63,6 +64,8 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     deleteChapter: (chapterId) => archiveChapter(chapterId, setSession, setSaveStatus),
     deleteDocument: (documentId) => archiveDocument(documentId, setSession, setSaveStatus),
     documentUpdates,
+    moveChapter: (chapterId, direction) =>
+      moveChapter(chapterId, direction, setSession, setSaveStatus),
     moveDocument: (documentId, direction) =>
       moveDocument(documentId, direction, setSession, setSaveStatus),
     openDocument: (documentId) => openDocument(documentId, setSession),

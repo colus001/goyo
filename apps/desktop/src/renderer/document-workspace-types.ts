@@ -23,11 +23,12 @@ export interface WritingWorkspaceState {
   createChapter: (title?: string) => void;
   createDocument: (kind: DocumentKind) => void;
   createDocumentInChapter: (chapterId: string, kind: DocumentKind) => void;
-  createEpisodeAfter: (chapterId: string, previousDocumentId: string | null) => void;
+  createEpisodeAfter: (chapterId: string | null, previousDocumentId: string | null) => void;
   deleteBook: (bookId: string) => void;
   deleteChapter: (chapterId: string) => void;
   deleteDocument: (documentId: string) => void;
   documentUpdates: DocumentUpdateMap;
+  moveChapter: (chapterId: string, direction: 'down' | 'up') => void;
   moveDocument: (documentId: string, direction: 'down' | 'up') => void;
   openDocument: (documentId: string) => void;
   recordDocumentUpdate: (update: Uint8Array) => void;

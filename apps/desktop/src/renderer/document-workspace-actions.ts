@@ -83,7 +83,7 @@ export function startQuickDraft(
       session?.chapters.find((candidate) => candidate.id === QUICK_DRAFTS_INBOX_CHAPTER_ID) ??
       createQuickDraftsInboxChapter(now);
     const documents = session?.documents ?? [];
-    const nextOrder = getNextDocumentOrder(chapter.id, documents, 'draft');
+    const nextOrder = getNextDocumentOrder(book.id, chapter.id, documents, 'draft');
     const document = createUntitledDocument(book.id, chapter.id, nextOrder, 'draft');
     nextBook = book;
     nextChapter = chapter;
@@ -161,14 +161,10 @@ export function createDocument(
       return session;
     }
 
-    if (!session.activeChapterId) {
-      return session;
-    }
-
     document = createUntitledDocument(
       session.activeBookId,
       session.activeChapterId,
-      getNextDocumentOrder(session.activeChapterId, session.documents, kind),
+      getNextDocumentOrder(session.activeBookId, session.activeChapterId, session.documents, kind),
       kind,
     );
     return addDocumentToSession(session, document);
@@ -201,7 +197,7 @@ export function createDocumentInChapter(
     document = createUntitledDocument(
       chapter.bookId,
       chapter.id,
-      getNextDocumentOrder(chapter.id, session.documents, kind),
+      getNextDocumentOrder(chapter.bookId, chapter.id, session.documents, kind),
       kind,
     );
 
