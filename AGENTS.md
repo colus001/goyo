@@ -2,14 +2,14 @@
 
 ## Project
 
-This project is a writing app for essays and fiction. The first target is a desktop web experience, with mobile support planned after the desktop writing workflow is stable.
+This project is a writing app for essays and fiction. The first target is an Electron desktop app focused on distraction-free long-form writing, with a web app planned later using as much shared code as possible.
 
 The product should prioritize calm long-form writing, drafting, revision, organization, and safe synchronization across devices.
 
 ## Product Priorities
 
-- Build the desktop writing experience first.
-- Keep the architecture mobile-compatible, but do not prioritize mobile UI polish in the first milestone.
+- Build the Electron desktop writing experience first.
+- Keep the architecture web-compatible, but do not prioritize the browser web app in the first milestone.
 - Support essays and fiction without forcing one rigid writing model.
 - Preserve user writing above all else.
 - Avoid destructive conflict handling.
@@ -17,19 +17,26 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 
 ## Stack Direction
 
-- Frontend: desktop-first web app.
+- Primary app: Electron desktop app.
+- Future app: browser web app using shared packages where practical.
+- Renderer: React and TypeScript.
 - Styling: Tailwind CSS.
 - Sync API: Cloudflare Workers.
 - Durable storage: Cloudflare D1.
 - Cache: Cloudflare KV.
 - Realtime document coordination: Cloudflare Durable Objects if realtime multi-client editing is implemented.
 - Collaborative document model: CRDT, preferably Yjs.
+- Desktop packaging and update tooling should be selected when packaging becomes a milestone; Electron is the desktop runtime direction.
 
 ## Workspace And Tooling
 
 - Use `pnpm` as the package manager and workspace runner.
-- Keep the workspace layout as `apps/web`, `apps/worker`, `packages/shared`, and `packages/ui` unless there is a concrete reason to change it.
-- Put reusable UI components in `packages/ui`; keep `apps/web` focused on app composition, routing, and feature wiring.
+- Keep the workspace layout as `apps/desktop`, `apps/web`, `apps/worker`, `packages/core`, `packages/shared`, and `packages/ui` unless there is a concrete reason to change it.
+- `apps/desktop` is the primary app and should contain Electron main/preload/renderer composition, native lifecycle, IPC boundaries, and desktop-specific integration.
+- `apps/web` is retained for the future browser app and should reuse packages rather than duplicate app logic.
+- Put reusable UI components in `packages/ui`; keep app packages focused on app composition, routing, feature wiring, and platform-specific integration.
+- Put editor-agnostic product/domain logic in `packages/core`, including document operations, sync state machines, recovery policies, and local store interfaces.
+- Keep shared IDs, API contracts, and cross-runtime TypeScript types in `packages/shared`.
 - Prefer Tailwind utility classes for styling. Avoid adding separate CSS files unless they are needed for global styles, editor-specific resets, or third-party integration.
 - Prefer the relevant CLI for workspace/package operations instead of hand-editing generated package metadata when the CLI can do the job safely.
 - Use Biome for formatting and linting.
@@ -38,7 +45,17 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 - Run `pnpm check` before considering a development slice complete.
 - If `pnpm check` reports Biome, Knip, lint, or typecheck issues, fix the reported issues instead of bypassing them.
 - Use `pnpm check:write` when safe automatic Biome fixes are appropriate, then rerun `pnpm check`.
-- Use root scripts for common workflows: `pnpm dev`, `pnpm dev:web`, `pnpm dev:worker`, `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm knip`, and `pnpm check`.
+- Use root scripts for common workflows: `pnpm dev`, `pnpm dev:desktop`, `pnpm dev:web`, `pnpm dev:worker`, `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm knip`, and `pnpm check`.
+
+## Desktop Architecture
+
+- Treat Electron as the primary runtime.
+- Keep Electron main process code responsible for native window lifecycle, native menus, auto-update integration when added, filesystem access, and local database access when needed.
+- Keep preload code as a narrow, typed, security-conscious IPC boundary.
+- Keep renderer code focused on React app composition and interaction with `packages/ui`, `packages/editor` if added, `packages/core`, and the preload API.
+- Do not put reusable domain logic directly in Electron main, preload, or renderer code if it can live in `packages/core`.
+- Prefer platform interfaces in `packages/core` over importing Electron, SQLite, IndexedDB, or browser-only APIs directly into core logic.
+- Desktop local persistence should prefer a durable local database such as SQLite when implementation begins, while preserving an abstraction that can later support IndexedDB for the browser web app.
 
 ## Concurrent Editing
 

@@ -3,19 +3,44 @@
 ## Milestone 0: Product And Technical Foundation
 
 - [x] Initialize the repository structure.
-- [x] Create the Vite + React + TypeScript web app.
+- [ ] Create the Electron + React + TypeScript desktop app.
+- [x] Create the Vite + React + TypeScript web app scaffold for future reuse.
 - [x] Create the Cloudflare Worker app structure.
-- [x] Decide the monorepo layout, preferably `apps/web`, `apps/worker`, `packages/shared`, and `packages/ui`.
+- [x] Decide the monorepo layout, preferably `apps/desktop`, `apps/web`, `apps/worker`, `packages/core`, `packages/shared`, and `packages/ui`.
 - [x] Configure TypeScript across the workspace.
 - [x] Configure linting and formatting.
 - [x] Configure Tailwind CSS for web styling.
 - [x] Add shared UI package structure.
+- [ ] Add core domain package structure.
 - [ ] Add basic test tooling.
 - [x] Add local development scripts.
 - [ ] Document the local-first architecture.
-- [ ] Document the role of IndexedDB, Yjs, D1, KV, and Durable Objects.
+- [ ] Document the role of SQLite, IndexedDB, Yjs, D1, KV, and Durable Objects.
 
-## Milestone 1: Local-First Desktop Editor MVP
+## Milestone 1: Electron Desktop Shell
+
+- [ ] Add `apps/desktop` package.
+- [ ] Configure Electron main process.
+- [ ] Configure Electron preload boundary.
+- [ ] Configure React renderer with Vite and Tailwind.
+- [ ] Reuse `packages/ui` from the desktop renderer.
+- [ ] Add root `pnpm dev:desktop` script.
+- [ ] Make `pnpm dev` run the desktop app.
+- [ ] Add a minimal native application menu.
+- [ ] Verify desktop window lifecycle on macOS.
+- [ ] Verify `pnpm check` and `pnpm build` include the desktop app.
+
+## Milestone 2: Core Domain And Platform Boundaries
+
+- [ ] Add `packages/core` package.
+- [ ] Define document metadata types and operations in `packages/core`.
+- [ ] Define local document store interfaces in `packages/core`.
+- [ ] Define sync queue interfaces in `packages/core`.
+- [ ] Define recovery policy interfaces in `packages/core`.
+- [ ] Keep Electron, SQLite, IndexedDB, and browser APIs out of `packages/core`.
+- [ ] Keep shared IDs and API contracts in `packages/shared`.
+
+## Milestone 3: Local-First Desktop Editor MVP
 
 - [ ] Add Tiptap/ProseMirror editor.
 - [ ] Add Yjs as the document model for editor content.
@@ -26,12 +51,13 @@
 - [ ] Add document title editing.
 - [ ] Add local autosave status.
 - [ ] Persist editor content locally without relying on a server.
-- [ ] Verify that a document survives browser refresh and app restart.
+- [ ] Verify that a document survives app restart.
 - [ ] Verify long-form writing performance with a large document.
 
-## Milestone 2: Local Document Store
+## Milestone 4: Local Document Store
 
-- [ ] Choose the IndexedDB wrapper or direct IndexedDB approach.
+- [ ] Choose the desktop local store implementation, preferably SQLite.
+- [ ] Keep the local store behind `packages/core` interfaces.
 - [ ] Store local document metadata separately from document content updates.
 - [ ] Store Yjs incremental updates locally.
 - [ ] Add local document snapshots or compacted state.
@@ -41,7 +67,7 @@
 - [ ] Verify that a document can be restored from local metadata plus local Yjs data.
 - [ ] Verify that local writes remain safe while offline.
 
-## Milestone 3: CRDT Sync Core
+## Milestone 5: CRDT Sync Core
 
 - [ ] Implement Yjs update generation for local edits.
 - [ ] Implement Yjs update replay.
@@ -54,7 +80,7 @@
 - [ ] Add tests for duplicated update delivery.
 - [ ] Add tests for out-of-order update delivery.
 
-## Milestone 4: Worker And D1 Persistence
+## Milestone 6: Worker And D1 Persistence
 
 - [ ] Add Cloudflare Worker health endpoint.
 - [ ] Configure Wrangler for local development.
@@ -71,7 +97,7 @@
 - [ ] Ensure D1 remains the canonical remote store.
 - [ ] Ensure KV is not required to restore document content.
 
-## Milestone 5: Incremental Remote Sync
+## Milestone 7: Incremental Remote Sync
 
 - [ ] Push local unsynced Yjs updates to the Worker.
 - [ ] Pull missing remote Yjs updates from the Worker.
@@ -80,11 +106,11 @@
 - [ ] Add subtle sync status UI.
 - [ ] Handle offline mode without blocking local editing.
 - [ ] Handle reconnect after offline edits.
-- [ ] Verify same-document editing from two browser instances.
+- [ ] Verify same-document editing from two desktop app instances.
 - [ ] Verify duplicated sync requests are safe.
 - [ ] Verify delayed or out-of-order remote updates are safe.
 
-## Milestone 6: Desktop Writing Experience
+## Milestone 8: Desktop Writing Experience
 
 - [ ] Add left-side document or project navigation.
 - [ ] Add calm central writing surface.
@@ -98,7 +124,7 @@
 - [ ] Support essay-style document workflows.
 - [ ] Support fiction chapter or scene workflows.
 
-## Milestone 7: Recovery And Version Safety
+## Milestone 9: Recovery And Version Safety
 
 - [ ] Add automatic local checkpoints.
 - [ ] Add remote snapshot policy.
@@ -110,7 +136,7 @@
 - [ ] Verify recovery from local data after remote sync failure.
 - [ ] Verify recovery from snapshot plus later updates.
 
-## Milestone 8: Realtime Same-Document Editing
+## Milestone 10: Realtime Same-Document Editing
 
 - [ ] Add Durable Object per document or collaboration room.
 - [ ] Add WebSocket connection handling.
@@ -122,7 +148,7 @@
 - [ ] Verify realtime editing from two clients.
 - [ ] Verify Durable Object restart recovery from D1 and local updates.
 
-## Milestone 9: Export
+## Milestone 11: Export
 
 - [ ] Add plain text export.
 - [ ] Add Markdown export.
@@ -134,7 +160,7 @@
 - [ ] Support fiction chapter export.
 - [ ] Verify export works independently from remote sync state.
 
-## Milestone 10: Auth And Multi-Device Accounts
+## Milestone 12: Auth And Multi-Device Accounts
 
 - [ ] Choose an authentication approach.
 - [ ] Add user identity model.
@@ -146,7 +172,17 @@
 - [ ] Verify multiple devices can sync documents for the same user.
 - [ ] Verify one user cannot access another user's document updates.
 
-## Milestone 11: Mobile-Compatible Pass
+## Milestone 13: Future Browser Web App
+
+- [ ] Reuse `packages/ui` in `apps/web`.
+- [ ] Reuse `packages/core` in `apps/web`.
+- [ ] Add IndexedDB implementation for core local store interfaces.
+- [ ] Add responsive baseline for primary browser screens.
+- [ ] Review web editor constraints separately from Electron desktop constraints.
+- [ ] Test offline and reconnect behavior in browser runtime.
+- [ ] Ensure web app does not duplicate desktop-only logic.
+
+## Milestone 14: Mobile-Compatible Pass
 
 - [ ] Add responsive baseline for primary screens.
 - [ ] Review mobile editor constraints.
