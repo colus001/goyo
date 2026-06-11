@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@writer/shared": "workspace:*",
+    "lucide-react": "^1.17.0",
     "react": "^19.2.6"
   },
   "devDependencies": {
