@@ -58,8 +58,8 @@
 - [x] Keep Quick Drafts as a separate system book and inbox chapter for bookless writing.
 - [x] Add local autosave status.
 - [x] Persist editor content locally without relying on a server.
-- [ ] Verify that a document survives app restart.
-- [ ] Verify long-form writing performance with a large document.
+- [x] Verify that a document survives app restart.
+- [x] Verify long-form writing performance with a large document.
 
 ## Milestone 4: Local Document Store
 
@@ -74,7 +74,7 @@
 - [ ] Add document list indexing.
 - [ ] Add archive or soft-delete state.
 - [x] Add archive or soft-delete state for books, chapters, and documents.
-- [ ] Verify that a document can be restored from local metadata plus local Yjs data.
+- [x] Verify that a document can be restored from local metadata plus local Yjs data.
 - [ ] Verify that local writes remain safe while offline.
 
 ## Milestone 5: CRDT Sync Core
@@ -127,6 +127,8 @@
 - [x] Add move up/down chapter ordering controls.
 - [x] Add calm central writing surface.
 - [ ] Add quiet toolbar or command surface.
+- [ ] Restore the last app state on launch, including the previous book, selected episode, sidebar state, and focused writing mode where practical.
+- [ ] Add a settings menu or settings surface for app-level preferences.
 - [ ] Add keyboard shortcuts for primary writing actions.
 - [x] Add word count.
 - [x] Add document status metadata.
@@ -152,9 +154,9 @@
 - [x] Migrated desktop SQLite `documents.chapter_id` to support nullable chapter ids.
 - [x] Split reusable UI pieces including shared `ContextMenu`, book episode list, chapter dialogs, and chapter expansion state.
 - [x] Added core tests for book-level episodes and chapter reordering.
-- [ ] Manually verify desktop restart restores books, chapters, book-level episodes, chapter episodes, ordering, archived state, and Yjs content.
-- [ ] Manually verify context menus open and close consistently via outside click and Escape across sidebar empty space, chapters, and episodes.
-- [ ] Manually verify sidebar hover affordances only appear for the row/card being hovered.
+- [x] Manually verify desktop restart restores books, chapters, book-level episodes, chapter episodes, ordering, archived state, and Yjs content.
+- [x] Manually verify context menus open and close consistently via outside click and Escape across sidebar empty space, chapters, and episodes.
+- [x] Manually verify sidebar hover affordances only appear for the row/card being hovered.
 
 ## Milestone 9: Recovery And Version Safety
 
