@@ -5,6 +5,7 @@
     { "path": "./apps/web" },
     { "path": "./apps/worker" },
     { "path": "./packages/core" },
+    { "path": "./packages/editor" },
     { "path": "./packages/ui" },
     { "path": "./packages/shared" }
   ]

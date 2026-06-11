@@ -1,5 +1,10 @@
+import { WritingEditor } from '@writer/editor'
 import { WritingShellPreview } from '@writer/ui'
 
 export function App() {
-  return <WritingShellPreview />
+  return (
+    <WritingShellPreview>
+      <WritingEditor />
+    </WritingShellPreview>
+  )
 }

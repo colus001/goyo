@@ -1,0 +1,27 @@
+{
+  "name": "@writer/editor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tiptap/extension-collaboration": "^3.26.0",
+    "@tiptap/react": "^3.26.0",
+    "@tiptap/starter-kit": "^3.26.0",
+    "react": "^19.2.6",
+    "yjs": "^13.6.31"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "typescript": "latest"
+  }
+}
