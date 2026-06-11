@@ -1,7 +1,7 @@
-import { WritingShell } from '@writer/ui'
+import { WritingShell } from '@writer/ui';
 
 function App() {
-  return <WritingShell />
+  return <WritingShell />;
 }
 
-export default App
+export default App;

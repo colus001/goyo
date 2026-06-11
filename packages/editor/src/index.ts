@@ -1,1 +1,1 @@
-export { WritingEditor } from './writing-editor'
+export { WritingEditor } from './writing-editor';

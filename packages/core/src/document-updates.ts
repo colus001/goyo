@@ -1,12 +1,12 @@
-import type { DocumentId, SyncClientId } from '@writer/shared'
-import type { DocumentUpdateRecord } from './sync'
+import type { DocumentId, SyncClientId } from '@writer/shared';
+import type { DocumentUpdateRecord } from './sync';
 
 export interface CreateDocumentUpdateRecordInput {
-  clientId: SyncClientId
-  createdAt: string
-  documentId: DocumentId
-  id: string
-  update: Uint8Array
+  clientId: SyncClientId;
+  createdAt: string;
+  documentId: DocumentId;
+  id: string;
+  update: Uint8Array;
 }
 
 export function createDocumentUpdateRecord(
@@ -18,19 +18,19 @@ export function createDocumentUpdateRecord(
     documentId: input.documentId,
     id: input.id,
     update: input.update,
-  }
+  };
 }
 
 export function sortDocumentUpdatesForReplay(
   updates: DocumentUpdateRecord[],
 ): DocumentUpdateRecord[] {
   return [...updates].sort((first, second) => {
-    const createdAtOrder = first.createdAt.localeCompare(second.createdAt)
+    const createdAtOrder = first.createdAt.localeCompare(second.createdAt);
 
     if (createdAtOrder !== 0) {
-      return createdAtOrder
+      return createdAtOrder;
     }
 
-    return first.id.localeCompare(second.id)
-  })
+    return first.id.localeCompare(second.id);
+  });
 }

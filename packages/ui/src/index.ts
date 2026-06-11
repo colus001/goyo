@@ -1,1 +1,1 @@
-export { WritingShell } from './writing-shell'
+export { WritingShell } from './writing-shell';

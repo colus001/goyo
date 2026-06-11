@@ -1,32 +1,32 @@
-import type { BookId, DocumentId } from '@writer/shared'
+import type { BookId, DocumentId } from '@writer/shared';
 
-const DEFAULT_DOCUMENT_TITLE = 'Untitled document'
+const DEFAULT_DOCUMENT_TITLE = 'Untitled document';
 
 export interface DocumentMetadata {
-  bookId: BookId
-  kind: DocumentKind
-  id: DocumentId
-  order: number
-  title: string
-  createdAt: string
-  updatedAt: string
-  archivedAt: string | null
+  bookId: BookId;
+  kind: DocumentKind;
+  id: DocumentId;
+  order: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
 }
 
-export type DocumentKind = 'chapter' | 'note' | 'draft'
+export type DocumentKind = 'chapter' | 'note' | 'draft';
 
 export interface CreateDocumentMetadataInput {
-  bookId: BookId
-  id: DocumentId
-  kind?: DocumentKind
-  now: string
-  order?: number
-  title?: string
+  bookId: BookId;
+  id: DocumentId;
+  kind?: DocumentKind;
+  now: string;
+  order?: number;
+  title?: string;
 }
 
 export interface RenameDocumentInput {
-  now: string
-  title: string
+  now: string;
+  title: string;
 }
 
 export function createDocumentMetadata(input: CreateDocumentMetadataInput): DocumentMetadata {
@@ -39,32 +39,32 @@ export function createDocumentMetadata(input: CreateDocumentMetadataInput): Docu
     order: input.order ?? 0,
     title: normalizeDocumentTitle(input.title),
     updatedAt: input.now,
-  }
+  };
 }
 
 export function renameDocument(
   document: DocumentMetadata,
   input: RenameDocumentInput,
 ): DocumentMetadata {
-  const title = input.title
+  const title = input.title;
 
   if (title.trim().length === 0 || title === document.title) {
-    return document
+    return document;
   }
 
   return {
     ...document,
     title,
     updatedAt: input.now,
-  }
+  };
 }
 
 function normalizeDocumentTitle(title: string | undefined): string {
-  const normalizedTitle = title?.trim() ?? ''
+  const normalizedTitle = title?.trim() ?? '';
 
   if (normalizedTitle.length === 0) {
-    return DEFAULT_DOCUMENT_TITLE
+    return DEFAULT_DOCUMENT_TITLE;
   }
 
-  return normalizedTitle
+  return normalizedTitle;
 }
