@@ -1,23 +1,41 @@
 import {
+  addChapterToSession,
   addDocumentToSession,
   type BookMetadata,
+  type ChapterMetadata,
   createBookMetadata,
-  createDocumentMetadata,
-  createDocumentSessionFromBooksAndDocuments,
+  createChapterMetadata,
+  createDocumentSessionFromBooksChaptersAndDocuments,
   createDocumentUpdateRecord,
   createQuickDraftsBook,
+  createQuickDraftsInboxChapter,
   type DocumentKind,
   type DocumentMetadata,
   type DocumentSession,
-  type DocumentUpdateRecord,
-  getActiveDocumentOrNull,
   QUICK_DRAFTS_BOOK_ID,
-  renameActiveDocument,
+  QUICK_DRAFTS_INBOX_CHAPTER_ID,
   reorderDocument,
   selectActiveBook,
+  selectActiveChapter,
   selectActiveDocument,
 } from '@writer/core';
 import type { Dispatch, SetStateAction } from 'react';
+import { getNextChapterOrder, getNextDocumentOrder } from './document-workspace-ordering';
+import {
+  createUntitledDocument,
+  persistBookMetadata,
+  persistChapterMetadata,
+  persistDocumentMetadata,
+  persistDocumentUpdate,
+} from './document-workspace-persistence';
+
+export {
+  renameBook,
+  renameChapterTitle,
+  renameDocumentTitle,
+  updateBookAccentColor,
+} from './document-workspace-rename-actions';
+
 import type { SaveStatus, WorkspaceScreen } from './document-workspace-types';
 
 export function createBook(
@@ -38,7 +56,7 @@ export function createBook(
 
     setSession((session) => {
       if (!session) {
-        return createDocumentSessionFromBooksAndDocuments([book], []);
+        return createDocumentSessionFromBooksChaptersAndDocuments([book], [], []);
       }
 
       return selectActiveBook({ ...session, books: [...session.books, book] }, book.id);
@@ -53,6 +71,7 @@ export function startQuickDraft(
   setSaveStatus: (saveStatus: SaveStatus) => void,
 ) {
   let nextBook: BookMetadata | null = null;
+  let nextChapter: ChapterMetadata | null = null;
   let nextDocument: DocumentMetadata | null = null;
 
   setSession((session) => {
@@ -60,32 +79,73 @@ export function startQuickDraft(
     const book =
       session?.books.find((candidate) => candidate.id === QUICK_DRAFTS_BOOK_ID) ??
       createQuickDraftsBook(now);
+    const chapter =
+      session?.chapters.find((candidate) => candidate.id === QUICK_DRAFTS_INBOX_CHAPTER_ID) ??
+      createQuickDraftsInboxChapter(now);
     const documents = session?.documents ?? [];
-    const nextOrder = getNextDocumentOrder(QUICK_DRAFTS_BOOK_ID, documents, 'draft');
-    const document = createUntitledDocument(book.id, nextOrder, 'draft');
+    const nextOrder = getNextDocumentOrder(chapter.id, documents, 'draft');
+    const document = createUntitledDocument(book.id, chapter.id, nextOrder, 'draft');
     nextBook = book;
+    nextChapter = chapter;
     nextDocument = document;
 
     if (!session) {
-      return createDocumentSessionFromBooksAndDocuments([book], [document]);
+      return createDocumentSessionFromBooksChaptersAndDocuments([book], [chapter], [document]);
     }
 
     const books = session.books.some((candidate) => candidate.id === book.id)
       ? session.books
       : [...session.books, book];
 
-    return addDocumentToSession({ ...session, activeBookId: book.id, books }, document);
+    const chapters = session.chapters.some((candidate) => candidate.id === chapter.id)
+      ? session.chapters
+      : [...session.chapters, chapter];
+
+    return addDocumentToSession(
+      { ...session, activeBookId: book.id, activeChapterId: chapter.id, books, chapters },
+      document,
+    );
   });
 
-  if (nextBook && nextDocument) {
+  if (nextBook && nextChapter && nextDocument) {
     const book = nextBook;
+    const chapter = nextChapter;
     const document = nextDocument;
 
     void persistBookMetadata(book, setSaveStatus).then(() =>
-      persistDocumentMetadata(document, setSaveStatus),
+      persistChapterMetadata(chapter, setSaveStatus).then(() =>
+        persistDocumentMetadata(document, setSaveStatus),
+      ),
     );
   }
   setScreen('book');
+}
+
+export function createChapter(
+  setSession: Dispatch<SetStateAction<DocumentSession | null>>,
+  setSaveStatus: (saveStatus: SaveStatus) => void,
+) {
+  let chapter: ChapterMetadata | null = null;
+
+  setSession((session) => {
+    if (!session) {
+      return session;
+    }
+
+    chapter = createChapterMetadata({
+      bookId: session.activeBookId,
+      id: `chapter_${globalThis.crypto.randomUUID()}`,
+      now: new Date().toISOString(),
+      order: getNextChapterOrder(session.activeBookId, session.chapters),
+      title: 'Untitled chapter',
+    });
+
+    return addChapterToSession(session, chapter);
+  });
+
+  if (chapter) {
+    void persistChapterMetadata(chapter, setSaveStatus);
+  }
 }
 
 export function createDocument(
@@ -100,12 +160,51 @@ export function createDocument(
       return session;
     }
 
+    if (!session.activeChapterId) {
+      return session;
+    }
+
     document = createUntitledDocument(
       session.activeBookId,
-      getNextDocumentOrder(session.activeBookId, session.documents, kind),
+      session.activeChapterId,
+      getNextDocumentOrder(session.activeChapterId, session.documents, kind),
       kind,
     );
     return addDocumentToSession(session, document);
+  });
+
+  if (document) {
+    void persistDocumentMetadata(document, setSaveStatus);
+  }
+}
+
+export function createDocumentInChapter(
+  chapterId: string,
+  kind: DocumentKind,
+  setSession: Dispatch<SetStateAction<DocumentSession | null>>,
+  setSaveStatus: (saveStatus: SaveStatus) => void,
+) {
+  let document: DocumentMetadata | null = null;
+
+  setSession((session) => {
+    if (!session) {
+      return session;
+    }
+
+    const chapter = session.chapters.find((candidate) => candidate.id === chapterId);
+
+    if (!chapter) {
+      return session;
+    }
+
+    document = createUntitledDocument(
+      chapter.bookId,
+      chapter.id,
+      getNextDocumentOrder(chapter.id, session.documents, kind),
+      kind,
+    );
+
+    return addDocumentToSession(selectActiveChapter(session, chapter.id), document);
   });
 
   if (document) {
@@ -159,6 +258,13 @@ export function selectBook(
   setScreen('book');
 }
 
+export function selectChapter(
+  chapterId: string,
+  setSession: Dispatch<SetStateAction<DocumentSession | null>>,
+) {
+  setSession((session) => (session ? selectActiveChapter(session, chapterId) : session));
+}
+
 export function recordDocumentUpdate(
   documentId: string | undefined,
   clientId: string,
@@ -178,98 +284,4 @@ export function recordDocumentUpdate(
   });
 
   void persistDocumentUpdate(documentUpdate, setSaveStatus);
-}
-
-export function renameDraft(
-  session: DocumentSession | null,
-  activeDocument: DocumentMetadata | null,
-  title: string,
-  setSession: (session: DocumentSession) => void,
-  setSaveStatus: (saveStatus: SaveStatus) => void,
-) {
-  if (!session || !activeDocument) {
-    return;
-  }
-
-  const updatedSession = renameActiveDocument(session, { now: new Date().toISOString(), title });
-  const updatedDocument = getActiveDocumentOrNull(updatedSession);
-
-  setSession(updatedSession);
-
-  if (updatedDocument && updatedDocument !== activeDocument) {
-    void persistDocumentMetadata(updatedDocument, setSaveStatus);
-  }
-}
-
-async function persistDocumentMetadata(
-  document: DocumentMetadata,
-  setSaveStatus: (saveStatus: SaveStatus) => void,
-): Promise<boolean> {
-  setSaveStatus('Saving locally');
-
-  try {
-    await window.writerDesktop.documents.saveMetadata(document);
-    setSaveStatus('Saved locally');
-    return true;
-  } catch {
-    setSaveStatus('Save failed');
-    return false;
-  }
-}
-
-async function persistBookMetadata(
-  book: BookMetadata,
-  setSaveStatus: (saveStatus: SaveStatus) => void,
-): Promise<boolean> {
-  setSaveStatus('Saving locally');
-
-  try {
-    await window.writerDesktop.books.saveMetadata(book);
-    setSaveStatus('Saved locally');
-    return true;
-  } catch {
-    setSaveStatus('Save failed');
-    return false;
-  }
-}
-
-async function persistDocumentUpdate(
-  update: DocumentUpdateRecord,
-  setSaveStatus: (saveStatus: SaveStatus) => void,
-) {
-  setSaveStatus('Saving locally');
-
-  try {
-    await window.writerDesktop.documentUpdates.append(update);
-    setSaveStatus('Saved locally');
-  } catch {
-    setSaveStatus('Save failed');
-  }
-}
-
-function createUntitledDocument(
-  bookId: string,
-  order: number,
-  kind: DocumentKind,
-): DocumentMetadata {
-  return createDocumentMetadata({
-    bookId,
-    id: `doc_${globalThis.crypto.randomUUID()}`,
-    kind,
-    now: new Date().toISOString(),
-    order,
-    title: kind === 'chapter' ? 'Untitled chapter' : 'Untitled draft',
-  });
-}
-
-function getNextDocumentOrder(
-  bookId: string,
-  documents: DocumentMetadata[],
-  kind: DocumentKind,
-): number {
-  const orders = documents
-    .filter((document) => document.bookId === bookId && document.kind === kind)
-    .map((document) => document.order);
-
-  return Math.max(-1, ...orders) + 1;
 }

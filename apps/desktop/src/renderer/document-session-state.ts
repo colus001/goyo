@@ -1,21 +1,30 @@
 import {
-  createDocumentSessionFromBooksAndDocuments,
+  createDocumentSessionFromBooksChaptersAndDocuments,
   type DocumentSession,
   getActiveBook,
+  getActiveChapterOrNull,
   getActiveDocumentOrNull,
 } from '@writer/core';
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useState } from 'react';
 import {
   createBook,
+  createChapter,
   createDocument,
+  createDocumentInChapter,
   moveDocument,
   openDocument,
   recordDocumentUpdate,
-  renameDraft,
+  renameBook,
+  renameChapterTitle,
+  renameDocumentTitle,
   selectBook,
+  selectChapter,
   startQuickDraft,
+  updateBookAccentColor,
 } from './document-workspace-actions';
+import { archiveBook, archiveChapter, archiveDocument } from './document-workspace-delete-actions';
+import { createEpisodeAfter } from './document-workspace-episode-actions';
 import type {
   DocumentUpdateMap,
   SaveStatus,
@@ -30,6 +39,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
   const [session, setSession] = useState<DocumentSession | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('Loading local documents');
   const activeDocument = session ? getActiveDocumentOrNull(session) : null;
+  const activeChapter = session ? getActiveChapterOrNull(session) : null;
   const activeBook = session ? getActiveBook(session) : null;
 
   useLoadDocumentUpdates(activeDocument?.id ?? null, setDocumentUpdates, setSaveStatus);
@@ -37,22 +47,37 @@ export function useWritingWorkspace(): WritingWorkspaceState {
 
   return {
     activeBook,
+    activeChapter,
     activeDocument,
     createBook: () => createBook(setSession, setScreen, setSaveStatus),
+    createChapter: () => createChapter(setSession, setSaveStatus),
     createDocument: (kind) => createDocument(kind, setSession, setSaveStatus),
+    createDocumentInChapter: (chapterId, kind) =>
+      createDocumentInChapter(chapterId, kind, setSession, setSaveStatus),
+    createEpisodeAfter: (chapterId, previousDocumentId) =>
+      createEpisodeAfter(chapterId, previousDocumentId, setSession, setSaveStatus),
+    deleteBook: (bookId) => archiveBook(bookId, setSession, setSaveStatus),
+    deleteChapter: (chapterId) => archiveChapter(chapterId, setSession, setSaveStatus),
+    deleteDocument: (documentId) => archiveDocument(documentId, setSession, setSaveStatus),
     documentUpdates,
     moveDocument: (documentId, direction) =>
       moveDocument(documentId, direction, setSession, setSaveStatus),
     openDocument: (documentId) => openDocument(documentId, setSession),
     recordDocumentUpdate: (update) =>
       recordDocumentUpdate(activeDocument?.id, clientId, update, setSaveStatus),
-    renameDraft: (title) => renameDraft(session, activeDocument, title, setSession, setSaveStatus),
+    renameBook: (title) => renameBook(session, title, setSession, setSaveStatus),
+    renameChapterTitle: (title) => renameChapterTitle(session, title, setSession, setSaveStatus),
+    renameDocumentTitle: (title) =>
+      renameDocumentTitle(session, activeDocument, title, setSession, setSaveStatus),
     saveStatus,
     screen,
     selectBook: (bookId) => selectBook(bookId, setSession, setScreen),
+    selectChapter: (chapterId) => selectChapter(chapterId, setSession),
     session,
     showLibrary: () => setScreen('library'),
     startQuickDraft: () => startQuickDraft(setSession, setScreen, setSaveStatus),
+    updateBookAccentColor: (bookId, accentColor) =>
+      updateBookAccentColor(bookId, accentColor, setSession, setSaveStatus),
   };
 }
 
@@ -65,8 +90,9 @@ function useLoadWorkspace(
     let isCancelled = false;
 
     async function loadWorkspace() {
-      const [books, documents] = await Promise.all([
+      const [books, chapters, documents] = await Promise.all([
         window.writerDesktop.books.list(),
+        window.writerDesktop.chapters.list(),
         window.writerDesktop.documents.list(),
       ]);
 
@@ -74,8 +100,8 @@ function useLoadWorkspace(
         return;
       }
 
-      if (books.length > 0 || documents.length > 0) {
-        setSession(createDocumentSessionFromBooksAndDocuments(books, documents));
+      if (books.length > 0 || chapters.length > 0 || documents.length > 0) {
+        setSession(createDocumentSessionFromBooksChaptersAndDocuments(books, chapters, documents));
       }
 
       setSaveStatus('Saved locally');
