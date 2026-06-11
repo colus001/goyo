@@ -7,7 +7,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/out", "!**/.wrangler", "!**/node_modules"]
+    "includes": ["**", "!**/dist", "!**/out", "!**/.wrangler", "!**/.turbo", "!**/node_modules"]
   },
   "formatter": {
     "enabled": true,
@@ -19,6 +19,11 @@
     "formatter": {
       "quoteStyle": "single",
       "semicolons": "asNeeded"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   },
   "linter": {

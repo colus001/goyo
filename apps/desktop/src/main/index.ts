@@ -10,14 +10,32 @@ function registerDocumentIpc() {
 
   ipcMain.handle('documents:list', () => store.listDocuments())
   ipcMain.handle('documents:saveMetadata', (_event, document: DocumentMetadata) => {
-    store.saveDocument(document)
+    try {
+      store.saveDocument(document)
+    } catch (error) {
+      console.error('Failed to save document metadata', getErrorMessage(error))
+      throw error
+    }
   })
   ipcMain.handle('documentUpdates:list', (_event, documentId: string) =>
     store.listDocumentUpdates(documentId),
   )
   ipcMain.handle('documentUpdates:append', (_event, update) => {
-    store.appendDocumentUpdate(update)
+    try {
+      store.appendDocumentUpdate(update)
+    } catch (error) {
+      console.error('Failed to append document update', getErrorMessage(error))
+      throw error
+    }
   })
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return 'Unknown error'
 }
 
 function createApplicationMenu() {
@@ -70,7 +88,7 @@ function createWindow() {
     backgroundColor: '#f4efe6',
     show: false,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,

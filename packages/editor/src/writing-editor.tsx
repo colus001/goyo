@@ -26,7 +26,7 @@ export function WritingEditor({
   useWordCountEmitter(editor, onWordCountChange)
 
   return (
-    <div className="min-h-[28rem]">
+    <div className="min-h-[34rem] max-w-[48rem]">
       <EditorContent editor={editor} />
     </div>
   )
@@ -51,7 +51,7 @@ function useWritingTiptapEditor(content: Y.XmlFragment, yDocument: Y.Doc) {
         attributes: {
           'aria-label': 'Writing editor',
           class:
-            'min-h-[28rem] outline-none font-serif text-[1.35rem] leading-[1.85] text-[#2d2923] selection:bg-[#d8cbb9]',
+            'min-h-[34rem] outline-none text-[1.25rem] leading-[1.85] text-[#2f2f2b] selection:bg-[#f0d6d3]',
         },
       },
       extensions: [

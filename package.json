@@ -5,18 +5,18 @@
   "description": "Local-first writing app for essays and fiction.",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @writer/desktop dev",
+    "dev": "turbo run dev --parallel",
     "dev:desktop": "pnpm --filter @writer/desktop dev",
     "dev:web": "pnpm --filter @writer/web dev",
     "dev:worker": "pnpm --filter @writer/worker dev",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "biome format --write .",
     "lint": "biome lint .",
-    "check": "biome check . && knip && pnpm typecheck && pnpm test",
-    "check:write": "biome check --write . && knip && pnpm typecheck && pnpm test",
+    "check": "biome check . && knip && turbo run typecheck && pnpm test",
+    "check:write": "biome check --write . && knip && turbo run typecheck && pnpm test",
     "knip": "knip"
   },
   "keywords": [],
@@ -25,6 +25,7 @@
   "devDependencies": {
     "@biomejs/biome": "latest",
     "knip": "latest",
+    "turbo": "^2.9.18",
     "typescript": "latest",
     "vitest": "^4.1.8"
   },

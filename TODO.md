@@ -9,6 +9,7 @@
 - [x] Decide the monorepo layout, preferably `apps/desktop`, `apps/web`, `apps/worker`, `packages/core`, `packages/shared`, and `packages/ui`.
 - [x] Configure TypeScript across the workspace.
 - [x] Configure linting and formatting.
+- [x] Configure Turborepo workspace task runner.
 - [x] Configure Tailwind CSS for web styling.
 - [x] Add shared UI package structure.
 - [x] Add core domain package structure.
@@ -25,7 +26,7 @@
 - [x] Configure React renderer with Vite and Tailwind.
 - [x] Reuse `packages/ui` from the desktop renderer.
 - [x] Add root `pnpm dev:desktop` script.
-- [x] Make `pnpm dev` run the desktop app.
+- [x] Make `pnpm dev` run all app dev processes through Turbo.
 - [x] Add a minimal native application menu.
 - [x] Verify desktop window lifecycle on macOS.
 - [x] Verify `pnpm check` and `pnpm build` include the desktop app.

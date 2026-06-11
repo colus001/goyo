@@ -23,6 +23,10 @@ const EMPTY_DOCUMENT_UPDATES: Uint8Array[] = []
 export function App() {
   const documentSession = useDocumentSession()
 
+  if (!isLoadedDocumentSession(documentSession)) {
+    return <WritingShellPreview status={documentSession.saveStatus} />
+  }
+
   return (
     <WritingShellPreview
       activeDocumentId={documentSession.session.activeDocumentId}
@@ -41,23 +45,28 @@ function DocumentSurface({
   documentUpdates,
   recordDocumentUpdate,
   renameDraft,
-}: ReturnType<typeof useDocumentSession>) {
+}: LoadedDocumentSession) {
   const [wordCount, setWordCount] = useState(0)
   const initialUpdates = documentUpdates[activeDocument.id] ?? EMPTY_DOCUMENT_UPDATES
 
   return (
-    <article className="mt-12 min-h-[36rem] w-full max-w-[48rem] self-center bg-[#fffaf0] px-16 py-14 shadow-[0_24px_80px_rgb(45_41_35_/_12%)]">
-      <div className="mb-8 flex items-center justify-between gap-6 border-[#eadfce] border-b pb-6">
+    <article className="mx-auto min-h-screen w-full max-w-[68rem] bg-white px-20 pt-14 pb-24">
+      <header className="mb-8 border-[#ecece8] border-b pb-6">
+        <div className="mb-4 flex items-center justify-between gap-6 text-[#9a9a93] text-sm">
+          <p>{formatDocumentDate(activeDocument.updatedAt)}</p>
+          <p className="whitespace-nowrap font-medium text-xs uppercase tracking-[0.13em]">
+            {wordCount} {wordCount === 1 ? 'word' : 'words'}
+          </p>
+        </div>
         <input
           aria-label="Document title"
-          className="min-w-0 flex-1 bg-transparent font-serif text-[2.75rem] text-[#2d2923] outline-none placeholder:text-[#a89b8b]"
+          className="w-full bg-transparent font-semibold text-[#242421] text-[2.25rem] leading-tight tracking-[-0.045em] outline-none placeholder:text-[#b5b5ae]"
           onChange={(event) => renameDraft(event.target.value)}
+          placeholder="Untitled draft"
           value={activeDocument.title}
         />
-        <p className="whitespace-nowrap font-medium text-[#7a6d5f] text-xs uppercase tracking-[0.08em]">
-          {wordCount} words
-        </p>
-      </div>
+      </header>
+
       <WritingEditor
         documentId={activeDocument.id}
         initialUpdates={initialUpdates}
@@ -68,22 +77,35 @@ function DocumentSurface({
   )
 }
 
-function useDocumentSession() {
+function useDocumentSession(): LoadedDocumentSession | LoadingDocumentSession {
   const [clientId] = useState(() => `client_${globalThis.crypto.randomUUID()}`)
   const [documentUpdates, setDocumentUpdates] = useState<DocumentUpdateMap>({})
-  const [session, setSession] = useState(createInitialSession)
+  const [session, setSession] = useState<DocumentSession | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('Loading local documents')
-  const activeDocument = getActiveDocument(session)
+  const activeDocument = session ? getActiveDocument(session) : null
 
-  useLoadDocumentUpdates(activeDocument.id, setDocumentUpdates, setSaveStatus)
+  useLoadDocumentUpdates(activeDocument?.id ?? null, setDocumentUpdates, setSaveStatus)
   useLoadDocuments(setSession, setSaveStatus)
+
+  if (!session || !activeDocument) {
+    return {
+      saveStatus,
+      session: null,
+    }
+  }
 
   return {
     activeDocument,
     createDraft: () => createDraft(setSession, setSaveStatus),
     documentUpdates,
     openDraft: (documentId: string) =>
-      setSession((current) => selectActiveDocument(current, documentId)),
+      setSession((current) => {
+        if (!current) {
+          return current
+        }
+
+        return selectActiveDocument(current, documentId)
+      }),
     recordDocumentUpdate: (update: Uint8Array) =>
       recordDocumentUpdate(activeDocument.id, clientId, update, setSaveStatus),
     renameDraft: (title: string) =>
@@ -93,21 +115,49 @@ function useDocumentSession() {
   }
 }
 
+interface LoadingDocumentSession {
+  saveStatus: SaveStatus
+  session: null
+}
+
+interface LoadedDocumentSession {
+  activeDocument: DocumentMetadata
+  createDraft: () => void
+  documentUpdates: DocumentUpdateMap
+  openDraft: (documentId: string) => void
+  recordDocumentUpdate: (update: Uint8Array) => void
+  renameDraft: (title: string) => void
+  saveStatus: SaveStatus
+  session: DocumentSession
+}
+
+function isLoadedDocumentSession(
+  session: LoadedDocumentSession | LoadingDocumentSession,
+): session is LoadedDocumentSession {
+  return session.session !== null
+}
+
 function useLoadDocumentUpdates(
-  documentId: string,
+  documentId: string | null,
   setDocumentUpdates: Dispatch<SetStateAction<DocumentUpdateMap>>,
   setSaveStatus: (saveStatus: SaveStatus) => void,
 ) {
   useEffect(() => {
+    if (!documentId) {
+      return
+    }
+
+    const loadedDocumentId = documentId
+
     let isCancelled = false
 
     async function loadDocumentUpdates() {
-      const updates = await window.writerDesktop.documentUpdates.list(documentId)
+      const updates = await window.writerDesktop.documentUpdates.list(loadedDocumentId)
 
       if (!isCancelled) {
         setDocumentUpdates((current) => ({
           ...current,
-          [documentId]: updates.map(({ update }) => update),
+          [loadedDocumentId]: updates.map(({ update }) => update),
         }))
       }
     }
@@ -121,7 +171,7 @@ function useLoadDocumentUpdates(
 }
 
 function useLoadDocuments(
-  setSession: Dispatch<SetStateAction<DocumentSession>>,
+  setSession: Dispatch<SetStateAction<DocumentSession | null>>,
   setSaveStatus: (saveStatus: SaveStatus) => void,
 ) {
   useEffect(() => {
@@ -175,13 +225,24 @@ function recordDocumentUpdate(
 }
 
 function createDraft(
-  setSession: (updater: (session: DocumentSession) => DocumentSession) => void,
+  setSession: Dispatch<SetStateAction<DocumentSession | null>>,
   setSaveStatus: (saveStatus: SaveStatus) => void,
 ) {
   const document = createUntitledDocument()
 
-  setSession((session) => addDocumentToSession(session, document))
-  void persistDocumentMetadata(document, setSaveStatus)
+  void persistDocumentMetadata(document, setSaveStatus).then((saved) => {
+    if (!saved) {
+      return
+    }
+
+    setSession((session) => {
+      if (!session) {
+        return createDocumentSessionFromDocuments([document])
+      }
+
+      return addDocumentToSession(session, document)
+    })
+  })
 }
 
 function renameDraft(
@@ -204,14 +265,16 @@ function renameDraft(
 async function persistDocumentMetadata(
   document: DocumentMetadata,
   setSaveStatus: (saveStatus: SaveStatus) => void,
-) {
+): Promise<boolean> {
   setSaveStatus('Saving locally')
 
   try {
     await window.writerDesktop.documents.saveMetadata(document)
     setSaveStatus('Saved locally')
+    return true
   } catch {
     setSaveStatus('Save failed')
+    return false
   }
 }
 
@@ -229,14 +292,18 @@ async function persistDocumentUpdate(
   }
 }
 
-function createInitialSession(): DocumentSession {
-  return createDocumentSessionFromDocuments([createUntitledDocument()])
-}
-
 function createUntitledDocument(): DocumentMetadata {
   return createDocumentMetadata({
     id: `doc_${globalThis.crypto.randomUUID()}`,
     now: new Date().toISOString(),
     title: 'Untitled draft',
   })
+}
+
+function formatDocumentDate(updatedAt: string): string {
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(updatedAt))
 }

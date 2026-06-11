@@ -20,8 +20,12 @@ interface DocumentUpdateRow {
   created_at: string
 }
 
+interface SerializedDocumentUpdateRecord extends Omit<DocumentUpdateRecord, 'update'> {
+  update: ArrayBuffer | ArrayLike<number> | Uint8Array
+}
+
 export interface DesktopLocalStore {
-  appendDocumentUpdate(update: DocumentUpdateRecord): void
+  appendDocumentUpdate(update: SerializedDocumentUpdateRecord): void
   listDocuments(): DocumentMetadata[]
   listDocumentUpdates(documentId: string): DocumentUpdateRecord[]
   saveDocument(document: DocumentMetadata): void
@@ -85,7 +89,7 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     appendDocumentUpdate(update) {
       appendDocumentUpdateStatement.run({
         ...update,
-        update: Buffer.from(update.update),
+        update: toUpdateBuffer(update.update),
       })
     },
     listDocuments() {
@@ -98,6 +102,18 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
       saveDocumentStatement.run(document)
     },
   }
+}
+
+function toUpdateBuffer(update: SerializedDocumentUpdateRecord['update']): Buffer {
+  if (update instanceof Uint8Array) {
+    return Buffer.from(update)
+  }
+
+  if (update instanceof ArrayBuffer) {
+    return Buffer.from(update)
+  }
+
+  return Buffer.from(Array.from(update))
 }
 
 function rowToDocumentUpdateRecord(row: unknown): DocumentUpdateRecord {
