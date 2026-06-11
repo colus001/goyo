@@ -7,7 +7,14 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/out", "!**/.wrangler", "!**/.turbo", "!**/node_modules"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/out",
+      "!**/.wrangler",
+      "!**/.turbo",
+      "!**/node_modules"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -18,7 +25,7 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
-      "semicolons": "asNeeded"
+      "semicolons": "always"
     }
   },
   "css": {
