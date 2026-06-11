@@ -18,11 +18,27 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 ## Stack Direction
 
 - Frontend: desktop-first web app.
+- Styling: Tailwind CSS.
 - Sync API: Cloudflare Workers.
 - Durable storage: Cloudflare D1.
 - Cache: Cloudflare KV.
 - Realtime document coordination: Cloudflare Durable Objects if realtime multi-client editing is implemented.
 - Collaborative document model: CRDT, preferably Yjs.
+
+## Workspace And Tooling
+
+- Use `pnpm` as the package manager and workspace runner.
+- Keep the workspace layout as `apps/web`, `apps/worker`, `packages/shared`, and `packages/ui` unless there is a concrete reason to change it.
+- Put reusable UI components in `packages/ui`; keep `apps/web` focused on app composition, routing, and feature wiring.
+- Prefer Tailwind utility classes for styling. Avoid adding separate CSS files unless they are needed for global styles, editor-specific resets, or third-party integration.
+- Prefer the relevant CLI for workspace/package operations instead of hand-editing generated package metadata when the CLI can do the job safely.
+- Use Biome for formatting and linting.
+- Use Knip for unused dependency, export, and file checks.
+- Use TypeScript project checks for type safety.
+- Run `pnpm check` before considering a development slice complete.
+- If `pnpm check` reports Biome, Knip, lint, or typecheck issues, fix the reported issues instead of bypassing them.
+- Use `pnpm check:write` when safe automatic Biome fixes are appropriate, then rerun `pnpm check`.
+- Use root scripts for common workflows: `pnpm dev`, `pnpm dev:web`, `pnpm dev:worker`, `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm knip`, and `pnpm check`.
 
 ## Concurrent Editing
 

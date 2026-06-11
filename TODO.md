@@ -2,14 +2,16 @@
 
 ## Milestone 0: Product And Technical Foundation
 
-- [ ] Initialize the repository structure.
-- [ ] Create the Vite + React + TypeScript web app.
-- [ ] Create the Cloudflare Worker app structure.
-- [ ] Decide the monorepo layout, preferably `apps/web`, `apps/worker`, and `packages/shared`.
-- [ ] Configure TypeScript across the workspace.
-- [ ] Configure linting and formatting.
+- [x] Initialize the repository structure.
+- [x] Create the Vite + React + TypeScript web app.
+- [x] Create the Cloudflare Worker app structure.
+- [x] Decide the monorepo layout, preferably `apps/web`, `apps/worker`, `packages/shared`, and `packages/ui`.
+- [x] Configure TypeScript across the workspace.
+- [x] Configure linting and formatting.
+- [x] Configure Tailwind CSS for web styling.
+- [x] Add shared UI package structure.
 - [ ] Add basic test tooling.
-- [ ] Add local development scripts.
+- [x] Add local development scripts.
 - [ ] Document the local-first architecture.
 - [ ] Document the role of IndexedDB, Yjs, D1, KV, and Durable Objects.
 
