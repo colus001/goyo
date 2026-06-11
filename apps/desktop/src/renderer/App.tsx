@@ -5,7 +5,7 @@ import {
 } from '@writer/core';
 import { WritingEditor, type WritingEditorRef } from '@writer/editor';
 import { WritingShell } from '@writer/ui';
-import { useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { useWritingWorkspace } from './document-session-state';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { LibraryScreen } from './library-screen';
@@ -44,6 +44,7 @@ export function App() {
       onCreateEpisodeAfter={workspace.createEpisodeAfter}
       onDeleteChapter={workspace.deleteChapter}
       onDeleteDocument={workspace.deleteDocument}
+      onMoveChapter={workspace.moveChapter}
       onMoveDocument={workspace.moveDocument}
       onRenameBook={workspace.renameBook}
       onRenameChapter={workspace.renameChapterTitle}
@@ -82,10 +83,10 @@ function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState }) {
         <div className="mt-8 flex justify-center gap-2">
           <button
             className="rounded-full bg-[#30302d] px-4 py-2 text-white"
-            onClick={() => workspace.createChapter()}
+            onClick={() => workspace.createDocument('episode')}
             type="button"
           >
-            Create first chapter
+            New episode
           </button>
         </div>
       </div>
@@ -123,20 +124,19 @@ function EpisodeSurface({ workspace }: { workspace: WritingWorkspaceState }) {
   const [wordCount, setWordCount] = useState(0);
   const initialUpdates = workspace.documentUpdates[activeDocument.id] ?? EMPTY_DOCUMENT_UPDATES;
   const editorRef = useRef<WritingEditorRef>(null);
+  const hasTitle = activeDocument.title.trim().length > 0;
 
   return (
     <article className="mx-auto min-h-screen w-full max-w-[52rem] bg-white px-12 pt-12 pb-24">
       <header className="mb-9 border-[#ecece8] border-b pb-6">
         <div className="mb-4 flex items-center justify-between gap-6 text-[#9a9a93] text-sm">
-          <p>
-            {workspace.activeBook?.title} / {workspace.activeChapter?.title} /{' '}
-            {formatDocumentKind(activeDocument.kind)}
-          </p>
+          <p>{formatEpisodeBreadcrumb(workspace, activeDocument)}</p>
           <p className="whitespace-nowrap font-medium text-xs uppercase tracking-[0.13em]">
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
           </p>
         </div>
         <DocumentTitleInput
+          autoFocus={!hasTitle}
           document={activeDocument}
           onRename={workspace.renameDocumentTitle}
           onSubmit={() => editorRef.current?.focus()}
@@ -145,6 +145,7 @@ function EpisodeSurface({ workspace }: { workspace: WritingWorkspaceState }) {
 
       <WritingEditor
         documentId={activeDocument.id}
+        focusOnMount={hasTitle}
         key={activeDocument.id}
         initialUpdates={initialUpdates}
         onDocumentUpdate={workspace.recordDocumentUpdate}
@@ -189,6 +190,10 @@ function ChapterTitleInput({
       onBlur={commitTitle}
       onChange={(event) => setTitle(event.target.value)}
       onKeyDown={(event) => {
+        if (isComposing(event)) {
+          return;
+        }
+
         if (event.key === 'Enter') {
           event.currentTarget.blur();
         }
@@ -201,24 +206,29 @@ function ChapterTitleInput({
 }
 
 function DocumentTitleInput({
+  autoFocus = true,
   document,
   onRename,
   onSubmit,
 }: {
+  autoFocus?: boolean;
   document: DocumentMetadata;
   onRename: (title: string) => void;
   onSubmit?: () => void;
 }) {
   const [title, setTitle] = useState(document.title);
   const inputRef = useRef<HTMLInputElement>(null);
+  const documentId = document.id;
 
   useEffect(() => {
     setTitle(document.title);
   }, [document.title]);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (autoFocus && documentId) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus, documentId]);
 
   const commitTitle = () => {
     if (title.trim().length === 0) {
@@ -236,6 +246,10 @@ function DocumentTitleInput({
       onBlur={commitTitle}
       onChange={(event) => setTitle(event.target.value)}
       onKeyDown={(event) => {
+        if (isComposing(event)) {
+          return;
+        }
+
         if (event.key === 'Enter') {
           event.currentTarget.blur();
           onSubmit?.();
@@ -246,6 +260,23 @@ function DocumentTitleInput({
       value={title}
     />
   );
+}
+
+function formatEpisodeBreadcrumb(
+  workspace: WritingWorkspaceState,
+  document: DocumentMetadata,
+): string {
+  return [
+    workspace.activeBook?.title,
+    workspace.activeChapter?.title,
+    formatDocumentKind(document.kind),
+  ]
+    .filter(Boolean)
+    .join(' / ');
+}
+
+function isComposing(event: KeyboardEvent<HTMLInputElement>): boolean {
+  return event.nativeEvent.isComposing || event.keyCode === 229;
 }
 
 function formatDocumentKind(kind: DocumentMetadata['kind']): string {

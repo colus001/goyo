@@ -7,6 +7,7 @@ import * as Y from 'yjs';
 
 export interface WritingEditorProps {
   documentId: string;
+  focusOnMount?: boolean;
   initialUpdates?: Uint8Array[];
   onDocumentUpdate?: (update: Uint8Array) => void;
   onWordCountChange?: (wordCount: number) => void;
@@ -18,7 +19,7 @@ export interface WritingEditorRef {
 
 export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
   function WritingEditor(
-    { documentId, initialUpdates = [], onDocumentUpdate, onWordCountChange },
+    { documentId, focusOnMount = false, initialUpdates = [], onDocumentUpdate, onWordCountChange },
     ref,
   ): ReactElement {
     const yDocument = useYDocument(initialUpdates);
@@ -34,6 +35,7 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
     );
 
     useDocumentUpdateEmitter(yDocument, onDocumentUpdate);
+    useEditorMountFocus(editor, focusOnMount);
     useWordCountEmitter(editor, onWordCountChange);
 
     const focusEditor = (event: MouseEvent<HTMLDivElement>) => {
@@ -85,6 +87,16 @@ function useWritingTiptapEditor(content: Y.XmlFragment, yDocument: Y.Doc) {
     },
     [content, yDocument],
   );
+}
+
+function useEditorMountFocus(editor: ReturnType<typeof useEditor>, focusOnMount: boolean) {
+  useEffect(() => {
+    if (!editor || !focusOnMount) {
+      return;
+    }
+
+    editor.chain().focus('end').run();
+  }, [editor, focusOnMount]);
 }
 
 function useDocumentUpdateEmitter(

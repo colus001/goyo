@@ -15,7 +15,7 @@ export interface WritingShellProps {
   }>;
   children?: ReactNode;
   documents?: Array<{
-    chapterId: string;
+    chapterId: string | null;
     id: string;
     kind?: 'draft' | 'episode' | 'note';
     title: string;
@@ -24,9 +24,10 @@ export interface WritingShellProps {
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
   onCreateDocumentInChapter?: (chapterId: string, kind: 'draft' | 'episode' | 'note') => void;
-  onCreateEpisodeAfter?: (chapterId: string, previousDocumentId: string | null) => void;
+  onCreateEpisodeAfter?: (chapterId: string | null, previousDocumentId: string | null) => void;
   onDeleteChapter?: (chapterId: string) => void;
   onDeleteDocument?: (documentId: string) => void;
+  onMoveChapter?: (chapterId: string, direction: 'down' | 'up') => void;
   onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
   onRenameBook?: (title: string) => void;
   onRenameChapter?: (title: string) => void;
@@ -50,6 +51,7 @@ export function WritingShell({
   onCreateEpisodeAfter,
   onDeleteChapter,
   onDeleteDocument,
+  onMoveChapter,
   onMoveDocument,
   onRenameBook,
   onRenameChapter,
@@ -80,6 +82,7 @@ export function WritingShell({
         onCreateEpisodeAfter={onCreateEpisodeAfter}
         onDeleteChapter={onDeleteChapter}
         onDeleteDocument={onDeleteDocument}
+        onMoveChapter={onMoveChapter}
         onMoveDocument={onMoveDocument}
         onRenameBook={onRenameBook}
         onRenameChapter={onRenameChapter}

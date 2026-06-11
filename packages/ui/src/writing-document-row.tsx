@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import type { ReactElement } from 'react';
-import { useEffect } from 'react';
+import { ContextMenu } from './context-menu';
 import type { WritingShellProps } from './writing-shell';
 
 type DocumentItem = NonNullable<WritingShellProps['documents']>[number];
@@ -29,25 +29,9 @@ export function DocumentRow({
   onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
   onSelectDocument?: (documentId: string) => void;
 }): ReactElement {
-  useEffect(() => {
-    if (!menuPosition) {
-      return;
-    }
-
-    const closeMenu = () => onCloseMenu();
-
-    window.addEventListener('click', closeMenu);
-    window.addEventListener('keydown', closeMenu);
-
-    return () => {
-      window.removeEventListener('click', closeMenu);
-      window.removeEventListener('keydown', closeMenu);
-    };
-  }, [menuPosition, onCloseMenu]);
-
   return (
     <div
-      className={`group/row relative rounded-md transition ${isActive ? 'bg-white' : 'hover:bg-[#f5f5f2]'}`}
+      className={`group/document-row relative rounded-md transition ${isActive ? 'bg-white' : 'hover:bg-[#f5f5f2]'}`}
     >
       <FloatingInsertButton onInsert={onInsertBefore} placement="top" />
       {isActive ? (
@@ -70,7 +54,7 @@ export function DocumentRow({
           {document.title || 'Untitled episode'}
         </p>
       </button>
-      <div className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 transition group-hover/row:opacity-100 group-focus-within/row:opacity-100">
+      <div className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 transition group-hover/document-row:opacity-100">
         <MoveButton direction="up" document={document} onMoveDocument={onMoveDocument} />
         <MoveButton direction="down" document={document} onMoveDocument={onMoveDocument} />
       </div>
@@ -117,7 +101,7 @@ function MoveButton({
   );
 }
 
-function FloatingInsertButton({
+export function FloatingInsertButton({
   onInsert,
   placement,
 }: {
@@ -165,63 +149,28 @@ function EpisodeContextMenu({
   y: number;
 }): ReactElement {
   return (
-    <div
-      className="fixed z-50 min-w-34 rounded-lg border border-[#deded8] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
-      role="menu"
-      style={{ left: x, top: y }}
-    >
-      <ContextMenuItem
-        icon={<ArrowUp aria-hidden="true" size={15} />}
-        label="Move up"
-        onClick={onMoveUp}
-        onClose={onClose}
-      />
-      <ContextMenuItem
-        icon={<ArrowDown aria-hidden="true" size={15} />}
-        label="Move down"
-        onClick={onMoveDown}
-        onClose={onClose}
-      />
-      <div className="my-1 h-px bg-[#ededeb]" />
-      <ContextMenuItem
-        destructive
-        icon={<Trash2 aria-hidden="true" size={15} />}
-        label="Delete"
-        onClick={onDelete}
-        onClose={onClose}
-      />
-    </div>
-  );
-}
-
-function ContextMenuItem({
-  destructive,
-  icon,
-  label,
-  onClick,
-  onClose,
-}: {
-  destructive?: boolean;
-  icon: ReactElement;
-  label: string;
-  onClick: () => void;
-  onClose: () => void;
-}): ReactElement {
-  return (
-    <button
-      className={`flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-[#f4f4f1] ${
-        destructive ? 'text-[#b44b43]' : 'text-[#30302d]'
-      }`}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-        onClose();
-      }}
-      role="menuitem"
-      type="button"
-    >
-      <span className="grid size-4 place-items-center text-current">{icon}</span>
-      {label}
-    </button>
+    <ContextMenu
+      groups={[
+        [
+          { icon: <ArrowUp aria-hidden="true" size={15} />, label: 'Move up', onSelect: onMoveUp },
+          {
+            icon: <ArrowDown aria-hidden="true" size={15} />,
+            label: 'Move down',
+            onSelect: onMoveDown,
+          },
+        ],
+        [
+          {
+            destructive: true,
+            icon: <Trash2 aria-hidden="true" size={15} />,
+            label: 'Delete',
+            onSelect: onDelete,
+          },
+        ],
+      ]}
+      onClose={onClose}
+      x={x}
+      y={y}
+    />
   );
 }

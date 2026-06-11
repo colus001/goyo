@@ -1,6 +1,6 @@
 import { ArrowDownWideNarrow, Check, FilePlus2, PenLine } from 'lucide-react';
-import type { ReactElement } from 'react';
-import { useState } from 'react';
+import type { ReactElement, RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type LibrarySortMode = 'title' | 'updated';
 
@@ -16,6 +16,7 @@ export function LibraryHeader({
   sortMode: LibrarySortMode;
 }): ReactElement {
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const sortControlRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -32,7 +33,7 @@ export function LibraryHeader({
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <div className="relative">
+          <div className="relative" ref={sortControlRef}>
             <button
               className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#f1eee8] px-4 py-2 font-medium text-[#575149] transition hover:bg-[#e9e4dc] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
               onClick={() => setIsSortMenuOpen((current) => !current)}
@@ -43,6 +44,8 @@ export function LibraryHeader({
             </button>
             {isSortMenuOpen ? (
               <SortMenu
+                containerRef={sortControlRef}
+                onClose={() => setIsSortMenuOpen(false)}
                 onChange={(nextSortMode) => {
                   onSortModeChange(nextSortMode);
                   setIsSortMenuOpen(false);
@@ -52,7 +55,7 @@ export function LibraryHeader({
             ) : null}
           </div>
           <button
-            className="inline-flex items-center gap-2 rounded-full bg-[#30302d] px-4 py-2 font-medium text-white shadow-sm transition hover:bg-[#1f1f1d] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
+            className="inline-flex items-center gap-2 rounded-full bg-[#30302d] px-4 py-2 font-medium text-white shadow-sm transition hover:bg-[#1f1f1d] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25 cursor-pointer"
             onClick={onOpenNewBookModal}
             type="button"
           >
@@ -60,7 +63,7 @@ export function LibraryHeader({
             New book
           </button>
           <button
-            className="inline-flex items-center gap-2 rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] transition hover:bg-[#e3dfd6] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
+            className="inline-flex items-center gap-2 rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] transition hover:bg-[#e3dfd6] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20 cursor-pointer"
             onClick={onStartQuickDraft}
             type="button"
           >
@@ -74,14 +77,41 @@ export function LibraryHeader({
 }
 
 function SortMenu({
+  containerRef,
+  onClose,
   onChange,
   selectedSortMode,
 }: {
+  containerRef: RefObject<HTMLDivElement | null>;
+  onClose: () => void;
   onChange: (sortMode: LibrarySortMode) => void;
   selectedSortMode: LibrarySortMode;
 }): ReactElement {
+  useEffect(() => {
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (containerRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      onClose();
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('pointerdown', closeOnOutsidePointer);
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      window.removeEventListener('pointerdown', closeOnOutsidePointer);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [containerRef, onClose]);
+
   return (
-    <div className="absolute top-11 right-0 z-30 min-w-42 rounded-lg border border-[#deded8] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+    <div className="absolute top-11 right-0 z-30 min-w-42 cursor-pointer rounded-lg border border-[#deded8] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
       <SortMenuItem
         isSelected={selectedSortMode === 'updated'}
         label="Updated first"

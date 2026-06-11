@@ -1,20 +1,15 @@
 import { APP_NAME } from '@writer/shared';
 import { ChevronUp, Menu } from 'lucide-react';
-import type { ReactElement } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 import { useEffect, useState } from 'react';
-import { ChapterDeleteDialog } from './chapter-delete-dialog';
-import { NewChapterModal } from './new-chapter-modal';
 import { SyncStatusIcon } from './sync-status-icon';
-import { ChapterRow, type WritingSidebarContextMenuState } from './writing-chapter-row';
+import { ChapterTree } from './writing-chapter-tree';
 import type { WritingShellProps } from './writing-shell';
 
 interface WritingSidebarProps extends Omit<WritingShellProps, 'children'> {
   isCollapsed: boolean;
   onToggle: () => void;
 }
-
-type ChapterItem = NonNullable<WritingShellProps['chapters']>[number];
-type DocumentItem = NonNullable<WritingShellProps['documents']>[number];
 
 export function WritingSidebar({
   activeChapterId,
@@ -28,6 +23,7 @@ export function WritingSidebar({
   onCreateEpisodeAfter,
   onDeleteChapter,
   onDeleteDocument,
+  onMoveChapter,
   onMoveDocument,
   onRenameBook,
   onSelectChapter,
@@ -95,6 +91,7 @@ export function WritingSidebar({
             onCreateEpisodeAfter={onCreateEpisodeAfter}
             onDeleteChapter={onDeleteChapter}
             onDeleteDocument={onDeleteDocument}
+            onMoveChapter={onMoveChapter}
             onMoveDocument={onMoveDocument}
             onSelectChapter={onSelectChapter}
             onSelectDocument={onSelectDocument}
@@ -149,6 +146,10 @@ function BookTitleBlock({
           onBlur={commitTitle}
           onChange={(event) => setDraftTitle(event.target.value)}
           onKeyDown={(event) => {
+            if (isComposing(event)) {
+              return;
+            }
+
             if (event.key === 'Enter') {
               event.currentTarget.blur();
             }
@@ -164,90 +165,6 @@ function BookTitleBlock({
   );
 }
 
-function ChapterTree({
-  activeChapterId,
-  activeDocumentId,
-  chapters,
-  documents,
-  onCreateChapter,
-  onCreateEpisodeAfter,
-  onDeleteChapter,
-  onDeleteDocument,
-  onMoveDocument,
-  onSelectChapter,
-  onSelectDocument,
-}: {
-  activeChapterId?: string;
-  activeDocumentId?: string;
-  chapters: ChapterItem[];
-  documents: DocumentItem[];
-  onCreateChapter?: (title?: string) => void;
-  onCreateEpisodeAfter?: (chapterId: string, previousDocumentId: string | null) => void;
-  onDeleteChapter?: (chapterId: string) => void;
-  onDeleteDocument?: (documentId: string) => void;
-  onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
-  onSelectChapter?: (chapterId: string) => void;
-  onSelectDocument?: (documentId: string) => void;
-}): ReactElement {
-  const [openContextMenu, setOpenContextMenu] = useState<WritingSidebarContextMenuState>(null);
-  const [chapterPendingDelete, setChapterPendingDelete] = useState<ChapterItem | null>(null);
-  const [isNewChapterModalOpen, setIsNewChapterModalOpen] = useState(false);
-
-  return (
-    <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3" aria-label="Book chapters">
-      {chapters.map((chapter) => (
-        <ChapterRow
-          activeDocumentId={activeDocumentId}
-          chapter={chapter}
-          documents={documents.filter((document) => document.chapterId === chapter.id)}
-          isActive={chapter.id === activeChapterId}
-          key={chapter.id}
-          onCloseMenu={() => setOpenContextMenu(null)}
-          onCreateEpisodeAfter={onCreateEpisodeAfter}
-          onDeleteChapter={onDeleteChapter}
-          onDeleteDocument={onDeleteDocument}
-          onOpenChapterMenu={(chapterId, position) =>
-            setOpenContextMenu({ chapterId, kind: 'chapter', ...position })
-          }
-          onOpenMenu={(documentId, position) =>
-            setOpenContextMenu({ documentId, kind: 'document', ...position })
-          }
-          onRequestDeleteChapter={setChapterPendingDelete}
-          onMoveDocument={onMoveDocument}
-          onSelectChapter={onSelectChapter}
-          onSelectDocument={onSelectDocument}
-          openContextMenu={openContextMenu}
-        />
-      ))}
-      {chapters.length === 0 ? (
-        <p className="px-2 pt-5 text-[#8d8d86] text-sm">Create a chapter to start this book.</p>
-      ) : null}
-      <button
-        className="mt-3 w-full cursor-pointer rounded-md px-2.5 py-2 text-left font-medium text-[#6f6f68] text-sm transition hover:bg-[#f0eee8] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
-        onClick={() => setIsNewChapterModalOpen(true)}
-        type="button"
-      >
-        + Chapter
-      </button>
-      {chapterPendingDelete ? (
-        <ChapterDeleteDialog
-          chapter={chapterPendingDelete}
-          onCancel={() => setChapterPendingDelete(null)}
-          onConfirm={() => {
-            onDeleteChapter?.(chapterPendingDelete.id);
-            setChapterPendingDelete(null);
-          }}
-        />
-      ) : null}
-      {isNewChapterModalOpen ? (
-        <NewChapterModal
-          onClose={() => setIsNewChapterModalOpen(false)}
-          onCreate={(title) => {
-            onCreateChapter?.(title);
-            setIsNewChapterModalOpen(false);
-          }}
-        />
-      ) : null}
-    </nav>
-  );
+function isComposing(event: KeyboardEvent<HTMLInputElement>): boolean {
+  return event.nativeEvent.isComposing || event.keyCode === 229;
 }
