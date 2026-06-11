@@ -51,6 +51,9 @@
 - [x] Add document creation.
 - [x] Add document opening.
 - [x] Add document title editing.
+- [x] Add library-first book selection.
+- [x] Add Quick Drafts for writing without choosing a book.
+- [x] Allow empty book workspaces without forcing a placeholder document.
 - [x] Add local autosave status.
 - [x] Persist editor content locally without relying on a server.
 - [ ] Verify that a document survives app restart.
@@ -116,6 +119,7 @@
 ## Milestone 8: Desktop Writing Experience
 
 - [x] Add left-side document or project navigation.
+- [x] Add move up/down document ordering controls.
 - [x] Add calm central writing surface.
 - [ ] Add quiet toolbar or command surface.
 - [ ] Add keyboard shortcuts for primary writing actions.

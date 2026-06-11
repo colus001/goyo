@@ -12,6 +12,8 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 - Keep the architecture web-compatible, but do not prioritize the browser web app in the first milestone.
 - Support essays and fiction without forcing one rigid writing model.
 - Use books/projects as the top-level writing container and documents as chapter/note/draft units inside a book.
+- Start writers in a library view where they can select a book, create a book, or start writing without choosing a book.
+- Treat bookless writing as a product concept backed by a non-destructive `Quick Drafts` system book until a true nullable-book model is needed.
 - Preserve user writing above all else.
 - Avoid destructive conflict handling.
 - Keep the editor fast, quiet, and keyboard-friendly.
@@ -38,6 +40,8 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 - Put reusable UI components in `packages/ui`; keep app packages focused on app composition, routing, feature wiring, and platform-specific integration.
 - Put editor-agnostic product/domain logic in `packages/core`, including document operations, sync state machines, recovery policies, and local store interfaces.
 - Keep book, chapter, note, and draft metadata behavior in `packages/core`; app layers should compose these concepts rather than redefining them.
+- Allow books to exist without documents; empty book workspaces should show creation actions instead of forcing a placeholder document.
+- Keep document ordering explicit with metadata and prefer simple move up/down behavior before drag-and-drop.
 - Keep shared IDs, API contracts, and cross-runtime TypeScript types in `packages/shared`.
 - Prefer Tailwind utility classes for styling. Avoid adding separate CSS files unless they are needed for global styles, editor-specific resets, or third-party integration.
 - Prefer the relevant CLI for workspace/package operations instead of hand-editing generated package metadata when the CLI can do the job safely.

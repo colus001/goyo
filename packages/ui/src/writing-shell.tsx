@@ -1,20 +1,21 @@
-import { APP_NAME } from '@writer/shared'
-import type { ReactElement, ReactNode } from 'react'
-import { useState } from 'react'
+import { APP_NAME } from '@writer/shared';
+import type { ReactElement, ReactNode } from 'react';
+import { useState } from 'react';
 
 export interface WritingShellProps {
-  activeDocumentId?: string
-  bookTitle?: string
-  children?: ReactNode
+  activeDocumentId?: string;
+  bookTitle?: string;
+  children?: ReactNode;
   documents?: Array<{
-    id: string
-    kind?: 'chapter' | 'note' | 'draft'
-    title: string
-    updatedAt: string
-  }>
-  onCreateDocument?: () => void
-  onSelectDocument?: (documentId: string) => void
-  status?: string
+    id: string;
+    kind?: 'chapter' | 'note' | 'draft';
+    title: string;
+    updatedAt: string;
+  }>;
+  onCreateDocument?: () => void;
+  onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
+  onSelectDocument?: (documentId: string) => void;
+  status?: string;
 }
 
 export function WritingShell({
@@ -23,10 +24,11 @@ export function WritingShell({
   children,
   documents = [],
   onCreateDocument,
+  onMoveDocument,
   onSelectDocument,
   status = 'Local session',
 }: WritingShellProps): ReactElement {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
     <main
@@ -42,6 +44,7 @@ export function WritingShell({
         documents={documents}
         isCollapsed={isSidebarCollapsed}
         onCreateDocument={onCreateDocument}
+        onMoveDocument={onMoveDocument}
         onSelectDocument={onSelectDocument}
         onToggle={() => setIsSidebarCollapsed((current) => !current)}
         status={status}
@@ -66,12 +69,12 @@ export function WritingShell({
         )}
       </section>
     </main>
-  )
+  );
 }
 
 interface WritingSidebarProps extends Omit<WritingShellProps, 'children'> {
-  isCollapsed: boolean
-  onToggle: () => void
+  isCollapsed: boolean;
+  onToggle: () => void;
 }
 
 function WritingSidebar({
@@ -80,6 +83,7 @@ function WritingSidebar({
   documents = [],
   isCollapsed,
   onCreateDocument,
+  onMoveDocument,
   onSelectDocument,
   onToggle,
   status = 'Local session',
@@ -111,12 +115,13 @@ function WritingSidebar({
         <SidebarDocuments
           activeDocumentId={activeDocumentId}
           documents={documents}
+          onMoveDocument={onMoveDocument}
           onSelectDocument={onSelectDocument}
           status={status}
         />
       ) : null}
     </aside>
-  )
+  );
 }
 
 function SidebarHeader({
@@ -137,16 +142,20 @@ function SidebarHeader({
         +
       </button>
     </>
-  )
+  );
 }
 
 function SidebarDocuments({
   activeDocumentId,
   documents,
   onSelectDocument,
+  onMoveDocument,
   status,
 }: Required<Pick<WritingShellProps, 'documents' | 'status'>> &
-  Pick<WritingShellProps, 'activeDocumentId' | 'onSelectDocument'>): ReactElement {
+  Pick<
+    WritingShellProps,
+    'activeDocumentId' | 'onMoveDocument' | 'onSelectDocument'
+  >): ReactElement {
   return (
     <>
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-4" aria-label="Local documents">
@@ -156,18 +165,21 @@ function SidebarDocuments({
         <DocumentSection
           activeDocumentId={activeDocumentId}
           documents={documents.filter((document) => (document.kind ?? 'chapter') === 'chapter')}
+          onMoveDocument={onMoveDocument}
           onSelectDocument={onSelectDocument}
         />
         <DocumentSection
           activeDocumentId={activeDocumentId}
           documents={documents.filter((document) => document.kind === 'note')}
           label="Notes"
+          onMoveDocument={onMoveDocument}
           onSelectDocument={onSelectDocument}
         />
         <DocumentSection
           activeDocumentId={activeDocumentId}
           documents={documents.filter((document) => document.kind === 'draft')}
           label="Drafts"
+          onMoveDocument={onMoveDocument}
           onSelectDocument={onSelectDocument}
         />
       </nav>
@@ -176,24 +188,26 @@ function SidebarDocuments({
         <SyncStatusIcon status={status} />
       </footer>
     </>
-  )
+  );
 }
 
 interface DocumentSectionProps {
-  activeDocumentId?: string
-  documents: NonNullable<WritingShellProps['documents']>
-  label?: string
-  onSelectDocument?: (documentId: string) => void
+  activeDocumentId?: string;
+  documents: NonNullable<WritingShellProps['documents']>;
+  label?: string;
+  onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
+  onSelectDocument?: (documentId: string) => void;
 }
 
 function DocumentSection({
   activeDocumentId,
   documents,
   label,
+  onMoveDocument,
   onSelectDocument,
 }: DocumentSectionProps): ReactElement | null {
   if (documents.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -205,41 +219,63 @@ function DocumentSection({
       ) : null}
       <div className="space-y-1">
         {documents.map((document) => {
-          const isActive = document.id === activeDocumentId
+          const isActive = document.id === activeDocumentId;
 
           return (
-            <button
-              className={`group relative w-full cursor-pointer rounded-lg px-3 py-2.5 text-left transition focus:outline-none focus-visible:bg-[#ecece8] ${
+            <div
+              className={`group relative flex items-center gap-2 rounded-lg transition ${
                 isActive ? 'bg-[#f0f0ed]' : 'hover:bg-[#f4f4f1]'
               }`}
               key={document.id}
-              onClick={() => onSelectDocument?.(document.id)}
-              type="button"
             >
               {isActive ? (
                 <span className="absolute top-2.5 bottom-2.5 left-0 w-1 rounded-full bg-[#d65a53]" />
               ) : null}
-              <p className="truncate font-semibold text-[#292927] text-[0.95rem] tracking-[-0.01em]">
-                {document.title || 'Untitled draft'}
-              </p>
-              <p className="mt-1 text-[#a0a09a] text-xs">
-                {formatDocumentDate(document.updatedAt)}
-              </p>
-            </button>
-          )
+              <button
+                className="min-w-0 flex-1 cursor-pointer px-3 py-2.5 text-left focus:outline-none focus-visible:bg-[#ecece8]"
+                onClick={() => onSelectDocument?.(document.id)}
+                type="button"
+              >
+                <p className="truncate font-semibold text-[#292927] text-[0.95rem] tracking-[-0.01em]">
+                  {document.title || 'Untitled draft'}
+                </p>
+                <p className="mt-1 text-[#a0a09a] text-xs">
+                  {formatDocumentDate(document.updatedAt)}
+                </p>
+              </button>
+              <div className="mr-2 flex opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+                <button
+                  aria-label={`Move ${document.title} up`}
+                  className="grid size-7 cursor-pointer place-items-center rounded-md text-[#8d8d86] hover:bg-[#e7e7e2]"
+                  onClick={() => onMoveDocument?.(document.id, 'up')}
+                  type="button"
+                >
+                  ↑
+                </button>
+                <button
+                  aria-label={`Move ${document.title} down`}
+                  className="grid size-7 cursor-pointer place-items-center rounded-md text-[#8d8d86] hover:bg-[#e7e7e2]"
+                  onClick={() => onMoveDocument?.(document.id, 'down')}
+                  type="button"
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 function SyncStatusIcon({ status }: { status: string }): ReactElement {
-  const normalizedStatus = status.toLowerCase()
+  const normalizedStatus = status.toLowerCase();
   const className = normalizedStatus.includes('failed')
     ? 'bg-[#d65a53]'
     : normalizedStatus.includes('saving') || normalizedStatus.includes('loading')
       ? 'animate-pulse bg-[#a6a69f]'
-      : 'bg-[#8e9b82]'
+      : 'bg-[#8e9b82]';
 
   return (
     <span
@@ -249,12 +285,12 @@ function SyncStatusIcon({ status }: { status: string }): ReactElement {
     >
       <span className={`size-2 rounded-full ${className}`} aria-hidden="true" />
     </span>
-  )
+  );
 }
 
 function formatDocumentDate(updatedAt: string): string {
   return new Intl.DateTimeFormat('en', {
     day: '2-digit',
     month: 'short',
-  }).format(new Date(updatedAt))
+  }).format(new Date(updatedAt));
 }

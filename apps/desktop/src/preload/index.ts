@@ -1,5 +1,5 @@
-import type { BookMetadata, DocumentMetadata, DocumentUpdateRecord } from '@writer/core'
-import { contextBridge, ipcRenderer } from 'electron'
+import type { BookMetadata, DocumentMetadata, DocumentUpdateRecord } from '@writer/core';
+import { contextBridge, ipcRenderer } from 'electron';
 
 const desktopApi = {
   books: {
@@ -19,14 +19,14 @@ const desktopApi = {
       ipcRenderer.invoke('documentUpdates:list', documentId) as Promise<DocumentUpdateRecord[]>,
   },
   platform: process.platform,
-} as const
+} as const;
 
-contextBridge.exposeInMainWorld('writerDesktop', desktopApi)
+contextBridge.exposeInMainWorld('writerDesktop', desktopApi);
 
-export type WriterDesktopApi = typeof desktopApi
+export type WriterDesktopApi = typeof desktopApi;
 
 declare global {
   interface Window {
-    writerDesktop: WriterDesktopApi
+    writerDesktop: WriterDesktopApi;
   }
 }
