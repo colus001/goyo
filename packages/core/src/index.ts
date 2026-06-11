@@ -1,3 +1,11 @@
+export type { DocumentSession } from './document-session'
+export {
+  createDocumentSession,
+  createDraftInSession,
+  getActiveDocument,
+  renameActiveDocument,
+  selectActiveDocument,
+} from './document-session'
 export type {
   CreateDocumentMetadataInput,
   DocumentMetadata,

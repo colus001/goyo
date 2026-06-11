@@ -46,9 +46,9 @@
 - [x] Add Yjs as the document model for editor content.
 - [x] Connect Tiptap to Yjs using the appropriate ProseMirror/Yjs binding.
 - [x] Create a desktop-first editor layout.
-- [ ] Add document creation.
-- [ ] Add document opening.
-- [ ] Add document title editing.
+- [x] Add document creation.
+- [x] Add document opening.
+- [x] Add document title editing.
 - [ ] Add local autosave status.
 - [ ] Persist editor content locally without relying on a server.
 - [ ] Verify that a document survives app restart.
