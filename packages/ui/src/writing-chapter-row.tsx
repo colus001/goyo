@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import type { ReactElement } from 'react';
 import { ChapterContextMenu } from './chapter-context-menu';
 import { DocumentRow } from './writing-document-row';
@@ -84,34 +85,85 @@ export function ChapterRow({
         />
       ) : null}
       {isActive ? (
-        <div className="mt-1 pl-4">
-          {documents.map((document, index) => (
-            <DocumentRow
-              document={document}
-              isActive={document.id === activeDocumentId}
-              key={document.id}
-              menuPosition={
-                openContextMenu?.kind === 'document' && openContextMenu.documentId === document.id
-                  ? { x: openContextMenu.x, y: openContextMenu.y }
-                  : null
-              }
-              onCloseMenu={onCloseMenu}
-              onInsertAfter={
-                index === documents.length - 1
-                  ? () => onCreateEpisodeAfter?.(chapter.id, document.id)
-                  : undefined
-              }
-              onInsertBefore={() =>
-                onCreateEpisodeAfter?.(chapter.id, index === 0 ? null : documents[index - 1].id)
-              }
-              onDeleteDocument={onDeleteDocument}
-              onMoveDocument={onMoveDocument}
-              onOpenMenu={(position) => onOpenMenu(document.id, position)}
-              onSelectDocument={onSelectDocument}
-            />
-          ))}
-        </div>
+        <ChapterEpisodeList
+          activeDocumentId={activeDocumentId}
+          chapter={chapter}
+          documents={documents}
+          onCloseMenu={onCloseMenu}
+          onCreateEpisodeAfter={onCreateEpisodeAfter}
+          onDeleteDocument={onDeleteDocument}
+          onMoveDocument={onMoveDocument}
+          onOpenMenu={onOpenMenu}
+          onSelectDocument={onSelectDocument}
+          openContextMenu={openContextMenu}
+        />
       ) : null}
     </section>
+  );
+}
+
+function ChapterEpisodeList({
+  activeDocumentId,
+  chapter,
+  documents,
+  onCloseMenu,
+  onCreateEpisodeAfter,
+  onDeleteDocument,
+  onMoveDocument,
+  onOpenMenu,
+  onSelectDocument,
+  openContextMenu,
+}: {
+  activeDocumentId?: string;
+  chapter: ChapterItem;
+  documents: DocumentItem[];
+  onCloseMenu: () => void;
+  onCreateEpisodeAfter?: (chapterId: string, previousDocumentId: string | null) => void;
+  onDeleteDocument?: (documentId: string) => void;
+  onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
+  onOpenMenu: (documentId: string, position: { x: number; y: number }) => void;
+  onSelectDocument?: (documentId: string) => void;
+  openContextMenu: WritingSidebarContextMenuState;
+}): ReactElement {
+  return (
+    <div className="group/empty mt-1 pl-4">
+      {documents.length === 0 ? (
+        <button
+          aria-label="Add first episode"
+          className="mt-1 flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-[#9b958b] text-sm opacity-0 transition hover:bg-[#f0eee8] hover:text-[#30302d] hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20 group-hover/empty:opacity-100"
+          onClick={() => onCreateEpisodeAfter?.(chapter.id, null)}
+          type="button"
+        >
+          <Plus aria-hidden="true" size={15} />
+          New episode
+        </button>
+      ) : (
+        documents.map((document, index) => (
+          <DocumentRow
+            document={document}
+            isActive={document.id === activeDocumentId}
+            key={document.id}
+            menuPosition={
+              openContextMenu?.kind === 'document' && openContextMenu.documentId === document.id
+                ? { x: openContextMenu.x, y: openContextMenu.y }
+                : null
+            }
+            onCloseMenu={onCloseMenu}
+            onInsertAfter={
+              index === documents.length - 1
+                ? () => onCreateEpisodeAfter?.(chapter.id, document.id)
+                : undefined
+            }
+            onInsertBefore={() =>
+              onCreateEpisodeAfter?.(chapter.id, index === 0 ? null : documents[index - 1].id)
+            }
+            onDeleteDocument={onDeleteDocument}
+            onMoveDocument={onMoveDocument}
+            onOpenMenu={(position) => onOpenMenu(document.id, position)}
+            onSelectDocument={onSelectDocument}
+          />
+        ))
+      )}
+    </div>
   );
 }

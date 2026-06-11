@@ -3,6 +3,7 @@ import { ChevronUp, Menu } from 'lucide-react';
 import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 import { ChapterDeleteDialog } from './chapter-delete-dialog';
+import { NewChapterModal } from './new-chapter-modal';
 import { SyncStatusIcon } from './sync-status-icon';
 import { ChapterRow, type WritingSidebarContextMenuState } from './writing-chapter-row';
 import type { WritingShellProps } from './writing-shell';
@@ -37,7 +38,7 @@ export function WritingSidebar({
 }: WritingSidebarProps): ReactElement {
   return (
     <aside
-      className="flex h-screen min-h-0 flex-col border-[#deded9] border-r bg-[#fbfbfa]"
+      className="flex h-screen min-h-0 flex-col overflow-hidden border-[#deded9] border-r bg-[#fbfbfa]"
       aria-label="Manuscript navigation"
     >
       <header
@@ -180,7 +181,7 @@ function ChapterTree({
   activeDocumentId?: string;
   chapters: ChapterItem[];
   documents: DocumentItem[];
-  onCreateChapter?: () => void;
+  onCreateChapter?: (title?: string) => void;
   onCreateEpisodeAfter?: (chapterId: string, previousDocumentId: string | null) => void;
   onDeleteChapter?: (chapterId: string) => void;
   onDeleteDocument?: (documentId: string) => void;
@@ -190,6 +191,7 @@ function ChapterTree({
 }): ReactElement {
   const [openContextMenu, setOpenContextMenu] = useState<WritingSidebarContextMenuState>(null);
   const [chapterPendingDelete, setChapterPendingDelete] = useState<ChapterItem | null>(null);
+  const [isNewChapterModalOpen, setIsNewChapterModalOpen] = useState(false);
 
   return (
     <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3" aria-label="Book chapters">
@@ -222,7 +224,7 @@ function ChapterTree({
       ) : null}
       <button
         className="mt-3 w-full cursor-pointer rounded-md px-2.5 py-2 text-left font-medium text-[#6f6f68] text-sm transition hover:bg-[#f0eee8] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
-        onClick={onCreateChapter}
+        onClick={() => setIsNewChapterModalOpen(true)}
         type="button"
       >
         + Chapter
@@ -234,6 +236,15 @@ function ChapterTree({
           onConfirm={() => {
             onDeleteChapter?.(chapterPendingDelete.id);
             setChapterPendingDelete(null);
+          }}
+        />
+      ) : null}
+      {isNewChapterModalOpen ? (
+        <NewChapterModal
+          onClose={() => setIsNewChapterModalOpen(false)}
+          onCreate={(title) => {
+            onCreateChapter?.(title);
+            setIsNewChapterModalOpen(false);
           }}
         />
       ) : null}

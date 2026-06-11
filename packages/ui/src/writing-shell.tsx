@@ -21,7 +21,7 @@ export interface WritingShellProps {
     title: string;
     updatedAt: string;
   }>;
-  onCreateChapter?: () => void;
+  onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
   onCreateDocumentInChapter?: (chapterId: string, kind: 'draft' | 'episode' | 'note') => void;
   onCreateEpisodeAfter?: (chapterId: string, previousDocumentId: string | null) => void;
@@ -62,7 +62,7 @@ export function WritingShell({
 
   return (
     <main
-      className={`grid h-screen overflow-hidden bg-[#f7f7f5] font-sans text-[#252525] ${
+      className={`grid h-screen overflow-hidden bg-[#f7f7f5] font-sans text-[#252525] transition-[grid-template-columns] duration-[280ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
         isSidebarCollapsed ? 'grid-cols-[3rem_minmax(0,1fr)]' : 'grid-cols-[17rem_minmax(0,1fr)]'
       }`}
     >
