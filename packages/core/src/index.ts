@@ -1,6 +1,8 @@
 export type { DocumentSession } from './document-session'
 export {
+  addDocumentToSession,
   createDocumentSession,
+  createDocumentSessionFromDocuments,
   createDraftInSession,
   getActiveDocument,
   renameActiveDocument,

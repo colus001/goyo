@@ -6,6 +6,7 @@
         "electron.vite.config.ts",
         "src/main/index.ts",
         "src/preload/index.ts",
+        "src/renderer/desktop-api.d.ts",
         "src/renderer/main.tsx"
       ],
       "ignoreDependencies": ["tailwindcss"],

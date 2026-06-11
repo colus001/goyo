@@ -21,11 +21,37 @@ export function createDocumentSession(input: CreateDocumentMetadataInput): Docum
   }
 }
 
+export function createDocumentSessionFromDocuments(documents: DocumentMetadata[]): DocumentSession {
+  const activeDocument = documents[0]
+
+  if (!activeDocument) {
+    throw new Error('Document session needs at least one document')
+  }
+
+  return {
+    activeDocumentId: activeDocument.id,
+    documents,
+  }
+}
+
 export function createDraftInSession(
   session: DocumentSession,
   input: CreateDocumentMetadataInput,
 ): DocumentSession {
   const document = createDocumentMetadata(input)
+
+  return addDocumentToSession(session, document)
+}
+
+export function addDocumentToSession(
+  session: DocumentSession,
+  document: DocumentMetadata,
+): DocumentSession {
+  const existingDocument = session.documents.find(({ id }) => id === document.id)
+
+  if (existingDocument) {
+    return selectActiveDocument(session, document.id)
+  }
 
   return {
     activeDocumentId: document.id,

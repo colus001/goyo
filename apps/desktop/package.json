@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "tsc -b && electron-vite build",
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3",
     "typecheck": "tsc -b"
   },
   "dependencies": {
@@ -15,6 +16,7 @@
     "@writer/core": "workspace:*",
     "@writer/editor": "workspace:*",
     "@writer/ui": "workspace:*",
+    "better-sqlite3": "^12.10.0",
     "electron-vite": "^5.0.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -22,6 +24,8 @@
     "vite": "^7.3.5"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

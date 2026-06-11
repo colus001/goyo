@@ -11,6 +11,7 @@ export interface WritingShellPreviewProps {
   }>
   onCreateDocument?: () => void
   onSelectDocument?: (documentId: string) => void
+  status?: string
 }
 
 export function WritingShellPreview({
@@ -19,6 +20,7 @@ export function WritingShellPreview({
   documents = [],
   onCreateDocument,
   onSelectDocument,
+  status = 'Local session',
 }: WritingShellPreviewProps): ReactElement {
   return (
     <main className="grid min-h-screen grid-cols-[18rem_minmax(0,1fr)] bg-[#f4efe6] font-sans text-[#2d2923]">
@@ -58,9 +60,7 @@ export function WritingShellPreview({
       </aside>
 
       <section className="flex flex-col px-16 py-8" aria-label="Writing surface preview">
-        <p className="font-medium text-[#7a6d5f] text-xs uppercase tracking-[0.08em]">
-          Local session
-        </p>
+        <p className="font-medium text-[#7a6d5f] text-xs uppercase tracking-[0.08em]">{status}</p>
         {children ?? (
           <article className="mt-16 min-h-[32rem] w-full max-w-[44rem] self-center bg-[#fffaf0] p-16 shadow-[0_24px_80px_rgb(45_41_35_/_12%)]">
             <h2 className="mt-0 mb-6 font-serif text-[2.75rem] font-medium">Untitled draft</h2>

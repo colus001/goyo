@@ -49,16 +49,16 @@
 - [x] Add document creation.
 - [x] Add document opening.
 - [x] Add document title editing.
-- [ ] Add local autosave status.
+- [x] Add local autosave status.
 - [ ] Persist editor content locally without relying on a server.
 - [ ] Verify that a document survives app restart.
 - [ ] Verify long-form writing performance with a large document.
 
 ## Milestone 4: Local Document Store
 
-- [ ] Choose the desktop local store implementation, preferably SQLite.
+- [x] Choose the desktop local store implementation, preferably SQLite.
 - [ ] Keep the local store behind `packages/core` interfaces.
-- [ ] Store local document metadata separately from document content updates.
+- [x] Store local document metadata separately from document content updates.
 - [ ] Store Yjs incremental updates locally.
 - [ ] Add local document snapshots or compacted state.
 - [ ] Add a local unsynced update queue.

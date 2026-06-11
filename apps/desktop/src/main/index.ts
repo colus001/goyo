@@ -1,7 +1,18 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, Menu } from 'electron'
+import type { DocumentMetadata } from '@writer/core'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
+import { createDocumentMetadataStore } from './document-metadata-store'
 
 const isDevelopment = !app.isPackaged
+
+function registerDocumentIpc() {
+  const store = createDocumentMetadataStore(app.getPath('userData'))
+
+  ipcMain.handle('documents:list', () => store.listDocuments())
+  ipcMain.handle('documents:saveMetadata', (_event, document: DocumentMetadata) => {
+    store.saveDocument(document)
+  })
+}
 
 function createApplicationMenu() {
   const template: Electron.MenuItemConstructorOptions[] = [
@@ -74,6 +85,7 @@ function createWindow() {
 
 void app.whenReady().then(() => {
   app.setName('Writer')
+  registerDocumentIpc()
   createApplicationMenu()
   createWindow()
 
