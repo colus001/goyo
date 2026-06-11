@@ -1,7 +1,12 @@
-import type { DocumentMetadata, DocumentUpdateRecord } from '@writer/core'
+import type { BookMetadata, DocumentMetadata, DocumentUpdateRecord } from '@writer/core'
 import { contextBridge, ipcRenderer } from 'electron'
 
 const desktopApi = {
+  books: {
+    list: () => ipcRenderer.invoke('books:list') as Promise<BookMetadata[]>,
+    saveMetadata: (book: BookMetadata) =>
+      ipcRenderer.invoke('books:saveMetadata', book) as Promise<void>,
+  },
   documents: {
     list: () => ipcRenderer.invoke('documents:list') as Promise<DocumentMetadata[]>,
     saveMetadata: (document: DocumentMetadata) =>

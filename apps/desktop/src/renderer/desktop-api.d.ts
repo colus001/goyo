@@ -1,8 +1,12 @@
-import type { DocumentMetadata, DocumentUpdateRecord } from '@writer/core'
+import type { BookMetadata, DocumentMetadata, DocumentUpdateRecord } from '@writer/core'
 
 declare global {
   interface Window {
     writerDesktop: {
+      books: {
+        list: () => Promise<BookMetadata[]>
+        saveMetadata: (book: BookMetadata) => Promise<void>
+      }
       documents: {
         list: () => Promise<DocumentMetadata[]>
         saveMetadata: (document: DocumentMetadata) => Promise<void>

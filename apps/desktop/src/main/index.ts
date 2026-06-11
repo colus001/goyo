@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import type { DocumentMetadata } from '@writer/core'
+import type { BookMetadata, DocumentMetadata } from '@writer/core'
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { createDesktopLocalStore } from './document-metadata-store'
 
@@ -8,6 +8,15 @@ const isDevelopment = !app.isPackaged
 function registerDocumentIpc() {
   const store = createDesktopLocalStore(app.getPath('userData'))
 
+  ipcMain.handle('books:list', () => store.listBooks())
+  ipcMain.handle('books:saveMetadata', (_event, book: BookMetadata) => {
+    try {
+      store.saveBook(book)
+    } catch (error) {
+      console.error('Failed to save book metadata', getErrorMessage(error))
+      throw error
+    }
+  })
   ipcMain.handle('documents:list', () => store.listDocuments())
   ipcMain.handle('documents:saveMetadata', (_event, document: DocumentMetadata) => {
     try {

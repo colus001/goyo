@@ -1,9 +1,13 @@
+export type { BookMetadata, CreateBookMetadataInput, RenameBookInput } from './books'
+export { createBookMetadata, renameBook } from './books'
 export type { DocumentSession } from './document-session'
 export {
   addDocumentToSession,
   createDocumentSession,
+  createDocumentSessionFromBooksAndDocuments,
   createDocumentSessionFromDocuments,
   createDraftInSession,
+  getActiveBook,
   getActiveDocument,
   renameActiveDocument,
   selectActiveDocument,
@@ -12,6 +16,7 @@ export type { CreateDocumentUpdateRecordInput } from './document-updates'
 export { createDocumentUpdateRecord, sortDocumentUpdatesForReplay } from './document-updates'
 export type {
   CreateDocumentMetadataInput,
+  DocumentKind,
   DocumentMetadata,
   RenameDocumentInput,
 } from './documents'

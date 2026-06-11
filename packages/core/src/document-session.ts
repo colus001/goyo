@@ -1,4 +1,5 @@
-import type { DocumentId } from '@writer/shared'
+import type { BookId, DocumentId } from '@writer/shared'
+import { type BookMetadata, createBookMetadata } from './books'
 import {
   type CreateDocumentMetadataInput,
   createDocumentMetadata,
@@ -8,29 +9,50 @@ import {
 } from './documents'
 
 export interface DocumentSession {
+  activeBookId: BookId
   activeDocumentId: DocumentId
+  books: BookMetadata[]
   documents: DocumentMetadata[]
 }
 
 export function createDocumentSession(input: CreateDocumentMetadataInput): DocumentSession {
   const document = createDocumentMetadata(input)
+  const book = createBookMetadata({ id: document.bookId, now: input.now })
 
   return {
+    activeBookId: document.bookId,
     activeDocumentId: document.id,
+    books: [book],
     documents: [document],
   }
 }
 
 export function createDocumentSessionFromDocuments(documents: DocumentMetadata[]): DocumentSession {
+  return createDocumentSessionFromBooksAndDocuments([], documents)
+}
+
+export function createDocumentSessionFromBooksAndDocuments(
+  books: BookMetadata[],
+  documents: DocumentMetadata[],
+): DocumentSession {
   const activeDocument = documents[0]
 
   if (!activeDocument) {
     throw new Error('Document session needs at least one document')
   }
 
+  const activeBook =
+    books.find(({ id }) => id === activeDocument.bookId) ??
+    createBookMetadata({
+      id: activeDocument.bookId,
+      now: activeDocument.createdAt,
+    })
+
   return {
+    activeBookId: activeBook.id,
     activeDocumentId: activeDocument.id,
-    documents,
+    books: books.some(({ id }) => id === activeBook.id) ? books : [activeBook, ...books],
+    documents: sortDocuments(documents),
   }
 }
 
@@ -54,8 +76,10 @@ export function addDocumentToSession(
   }
 
   return {
+    ...session,
+    activeBookId: document.bookId,
     activeDocumentId: document.id,
-    documents: [...session.documents, document],
+    documents: sortDocuments([...session.documents, document]),
   }
 }
 
@@ -83,16 +107,27 @@ export function selectActiveDocument(
     return session
   }
 
-  const documentExists = session.documents.some((document) => document.id === documentId)
+  const document = session.documents.find((document) => document.id === documentId)
 
-  if (!documentExists) {
+  if (!document) {
     return session
   }
 
   return {
     ...session,
+    activeBookId: document.bookId,
     activeDocumentId: documentId,
   }
+}
+
+export function getActiveBook(session: DocumentSession): BookMetadata {
+  const book = session.books.find((book) => book.id === session.activeBookId)
+
+  if (!book) {
+    throw new Error(`Active book not found: ${session.activeBookId}`)
+  }
+
+  return book
 }
 
 export function getActiveDocument(session: DocumentSession): DocumentMetadata {
@@ -103,4 +138,18 @@ export function getActiveDocument(session: DocumentSession): DocumentMetadata {
   }
 
   return document
+}
+
+function sortDocuments(documents: DocumentMetadata[]): DocumentMetadata[] {
+  return [...documents].sort((first, second) => {
+    if (first.bookId !== second.bookId) {
+      return first.bookId.localeCompare(second.bookId)
+    }
+
+    if (first.order !== second.order) {
+      return first.order - second.order
+    }
+
+    return first.createdAt.localeCompare(second.createdAt)
+  })
 }

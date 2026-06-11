@@ -35,6 +35,7 @@
 
 - [x] Add `packages/core` package.
 - [x] Define document metadata types and operations in `packages/core`.
+- [x] Define book metadata and document kind concepts in `packages/core`.
 - [x] Define local document store interfaces in `packages/core`.
 - [x] Define sync queue interfaces in `packages/core`.
 - [x] Define recovery policy interfaces in `packages/core`.
@@ -60,6 +61,7 @@
 - [x] Choose the desktop local store implementation, preferably SQLite.
 - [ ] Keep the local store behind `packages/core` interfaces.
 - [x] Store local document metadata separately from document content updates.
+- [x] Store local book metadata separately from document content updates.
 - [x] Store Yjs incremental updates locally.
 - [ ] Add local document snapshots or compacted state.
 - [ ] Add a local unsynced update queue.
@@ -123,7 +125,8 @@
 - [ ] Add search.
 - [ ] Add basic tags or labels.
 - [ ] Support essay-style document workflows.
-- [ ] Support fiction chapter or scene workflows.
+- [x] Support basic fiction chapter workflows.
+- [ ] Support fiction scene workflows.
 
 ## Milestone 9: Recovery And Version Safety
 

@@ -1,18 +1,26 @@
-import type { DocumentId } from '@writer/shared'
+import type { BookId, DocumentId } from '@writer/shared'
 
 const DEFAULT_DOCUMENT_TITLE = 'Untitled document'
 
 export interface DocumentMetadata {
+  bookId: BookId
+  kind: DocumentKind
   id: DocumentId
+  order: number
   title: string
   createdAt: string
   updatedAt: string
   archivedAt: string | null
 }
 
+export type DocumentKind = 'chapter' | 'note' | 'draft'
+
 export interface CreateDocumentMetadataInput {
+  bookId: BookId
   id: DocumentId
+  kind?: DocumentKind
   now: string
+  order?: number
   title?: string
 }
 
@@ -24,8 +32,11 @@ export interface RenameDocumentInput {
 export function createDocumentMetadata(input: CreateDocumentMetadataInput): DocumentMetadata {
   return {
     archivedAt: null,
+    bookId: input.bookId,
     createdAt: input.now,
     id: input.id,
+    kind: input.kind ?? 'chapter',
+    order: input.order ?? 0,
     title: normalizeDocumentTitle(input.title),
     updatedAt: input.now,
   }
