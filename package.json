@@ -5,7 +5,8 @@
   "description": "Local-first writing app for essays and fiction.",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @writer/web dev",
+    "dev": "pnpm --filter @writer/desktop dev",
+    "dev:desktop": "pnpm --filter @writer/desktop dev",
     "dev:web": "pnpm --filter @writer/web dev",
     "dev:worker": "pnpm --filter @writer/worker dev",
     "build": "pnpm -r build",

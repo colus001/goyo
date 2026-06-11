@@ -3,7 +3,7 @@
 ## Milestone 0: Product And Technical Foundation
 
 - [x] Initialize the repository structure.
-- [ ] Create the Electron + React + TypeScript desktop app.
+- [x] Create the Electron + React + TypeScript desktop app.
 - [x] Create the Vite + React + TypeScript web app scaffold for future reuse.
 - [x] Create the Cloudflare Worker app structure.
 - [x] Decide the monorepo layout, preferably `apps/desktop`, `apps/web`, `apps/worker`, `packages/core`, `packages/shared`, and `packages/ui`.
@@ -19,16 +19,16 @@
 
 ## Milestone 1: Electron Desktop Shell
 
-- [ ] Add `apps/desktop` package.
-- [ ] Configure Electron main process.
-- [ ] Configure Electron preload boundary.
-- [ ] Configure React renderer with Vite and Tailwind.
-- [ ] Reuse `packages/ui` from the desktop renderer.
-- [ ] Add root `pnpm dev:desktop` script.
-- [ ] Make `pnpm dev` run the desktop app.
-- [ ] Add a minimal native application menu.
+- [x] Add `apps/desktop` package.
+- [x] Configure Electron main process.
+- [x] Configure Electron preload boundary.
+- [x] Configure React renderer with Vite and Tailwind.
+- [x] Reuse `packages/ui` from the desktop renderer.
+- [x] Add root `pnpm dev:desktop` script.
+- [x] Make `pnpm dev` run the desktop app.
+- [x] Add a minimal native application menu.
 - [ ] Verify desktop window lifecycle on macOS.
-- [ ] Verify `pnpm check` and `pnpm build` include the desktop app.
+- [x] Verify `pnpm check` and `pnpm build` include the desktop app.
 
 ## Milestone 2: Core Domain And Platform Boundaries
 

@@ -7,7 +7,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/.wrangler", "!**/node_modules"]
+    "includes": ["**", "!**/dist", "!**/out", "!**/.wrangler", "!**/node_modules"]
   },
   "formatter": {
     "enabled": true,
