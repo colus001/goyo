@@ -1,6 +1,6 @@
 import type { BookId, ChapterId, DocumentId } from '@writer/shared';
 
-const DEFAULT_DOCUMENT_TITLE = 'Untitled episode';
+const DEFAULT_DOCUMENT_TITLE = '';
 
 export interface DocumentMetadata {
   bookId: BookId;

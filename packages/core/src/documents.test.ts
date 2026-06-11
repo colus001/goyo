@@ -31,7 +31,7 @@ describe('document metadata creation', () => {
       title: '   ',
     });
 
-    expect(document.title).toBe('Untitled episode');
+    expect(document.title).toBe('');
   });
   it('creates notes and drafts in a book', () => {
     expect(

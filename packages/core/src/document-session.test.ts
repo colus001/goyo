@@ -159,7 +159,7 @@ describe('document session document mutation', () => {
 
     expect(session.activeDocumentId).toBe('doc_2');
     expect(session.documents.map((document) => document.id)).toEqual(['doc_1', 'doc_2']);
-    expect(session.documents.at(-1)?.title).toBe('Untitled episode');
+    expect(session.documents.at(-1)?.title).toBe('');
   });
 
   it('adds an existing document to a session and makes it active', () => {

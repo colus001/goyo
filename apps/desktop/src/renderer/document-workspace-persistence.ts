@@ -83,18 +83,5 @@ export function createUntitledDocument(
     kind,
     now: new Date().toISOString(),
     order,
-    title: getUntitledDocumentName(kind),
   });
-}
-
-function getUntitledDocumentName(kind: DocumentKind): string {
-  if (kind === 'episode') {
-    return 'Untitled episode';
-  }
-
-  if (kind === 'note') {
-    return 'Untitled note';
-  }
-
-  return 'Untitled draft';
 }
