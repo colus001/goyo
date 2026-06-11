@@ -2,17 +2,23 @@ import {
   addDocumentToSession,
   createDocumentMetadata,
   createDocumentSessionFromDocuments,
+  createDocumentUpdateRecord,
   type DocumentMetadata,
   type DocumentSession,
+  type DocumentUpdateRecord,
   getActiveDocument,
   renameActiveDocument,
   selectActiveDocument,
 } from '@writer/core'
 import { WritingEditor } from '@writer/editor'
 import { WritingShellPreview } from '@writer/ui'
+import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
 
 type SaveStatus = 'Loading local documents' | 'Saved locally' | 'Saving locally' | 'Save failed'
+type DocumentUpdateMap = Record<string, Uint8Array[]>
+
+const EMPTY_DOCUMENT_UPDATES: Uint8Array[] = []
 
 export function App() {
   const documentSession = useDocumentSession()
@@ -30,8 +36,14 @@ export function App() {
   )
 }
 
-function DocumentSurface({ activeDocument, renameDraft }: ReturnType<typeof useDocumentSession>) {
+function DocumentSurface({
+  activeDocument,
+  documentUpdates,
+  recordDocumentUpdate,
+  renameDraft,
+}: ReturnType<typeof useDocumentSession>) {
   const [wordCount, setWordCount] = useState(0)
+  const initialUpdates = documentUpdates[activeDocument.id] ?? EMPTY_DOCUMENT_UPDATES
 
   return (
     <article className="mt-12 min-h-[36rem] w-full max-w-[48rem] self-center bg-[#fffaf0] px-16 py-14 shadow-[0_24px_80px_rgb(45_41_35_/_12%)]">
@@ -46,16 +58,72 @@ function DocumentSurface({ activeDocument, renameDraft }: ReturnType<typeof useD
           {wordCount} words
         </p>
       </div>
-      <WritingEditor documentId={activeDocument.id} onWordCountChange={setWordCount} />
+      <WritingEditor
+        documentId={activeDocument.id}
+        initialUpdates={initialUpdates}
+        onDocumentUpdate={recordDocumentUpdate}
+        onWordCountChange={setWordCount}
+      />
     </article>
   )
 }
 
 function useDocumentSession() {
+  const [clientId] = useState(() => `client_${globalThis.crypto.randomUUID()}`)
+  const [documentUpdates, setDocumentUpdates] = useState<DocumentUpdateMap>({})
   const [session, setSession] = useState(createInitialSession)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('Loading local documents')
   const activeDocument = getActiveDocument(session)
 
+  useLoadDocumentUpdates(activeDocument.id, setDocumentUpdates, setSaveStatus)
+  useLoadDocuments(setSession, setSaveStatus)
+
+  return {
+    activeDocument,
+    createDraft: () => createDraft(setSession, setSaveStatus),
+    documentUpdates,
+    openDraft: (documentId: string) =>
+      setSession((current) => selectActiveDocument(current, documentId)),
+    recordDocumentUpdate: (update: Uint8Array) =>
+      recordDocumentUpdate(activeDocument.id, clientId, update, setSaveStatus),
+    renameDraft: (title: string) =>
+      renameDraft(session, activeDocument, title, setSession, setSaveStatus),
+    saveStatus,
+    session,
+  }
+}
+
+function useLoadDocumentUpdates(
+  documentId: string,
+  setDocumentUpdates: Dispatch<SetStateAction<DocumentUpdateMap>>,
+  setSaveStatus: (saveStatus: SaveStatus) => void,
+) {
+  useEffect(() => {
+    let isCancelled = false
+
+    async function loadDocumentUpdates() {
+      const updates = await window.writerDesktop.documentUpdates.list(documentId)
+
+      if (!isCancelled) {
+        setDocumentUpdates((current) => ({
+          ...current,
+          [documentId]: updates.map(({ update }) => update),
+        }))
+      }
+    }
+
+    void loadDocumentUpdates().catch(() => setSaveStatus('Save failed'))
+
+    return () => {
+      isCancelled = true
+    }
+  }, [documentId, setDocumentUpdates, setSaveStatus])
+}
+
+function useLoadDocuments(
+  setSession: Dispatch<SetStateAction<DocumentSession>>,
+  setSaveStatus: (saveStatus: SaveStatus) => void,
+) {
   useEffect(() => {
     let isCancelled = false
 
@@ -86,18 +154,24 @@ function useDocumentSession() {
     return () => {
       isCancelled = true
     }
-  }, [])
+  }, [setSession, setSaveStatus])
+}
 
-  return {
-    activeDocument,
-    createDraft: () => createDraft(setSession, setSaveStatus),
-    openDraft: (documentId: string) =>
-      setSession((current) => selectActiveDocument(current, documentId)),
-    renameDraft: (title: string) =>
-      renameDraft(session, activeDocument, title, setSession, setSaveStatus),
-    saveStatus,
-    session,
-  }
+function recordDocumentUpdate(
+  documentId: string,
+  clientId: string,
+  update: Uint8Array,
+  setSaveStatus: (saveStatus: SaveStatus) => void,
+) {
+  const documentUpdate = createDocumentUpdateRecord({
+    clientId,
+    createdAt: new Date().toISOString(),
+    documentId,
+    id: `update_${globalThis.crypto.randomUUID()}`,
+    update,
+  })
+
+  void persistDocumentUpdate(documentUpdate, setSaveStatus)
 }
 
 function createDraft(
@@ -135,6 +209,20 @@ async function persistDocumentMetadata(
 
   try {
     await window.writerDesktop.documents.saveMetadata(document)
+    setSaveStatus('Saved locally')
+  } catch {
+    setSaveStatus('Save failed')
+  }
+}
+
+async function persistDocumentUpdate(
+  update: DocumentUpdateRecord,
+  setSaveStatus: (saveStatus: SaveStatus) => void,
+) {
+  setSaveStatus('Saving locally')
+
+  try {
+    await window.writerDesktop.documentUpdates.append(update)
     setSaveStatus('Saved locally')
   } catch {
     setSaveStatus('Save failed')

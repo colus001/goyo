@@ -1,16 +1,22 @@
 import { join } from 'node:path'
 import type { DocumentMetadata } from '@writer/core'
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
-import { createDocumentMetadataStore } from './document-metadata-store'
+import { createDesktopLocalStore } from './document-metadata-store'
 
 const isDevelopment = !app.isPackaged
 
 function registerDocumentIpc() {
-  const store = createDocumentMetadataStore(app.getPath('userData'))
+  const store = createDesktopLocalStore(app.getPath('userData'))
 
   ipcMain.handle('documents:list', () => store.listDocuments())
   ipcMain.handle('documents:saveMetadata', (_event, document: DocumentMetadata) => {
     store.saveDocument(document)
+  })
+  ipcMain.handle('documentUpdates:list', (_event, documentId: string) =>
+    store.listDocumentUpdates(documentId),
+  )
+  ipcMain.handle('documentUpdates:append', (_event, update) => {
+    store.appendDocumentUpdate(update)
   })
 }
 

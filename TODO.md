@@ -50,7 +50,7 @@
 - [x] Add document opening.
 - [x] Add document title editing.
 - [x] Add local autosave status.
-- [ ] Persist editor content locally without relying on a server.
+- [x] Persist editor content locally without relying on a server.
 - [ ] Verify that a document survives app restart.
 - [ ] Verify long-form writing performance with a large document.
 
@@ -59,7 +59,7 @@
 - [x] Choose the desktop local store implementation, preferably SQLite.
 - [ ] Keep the local store behind `packages/core` interfaces.
 - [x] Store local document metadata separately from document content updates.
-- [ ] Store Yjs incremental updates locally.
+- [x] Store Yjs incremental updates locally.
 - [ ] Add local document snapshots or compacted state.
 - [ ] Add a local unsynced update queue.
 - [ ] Add document list indexing.

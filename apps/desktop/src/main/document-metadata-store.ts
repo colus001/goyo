@@ -1,6 +1,7 @@
+import { Buffer } from 'node:buffer'
 import { mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import type { DocumentMetadata } from '@writer/core'
+import type { DocumentMetadata, DocumentUpdateRecord } from '@writer/core'
 import Database from 'better-sqlite3'
 
 interface DocumentMetadataRow {
@@ -11,12 +12,22 @@ interface DocumentMetadataRow {
   archived_at: string | null
 }
 
-export interface DocumentMetadataStore {
+interface DocumentUpdateRow {
+  id: string
+  document_id: string
+  client_id: string
+  update_blob: Buffer
+  created_at: string
+}
+
+export interface DesktopLocalStore {
+  appendDocumentUpdate(update: DocumentUpdateRecord): void
   listDocuments(): DocumentMetadata[]
+  listDocumentUpdates(documentId: string): DocumentUpdateRecord[]
   saveDocument(document: DocumentMetadata): void
 }
 
-export function createDocumentMetadataStore(userDataPath: string): DocumentMetadataStore {
+export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore {
   const databasePath = join(userDataPath, 'writer.sqlite')
 
   mkdirSync(dirname(databasePath), { recursive: true })
@@ -31,6 +42,18 @@ export function createDocumentMetadataStore(userDataPath: string): DocumentMetad
       updated_at TEXT NOT NULL,
       archived_at TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS document_updates (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      client_id TEXT NOT NULL,
+      update_blob BLOB NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS document_updates_document_replay_idx
+      ON document_updates(document_id, created_at, id);
   `)
 
   const listDocumentsStatement = database.prepare(`
@@ -47,14 +70,45 @@ export function createDocumentMetadataStore(userDataPath: string): DocumentMetad
       updated_at = excluded.updated_at,
       archived_at = excluded.archived_at;
   `)
+  const listDocumentUpdatesStatement = database.prepare(`
+    SELECT id, document_id, client_id, update_blob, created_at
+    FROM document_updates
+    WHERE document_id = ?
+    ORDER BY created_at ASC, id ASC;
+  `)
+  const appendDocumentUpdateStatement = database.prepare(`
+    INSERT OR IGNORE INTO document_updates (id, document_id, client_id, update_blob, created_at)
+    VALUES (@id, @documentId, @clientId, @update, @createdAt);
+  `)
 
   return {
+    appendDocumentUpdate(update) {
+      appendDocumentUpdateStatement.run({
+        ...update,
+        update: Buffer.from(update.update),
+      })
+    },
     listDocuments() {
       return listDocumentsStatement.all().map(rowToDocumentMetadata)
+    },
+    listDocumentUpdates(documentId) {
+      return listDocumentUpdatesStatement.all(documentId).map(rowToDocumentUpdateRecord)
     },
     saveDocument(document) {
       saveDocumentStatement.run(document)
     },
+  }
+}
+
+function rowToDocumentUpdateRecord(row: unknown): DocumentUpdateRecord {
+  const update = row as DocumentUpdateRow
+
+  return {
+    clientId: update.client_id,
+    createdAt: update.created_at,
+    documentId: update.document_id,
+    id: update.id,
+    update: new Uint8Array(update.update_blob),
   }
 }
 

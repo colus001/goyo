@@ -1,4 +1,4 @@
-import type { DocumentMetadata } from '@writer/core'
+import type { DocumentMetadata, DocumentUpdateRecord } from '@writer/core'
 
 declare global {
   interface Window {
@@ -6,6 +6,10 @@ declare global {
       documents: {
         list: () => Promise<DocumentMetadata[]>
         saveMetadata: (document: DocumentMetadata) => Promise<void>
+      }
+      documentUpdates: {
+        append: (update: DocumentUpdateRecord) => Promise<void>
+        list: (documentId: string) => Promise<DocumentUpdateRecord[]>
       }
       platform: string
     }

@@ -8,6 +8,8 @@ export {
   renameActiveDocument,
   selectActiveDocument,
 } from './document-session'
+export type { CreateDocumentUpdateRecordInput } from './document-updates'
+export { createDocumentUpdateRecord, sortDocumentUpdatesForReplay } from './document-updates'
 export type {
   CreateDocumentMetadataInput,
   DocumentMetadata,
