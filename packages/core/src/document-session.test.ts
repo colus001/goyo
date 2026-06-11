@@ -70,7 +70,7 @@ describe('document session mutation', () => {
 
     const renamed = renameActiveDocument(session, {
       now: '2026-06-11T10:02:00.000Z',
-      title: ' Revised second ',
+      title: 'Revised second',
     })
 
     expect(renamed.documents.map((document) => document.title)).toEqual(['First', 'Revised second'])

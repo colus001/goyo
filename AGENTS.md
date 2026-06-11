@@ -117,9 +117,11 @@ D1 should store durable document data and update history. Snapshots may be used 
 ## UX Principles
 
 - The editor should feel like a writing surface, not an admin dashboard.
+- Empty space in the writing surface should behave like editable paper: show a text cursor and focus the editor instead of becoming dead space.
 - Keep primary writing actions close and secondary actions quiet.
 - Support keyboard-first desktop usage.
-- Make sync status visible but not distracting.
+- Make sync status visible but not distracting; prefer subtle indicators over prominent status text.
+- Support a collapsible navigation/sidebar so writers can focus on the current draft.
 - If a document is open elsewhere, communicate that clearly.
 - Presence and collaboration indicators should be subtle.
 

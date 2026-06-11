@@ -35,9 +35,9 @@ export function renameDocument(
   document: DocumentMetadata,
   input: RenameDocumentInput,
 ): DocumentMetadata {
-  const title = input.title.trim()
+  const title = input.title
 
-  if (title.length === 0 || title === document.title) {
+  if (title.trim().length === 0 || title === document.title) {
     return document
   }
 

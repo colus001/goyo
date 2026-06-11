@@ -11,7 +11,7 @@ import {
   selectActiveDocument,
 } from '@writer/core'
 import { WritingEditor } from '@writer/editor'
-import { WritingShellPreview } from '@writer/ui'
+import { WritingShell } from '@writer/ui'
 import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
 
@@ -24,11 +24,11 @@ export function App() {
   const documentSession = useDocumentSession()
 
   if (!isLoadedDocumentSession(documentSession)) {
-    return <WritingShellPreview status={documentSession.saveStatus} />
+    return <WritingShell status={documentSession.saveStatus} />
   }
 
   return (
-    <WritingShellPreview
+    <WritingShell
       activeDocumentId={documentSession.session.activeDocumentId}
       documents={documentSession.session.documents}
       onCreateDocument={documentSession.createDraft}
@@ -36,7 +36,7 @@ export function App() {
       status={documentSession.saveStatus}
     >
       <DocumentSurface {...documentSession} />
-    </WritingShellPreview>
+    </WritingShell>
   )
 }
 
@@ -50,8 +50,8 @@ function DocumentSurface({
   const initialUpdates = documentUpdates[activeDocument.id] ?? EMPTY_DOCUMENT_UPDATES
 
   return (
-    <article className="mx-auto min-h-screen w-full max-w-[68rem] bg-white px-20 pt-14 pb-24">
-      <header className="mb-8 border-[#ecece8] border-b pb-6">
+    <article className="mx-auto min-h-screen w-full max-w-[60rem] bg-white px-18 pt-12 pb-24">
+      <header className="mb-9 border-[#ecece8] border-b pb-6">
         <div className="mb-4 flex items-center justify-between gap-6 text-[#9a9a93] text-sm">
           <p>{formatDocumentDate(activeDocument.updatedAt)}</p>
           <p className="whitespace-nowrap font-medium text-xs uppercase tracking-[0.13em]">
@@ -60,7 +60,7 @@ function DocumentSurface({
         </div>
         <input
           aria-label="Document title"
-          className="w-full bg-transparent font-semibold text-[#242421] text-[2.25rem] leading-tight tracking-[-0.045em] outline-none placeholder:text-[#b5b5ae]"
+          className="w-full bg-transparent font-semibold text-[#242421] text-[2rem] leading-tight tracking-[-0.04em] outline-none placeholder:text-[#b5b5ae]"
           onChange={(event) => renameDraft(event.target.value)}
           placeholder="Untitled draft"
           value={activeDocument.title}

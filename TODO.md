@@ -113,13 +113,13 @@
 
 ## Milestone 8: Desktop Writing Experience
 
-- [ ] Add left-side document or project navigation.
-- [ ] Add calm central writing surface.
+- [x] Add left-side document or project navigation.
+- [x] Add calm central writing surface.
 - [ ] Add quiet toolbar or command surface.
 - [ ] Add keyboard shortcuts for primary writing actions.
-- [ ] Add word count.
-- [ ] Add document status metadata.
-- [ ] Add focused writing mode.
+- [x] Add word count.
+- [x] Add document status metadata.
+- [x] Add focused writing mode.
 - [ ] Add search.
 - [ ] Add basic tags or labels.
 - [ ] Support essay-style document workflows.

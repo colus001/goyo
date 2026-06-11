@@ -1,7 +1,7 @@
-import { WritingShellPreview } from '@writer/ui'
+import { WritingShell } from '@writer/ui'
 
 function App() {
-  return <WritingShellPreview />
+  return <WritingShell />
 }
 
 export default App
