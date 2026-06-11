@@ -19,7 +19,8 @@ export interface WritingWorkspaceState {
   activeChapter: ChapterMetadata | null;
   activeDocument: DocumentMetadata | null;
   createBook: () => void;
-  createChapter: () => void;
+  createBookWithDetails: (title: string, accentColor: string) => void;
+  createChapter: (title?: string) => void;
   createDocument: (kind: DocumentKind) => void;
   createDocumentInChapter: (chapterId: string, kind: DocumentKind) => void;
   createEpisodeAfter: (chapterId: string, previousDocumentId: string | null) => void;

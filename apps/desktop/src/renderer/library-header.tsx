@@ -5,12 +5,12 @@ import { useState } from 'react';
 export type LibrarySortMode = 'title' | 'updated';
 
 export function LibraryHeader({
-  onCreateBook,
+  onOpenNewBookModal,
   onSortModeChange,
   onStartQuickDraft,
   sortMode,
 }: {
-  onCreateBook: () => void;
+  onOpenNewBookModal: () => void;
   onSortModeChange: (sortMode: LibrarySortMode) => void;
   onStartQuickDraft: () => void;
   sortMode: LibrarySortMode;
@@ -53,7 +53,7 @@ export function LibraryHeader({
           </div>
           <button
             className="inline-flex items-center gap-2 rounded-full bg-[#30302d] px-4 py-2 font-medium text-white shadow-sm transition hover:bg-[#1f1f1d] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
-            onClick={onCreateBook}
+            onClick={onOpenNewBookModal}
             type="button"
           >
             <FilePlus2 aria-hidden="true" size={16} />

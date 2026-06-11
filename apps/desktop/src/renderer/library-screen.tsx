@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { LibraryHeader, type LibrarySortMode } from './library-header';
+import { NewBookModal } from './new-book-modal';
 
 type ContextMenuState = { bookId: string; x: number; y: number } | null;
 
@@ -13,6 +14,7 @@ export function LibraryScreen({ workspace }: { workspace: WritingWorkspaceState 
   const books = workspace.session?.books ?? [];
   const [openContextMenu, setOpenContextMenu] = useState<ContextMenuState>(null);
   const [bookPendingDelete, setBookPendingDelete] = useState<BookMetadata | null>(null);
+  const [isNewBookModalOpen, setIsNewBookModalOpen] = useState(false);
   const [sortMode, setSortMode] = useState<LibrarySortMode>('updated');
   const sortedBooks = sortLibraryBooks(books, sortMode);
 
@@ -36,7 +38,7 @@ export function LibraryScreen({ workspace }: { workspace: WritingWorkspaceState 
     <main className="h-screen overflow-y-auto bg-[#f8f6f1] px-10 py-10 text-[#252525]">
       <section className="mx-auto max-w-[64rem]">
         <LibraryHeader
-          onCreateBook={workspace.createBook}
+          onOpenNewBookModal={() => setIsNewBookModalOpen(true)}
           onStartQuickDraft={workspace.startQuickDraft}
           onSortModeChange={setSortMode}
           sortMode={sortMode}
@@ -60,6 +62,13 @@ export function LibraryScreen({ workspace }: { workspace: WritingWorkspaceState 
             workspace.deleteBook(bookPendingDelete.id);
             setBookPendingDelete(null);
           }}
+        />
+      ) : null}
+      {isNewBookModalOpen ? (
+        <NewBookModal
+          accentColors={BOOK_ACCENT_COLORS}
+          onClose={() => setIsNewBookModalOpen(false)}
+          onCreate={workspace.createBookWithDetails}
         />
       ) : null}
     </main>

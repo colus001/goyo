@@ -124,6 +124,7 @@ export function startQuickDraft(
 export function createChapter(
   setSession: Dispatch<SetStateAction<DocumentSession | null>>,
   setSaveStatus: (saveStatus: SaveStatus) => void,
+  title?: string,
 ) {
   let chapter: ChapterMetadata | null = null;
 
@@ -137,7 +138,7 @@ export function createChapter(
       id: `chapter_${globalThis.crypto.randomUUID()}`,
       now: new Date().toISOString(),
       order: getNextChapterOrder(session.activeBookId, session.chapters),
-      title: 'Untitled chapter',
+      title,
     });
 
     return addChapterToSession(session, chapter);

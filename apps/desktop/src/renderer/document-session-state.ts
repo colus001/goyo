@@ -23,6 +23,7 @@ import {
   startQuickDraft,
   updateBookAccentColor,
 } from './document-workspace-actions';
+import { createBookWithDetails } from './document-workspace-book-actions';
 import { archiveBook, archiveChapter, archiveDocument } from './document-workspace-delete-actions';
 import { createEpisodeAfter } from './document-workspace-episode-actions';
 import type {
@@ -50,7 +51,9 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     activeChapter,
     activeDocument,
     createBook: () => createBook(setSession, setScreen, setSaveStatus),
-    createChapter: () => createChapter(setSession, setSaveStatus),
+    createBookWithDetails: (title, accentColor) =>
+      createBookWithDetails(title, accentColor, setSession, setScreen, setSaveStatus),
+    createChapter: (title) => createChapter(setSession, setSaveStatus, title),
     createDocument: (kind) => createDocument(kind, setSession, setSaveStatus),
     createDocumentInChapter: (chapterId, kind) =>
       createDocumentInChapter(chapterId, kind, setSession, setSaveStatus),
