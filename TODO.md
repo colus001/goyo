@@ -11,11 +11,11 @@
 - [x] Configure linting and formatting.
 - [x] Configure Tailwind CSS for web styling.
 - [x] Add shared UI package structure.
-- [ ] Add core domain package structure.
-- [ ] Add basic test tooling.
+- [x] Add core domain package structure.
+- [x] Add basic test tooling.
 - [x] Add local development scripts.
-- [ ] Document the local-first architecture.
-- [ ] Document the role of SQLite, IndexedDB, Yjs, D1, KV, and Durable Objects.
+- [x] Document the local-first architecture.
+- [x] Document the role of SQLite, IndexedDB, Yjs, D1, KV, and Durable Objects.
 
 ## Milestone 1: Electron Desktop Shell
 
@@ -32,13 +32,13 @@
 
 ## Milestone 2: Core Domain And Platform Boundaries
 
-- [ ] Add `packages/core` package.
-- [ ] Define document metadata types and operations in `packages/core`.
-- [ ] Define local document store interfaces in `packages/core`.
-- [ ] Define sync queue interfaces in `packages/core`.
-- [ ] Define recovery policy interfaces in `packages/core`.
-- [ ] Keep Electron, SQLite, IndexedDB, and browser APIs out of `packages/core`.
-- [ ] Keep shared IDs and API contracts in `packages/shared`.
+- [x] Add `packages/core` package.
+- [x] Define document metadata types and operations in `packages/core`.
+- [x] Define local document store interfaces in `packages/core`.
+- [x] Define sync queue interfaces in `packages/core`.
+- [x] Define recovery policy interfaces in `packages/core`.
+- [x] Keep Electron, SQLite, IndexedDB, and browser APIs out of `packages/core`.
+- [x] Keep shared IDs and API contracts in `packages/shared`.
 
 ## Milestone 3: Local-First Desktop Editor MVP
 

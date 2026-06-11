@@ -11,10 +11,12 @@
     "dev:worker": "pnpm --filter @writer/worker dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "format": "biome format --write .",
     "lint": "biome lint .",
-    "check": "biome check . && knip && pnpm typecheck",
-    "check:write": "biome check --write . && knip && pnpm typecheck",
+    "check": "biome check . && knip && pnpm typecheck && pnpm test",
+    "check:write": "biome check --write . && knip && pnpm typecheck && pnpm test",
     "knip": "knip"
   },
   "keywords": [],
@@ -23,7 +25,8 @@
   "devDependencies": {
     "@biomejs/biome": "latest",
     "knip": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "vitest": "^4.1.8"
   },
   "packageManager": "pnpm@10.33.4"
 }
