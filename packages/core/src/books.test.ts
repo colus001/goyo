@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { createBookMetadata, renameBook } from './books'
+import { describe, expect, it } from 'vitest';
+import { createBookMetadata, renameBook } from './books';
 
 describe('book metadata', () => {
   it('creates a book with normalized title and stable timestamps', () => {
@@ -15,15 +15,15 @@ describe('book metadata', () => {
       id: 'book_1',
       title: 'Novel draft',
       updatedAt: '2026-06-11T10:00:00.000Z',
-    })
-  })
+    });
+  });
 
   it('renames a book while preserving typed spacing', () => {
     const book = createBookMetadata({
       id: 'book_1',
       now: '2026-06-11T10:00:00.000Z',
       title: 'Novel',
-    })
+    });
 
     expect(
       renameBook(book, {
@@ -34,6 +34,6 @@ describe('book metadata', () => {
       ...book,
       title: 'Novel draft ',
       updatedAt: '2026-06-11T10:05:00.000Z',
-    })
-  })
-})
+    });
+  });
+});
