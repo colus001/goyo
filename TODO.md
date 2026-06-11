@@ -27,7 +27,7 @@
 - [x] Add root `pnpm dev:desktop` script.
 - [x] Make `pnpm dev` run the desktop app.
 - [x] Add a minimal native application menu.
-- [ ] Verify desktop window lifecycle on macOS.
+- [x] Verify desktop window lifecycle on macOS.
 - [x] Verify `pnpm check` and `pnpm build` include the desktop app.
 
 ## Milestone 2: Core Domain And Platform Boundaries

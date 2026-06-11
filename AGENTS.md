@@ -42,10 +42,12 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 - Use Biome for formatting and linting.
 - Use Knip for unused dependency, export, and file checks.
 - Use TypeScript project checks for type safety.
+- Prefer writing tests before implementation when behavior is non-trivial, especially in `packages/core`.
 - Run `pnpm check` before considering a development slice complete.
 - If `pnpm check` reports Biome, Knip, lint, or typecheck issues, fix the reported issues instead of bypassing them.
 - Use `pnpm check:write` when safe automatic Biome fixes are appropriate, then rerun `pnpm check`.
-- Use root scripts for common workflows: `pnpm dev`, `pnpm dev:desktop`, `pnpm dev:web`, `pnpm dev:worker`, `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm knip`, and `pnpm check`.
+- Include tests in the root validation harness once test tooling is configured; `pnpm check` should cover formatting/linting, Knip, typechecking, and tests.
+- Use root scripts for common workflows: `pnpm dev`, `pnpm dev:desktop`, `pnpm dev:web`, `pnpm dev:worker`, `pnpm build`, `pnpm typecheck`, `pnpm test`, `pnpm lint`, `pnpm knip`, and `pnpm check`.
 
 ## Desktop Architecture
 
@@ -125,6 +127,10 @@ D1 should store durable document data and update history. Snapshots may be used 
 - Keep frontend, Worker, D1, KV, and Durable Object responsibilities clear.
 - Do not add compatibility layers unless persisted data, external consumers, or explicit requirements make them necessary.
 - Do not introduce new frameworks, services, or storage layers without documenting why.
+- For `packages/core`, use a test-first workflow when adding document operations, sync state machines, local store interfaces, recovery policies, or CRDT update handling.
+- Core tests should describe observable behavior and invariants, not implementation details.
+- Keep core tests platform-agnostic; do not require Electron, DOM, SQLite, IndexedDB, network access, or Cloudflare runtime.
+- When a bug is found in core logic, add or update a failing test before fixing it unless the issue is purely mechanical.
 
 ## Security And Privacy
 
@@ -135,6 +141,15 @@ D1 should store durable document data and update history. Snapshots may be used 
 - Avoid storing sensitive document content in cache unless there is a clear reason and expiration policy.
 
 ## Testing And Verification
+
+Prefer tests before implementation for domain behavior. This is not strict TDD for every UI or wiring change, but `packages/core` should lean TDD because it protects user writing, sync safety, and recovery behavior.
+
+The validation harness should eventually include:
+
+- Biome formatting and linting.
+- Knip unused dependency, export, and file checks.
+- TypeScript project checks.
+- Unit tests.
 
 Test sync behavior with:
 
