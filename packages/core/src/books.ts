@@ -2,10 +2,13 @@ import type { BookId } from '@writer/shared';
 
 const DEFAULT_BOOK_TITLE = 'Untitled book';
 
+export const DEFAULT_BOOK_ACCENT_COLOR = '#a6534b';
+export const QUICK_DRAFTS_ACCENT_COLOR = '#d7dbd2';
 export const QUICK_DRAFTS_BOOK_ID = 'book_quick_drafts';
 export const QUICK_DRAFTS_BOOK_TITLE = 'Quick Drafts';
 
 export interface BookMetadata {
+  accentColor: string;
   id: BookId;
   title: string;
   createdAt: string;
@@ -14,6 +17,7 @@ export interface BookMetadata {
 }
 
 export interface CreateBookMetadataInput {
+  accentColor?: string;
   id: BookId;
   now: string;
   title?: string;
@@ -26,6 +30,7 @@ export interface RenameBookInput {
 
 export function createBookMetadata(input: CreateBookMetadataInput): BookMetadata {
   return {
+    accentColor: input.accentColor ?? DEFAULT_BOOK_ACCENT_COLOR,
     archivedAt: null,
     createdAt: input.now,
     id: input.id,
@@ -37,6 +42,7 @@ export function createBookMetadata(input: CreateBookMetadataInput): BookMetadata
 export function createQuickDraftsBook(now: string): BookMetadata {
   return createBookMetadata({
     id: QUICK_DRAFTS_BOOK_ID,
+    accentColor: QUICK_DRAFTS_ACCENT_COLOR,
     now,
     title: QUICK_DRAFTS_BOOK_TITLE,
   });

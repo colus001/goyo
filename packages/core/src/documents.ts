@@ -1,9 +1,10 @@
-import type { BookId, DocumentId } from '@writer/shared';
+import type { BookId, ChapterId, DocumentId } from '@writer/shared';
 
-const DEFAULT_DOCUMENT_TITLE = 'Untitled document';
+const DEFAULT_DOCUMENT_TITLE = 'Untitled episode';
 
 export interface DocumentMetadata {
   bookId: BookId;
+  chapterId: ChapterId;
   kind: DocumentKind;
   id: DocumentId;
   order: number;
@@ -13,10 +14,11 @@ export interface DocumentMetadata {
   archivedAt: string | null;
 }
 
-export type DocumentKind = 'chapter' | 'note' | 'draft';
+export type DocumentKind = 'draft' | 'episode' | 'note';
 
 export interface CreateDocumentMetadataInput {
   bookId: BookId;
+  chapterId?: ChapterId;
   id: DocumentId;
   kind?: DocumentKind;
   now: string;
@@ -33,9 +35,10 @@ export function createDocumentMetadata(input: CreateDocumentMetadataInput): Docu
   return {
     archivedAt: null,
     bookId: input.bookId,
+    chapterId: input.chapterId ?? `chapter_${input.bookId}_default`,
     createdAt: input.now,
     id: input.id,
-    kind: input.kind ?? 'chapter',
+    kind: input.kind ?? 'episode',
     order: input.order ?? 0,
     title: normalizeDocumentTitle(input.title),
     updatedAt: input.now,

@@ -35,6 +35,7 @@ describe('document session book selection', () => {
     const selected = selectActiveBook(session, 'book_2');
 
     expect(selected.activeBookId).toBe('book_2');
+    expect(selected.activeChapterId).toBe('chapter_book_2_default');
     expect(selected.activeDocumentId).toBe('doc_2');
   });
 
@@ -59,6 +60,7 @@ describe('document session book selection', () => {
     const selected = selectActiveBook(session, 'book_empty');
 
     expect(selected.activeBookId).toBe('book_empty');
+    expect(selected.activeChapterId).toBeNull();
     expect(selected.activeDocumentId).toBeNull();
   });
 });

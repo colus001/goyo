@@ -1,5 +1,11 @@
-import type { BookId, DocumentId } from '@writer/shared';
+import type { BookId, ChapterId, DocumentId } from '@writer/shared';
 import { type BookMetadata, createBookMetadata } from './books';
+import { type ChapterMetadata, createChapterMetadata, renameChapter } from './chapters';
+import {
+  ensureChaptersForDocuments,
+  sortChapters,
+  sortDocuments,
+} from './document-session-helpers';
 import {
   type CreateDocumentMetadataInput,
   createDocumentMetadata,
@@ -8,10 +14,17 @@ import {
   renameDocument,
 } from './documents';
 
+export {
+  getActiveBook,
+  getActiveDocumentOrNull,
+} from './document-session-selectors';
+
 export interface DocumentSession {
   activeBookId: BookId;
+  activeChapterId: ChapterId | null;
   activeDocumentId: DocumentId | null;
   books: BookMetadata[];
+  chapters: ChapterMetadata[];
   documents: DocumentMetadata[];
 }
 
@@ -20,43 +33,83 @@ export type ReorderDocumentDirection = 'down' | 'up';
 export function createDocumentSession(input: CreateDocumentMetadataInput): DocumentSession {
   const document = createDocumentMetadata(input);
   const book = createBookMetadata({ id: document.bookId, now: input.now });
+  const chapter = createChapterMetadata({
+    bookId: document.bookId,
+    id: document.chapterId,
+    now: input.now,
+  });
 
   return {
     activeBookId: document.bookId,
+    activeChapterId: document.chapterId,
     activeDocumentId: document.id,
     books: [book],
+    chapters: [chapter],
     documents: [document],
   };
 }
 
 export function createDocumentSessionFromDocuments(documents: DocumentMetadata[]): DocumentSession {
-  return createDocumentSessionFromBooksAndDocuments([], documents);
+  return createDocumentSessionFromBooksChaptersAndDocuments([], [], documents);
 }
 
 export function createDocumentSessionFromBooksAndDocuments(
   books: BookMetadata[],
   documents: DocumentMetadata[],
 ): DocumentSession {
-  const sortedDocuments = sortDocuments(documents);
-  const activeDocument = sortedDocuments[0];
+  return createDocumentSessionFromBooksChaptersAndDocuments(books, [], documents);
+}
 
-  if (!activeDocument && books.length === 0) {
-    throw new Error('Document session needs at least one book or document');
+export function createDocumentSessionFromBooksChaptersAndDocuments(
+  books: BookMetadata[],
+  chapters: ChapterMetadata[],
+  documents: DocumentMetadata[],
+): DocumentSession {
+  const sortedDocuments = sortDocuments(documents);
+  const sortedChapters = sortChapters(ensureChaptersForDocuments(chapters, sortedDocuments));
+  const activeDocument = sortedDocuments[0];
+  const activeChapter =
+    sortedChapters.find((chapter) => chapter.id === activeDocument?.chapterId) ?? sortedChapters[0];
+
+  if (!activeDocument && !activeChapter && books.length === 0) {
+    throw new Error('Document session needs at least one book, chapter, or document');
   }
 
   const activeBook =
     books.find(({ id }) => id === activeDocument?.bookId) ??
+    books.find(({ id }) => id === activeChapter?.bookId) ??
     books[0] ??
     createBookMetadata({
-      id: activeDocument?.bookId ?? 'book_default',
-      now: activeDocument?.createdAt ?? new Date().toISOString(),
+      id: activeDocument?.bookId ?? activeChapter?.bookId ?? 'book_default',
+      now: activeDocument?.createdAt ?? activeChapter?.createdAt ?? new Date().toISOString(),
     });
 
   return {
     activeBookId: activeBook.id,
+    activeChapterId: activeChapter?.id ?? null,
     activeDocumentId: activeDocument?.id ?? null,
     books: books.some(({ id }) => id === activeBook.id) ? books : [activeBook, ...books],
+    chapters: sortedChapters,
     documents: sortedDocuments,
+  };
+}
+
+export function addChapterToSession(
+  session: DocumentSession,
+  chapter: ChapterMetadata,
+): DocumentSession {
+  const existingChapter = session.chapters.find(({ id }) => id === chapter.id);
+
+  if (existingChapter) {
+    return selectActiveChapter(session, chapter.id);
+  }
+
+  return {
+    ...session,
+    activeBookId: chapter.bookId,
+    activeChapterId: chapter.id,
+    activeDocumentId: null,
+    chapters: sortChapters([...session.chapters, chapter]),
   };
 }
 
@@ -82,8 +135,25 @@ export function addDocumentToSession(
   return {
     ...session,
     activeBookId: document.bookId,
+    activeChapterId: document.chapterId,
     activeDocumentId: document.id,
     documents: sortDocuments([...session.documents, document]),
+  };
+}
+
+export function renameActiveChapter(
+  session: DocumentSession,
+  input: RenameDocumentInput,
+): DocumentSession {
+  return {
+    ...session,
+    chapters: session.chapters.map((chapter) => {
+      if (chapter.id !== session.activeChapterId) {
+        return chapter;
+      }
+
+      return renameChapter(chapter, input);
+    }),
   };
 }
 
@@ -120,7 +190,26 @@ export function selectActiveDocument(
   return {
     ...session,
     activeBookId: document.bookId,
+    activeChapterId: document.chapterId,
     activeDocumentId: documentId,
+  };
+}
+
+export function selectActiveChapter(
+  session: DocumentSession,
+  chapterId: ChapterId,
+): DocumentSession {
+  const chapter = session.chapters.find((candidate) => candidate.id === chapterId);
+
+  if (!chapter) {
+    return session;
+  }
+
+  return {
+    ...session,
+    activeBookId: chapter.bookId,
+    activeChapterId: chapterId,
+    activeDocumentId: null,
   };
 }
 
@@ -135,13 +224,15 @@ export function selectActiveBook(session: DocumentSession, bookId: BookId): Docu
     return session;
   }
 
+  const activeChapter = sortChapters(session.chapters).find((chapter) => chapter.bookId === bookId);
   const activeDocument = sortDocuments(session.documents).find(
-    (document) => document.bookId === bookId,
+    (document) => document.chapterId === activeChapter?.id,
   );
 
   return {
     ...session,
     activeBookId: bookId,
+    activeChapterId: activeChapter?.id ?? null,
     activeDocumentId: activeDocument?.id ?? null,
   };
 }
@@ -158,7 +249,7 @@ export function reorderDocument(
   }
 
   const sectionDocuments = sortDocuments(session.documents).filter(
-    (candidate) => candidate.bookId === document.bookId && candidate.kind === document.kind,
+    (candidate) => candidate.chapterId === document.chapterId && candidate.kind === document.kind,
   );
   const currentIndex = sectionDocuments.findIndex((candidate) => candidate.id === documentId);
   const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
@@ -184,46 +275,4 @@ export function reorderDocument(
       }),
     ),
   };
-}
-
-export function getActiveBook(session: DocumentSession): BookMetadata {
-  const book = session.books.find((book) => book.id === session.activeBookId);
-
-  if (!book) {
-    throw new Error(`Active book not found: ${session.activeBookId}`);
-  }
-
-  return book;
-}
-
-export function getActiveDocument(session: DocumentSession): DocumentMetadata {
-  const document = getActiveDocumentOrNull(session);
-
-  if (!document) {
-    throw new Error(`Active document not found: ${session.activeDocumentId}`);
-  }
-
-  return document;
-}
-
-export function getActiveDocumentOrNull(session: DocumentSession): DocumentMetadata | null {
-  if (!session.activeDocumentId) {
-    return null;
-  }
-
-  return session.documents.find((document) => document.id === session.activeDocumentId) ?? null;
-}
-
-function sortDocuments(documents: DocumentMetadata[]): DocumentMetadata[] {
-  return [...documents].sort((first, second) => {
-    if (first.bookId !== second.bookId) {
-      return first.bookId.localeCompare(second.bookId);
-    }
-
-    if (first.order !== second.order) {
-      return first.order - second.order;
-    }
-
-    return first.createdAt.localeCompare(second.createdAt);
-  });
 }

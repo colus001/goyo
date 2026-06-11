@@ -22,15 +22,18 @@ describe('document session creation from a new document', () => {
     });
 
     expect(session.activeBookId).toBe('book_1');
+    expect(session.activeChapterId).toBe('chapter_book_1_default');
     expect(session.activeDocumentId).toBe('doc_1');
     expect(session.books.map((book) => book.id)).toEqual(['book_1']);
+    expect(session.chapters.map((chapter) => chapter.id)).toEqual(['chapter_book_1_default']);
     expect(session.documents).toEqual([
       {
         archivedAt: null,
         bookId: 'book_1',
+        chapterId: 'chapter_book_1_default',
         createdAt: '2026-06-11T10:00:00.000Z',
         id: 'doc_1',
-        kind: 'chapter',
+        kind: 'episode',
         order: 0,
         title: 'Opening page',
         updatedAt: '2026-06-11T10:00:00.000Z',
@@ -56,8 +59,10 @@ describe('document session creation from existing data', () => {
 
     expect(createDocumentSessionFromDocuments([firstDocument, secondDocument])).toEqual({
       activeBookId: 'book_1',
+      activeChapterId: 'chapter_book_1_default',
       activeDocumentId: 'doc_1',
       books: [expect.objectContaining({ id: 'book_1' })],
+      chapters: [expect.objectContaining({ id: 'chapter_book_1_default' })],
       documents: [firstDocument, secondDocument],
     });
   });
@@ -71,6 +76,7 @@ describe('document session creation from existing data', () => {
     const document = createDocumentSession({
       id: 'doc_1',
       bookId: 'book_1',
+      chapterId: 'chapter_1',
       now: '2026-06-11T10:01:00.000Z',
       title: 'Chapter 1',
     }).documents[0];
@@ -80,10 +86,12 @@ describe('document session creation from existing data', () => {
     expect(getActiveBook(session)).toBe(book);
     expect(session.documents).toEqual([document]);
   });
+});
 
+describe('document session creation from empty containers', () => {
   it('rejects starting from an empty document list', () => {
     expect(() => createDocumentSessionFromDocuments([])).toThrow(
-      'Document session needs at least one book or document',
+      'Document session needs at least one book, chapter, or document',
     );
   });
 
@@ -97,6 +105,7 @@ describe('document session creation from existing data', () => {
     const session = createDocumentSessionFromBooksAndDocuments([book], []);
 
     expect(session.activeBookId).toBe('book_empty');
+    expect(session.activeChapterId).toBeNull();
     expect(session.activeDocumentId).toBeNull();
     expect(getActiveDocumentOrNull(session)).toBeNull();
   });
@@ -150,7 +159,7 @@ describe('document session document mutation', () => {
 
     expect(session.activeDocumentId).toBe('doc_2');
     expect(session.documents.map((document) => document.id)).toEqual(['doc_1', 'doc_2']);
-    expect(session.documents.at(-1)?.title).toBe('Untitled document');
+    expect(session.documents.at(-1)?.title).toBe('Untitled episode');
   });
 
   it('adds an existing document to a session and makes it active', () => {

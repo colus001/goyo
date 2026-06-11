@@ -13,9 +13,10 @@ describe('document metadata creation', () => {
     expect(document).toEqual({
       archivedAt: null,
       bookId: 'book_1',
+      chapterId: 'chapter_book_1_default',
       createdAt: '2026-06-11T10:00:00.000Z',
       id: 'doc_1',
-      kind: 'chapter',
+      kind: 'episode',
       order: 0,
       title: 'First chapter',
       updatedAt: '2026-06-11T10:00:00.000Z',
@@ -30,7 +31,7 @@ describe('document metadata creation', () => {
       title: '   ',
     });
 
-    expect(document.title).toBe('Untitled document');
+    expect(document.title).toBe('Untitled episode');
   });
   it('creates notes and drafts in a book', () => {
     expect(
@@ -44,6 +45,7 @@ describe('document metadata creation', () => {
       }),
     ).toMatchObject({
       bookId: 'book_1',
+      chapterId: 'chapter_book_1_default',
       id: 'doc_6',
       kind: 'note',
       order: 3,

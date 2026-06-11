@@ -2,25 +2,43 @@ export type { BookMetadata, CreateBookMetadataInput, RenameBookInput } from './b
 export {
   createBookMetadata,
   createQuickDraftsBook,
+  DEFAULT_BOOK_ACCENT_COLOR,
+  QUICK_DRAFTS_ACCENT_COLOR,
   QUICK_DRAFTS_BOOK_ID,
   QUICK_DRAFTS_BOOK_TITLE,
   renameBook,
 } from './books';
+export type { ChapterMetadata, CreateChapterMetadataInput, RenameChapterInput } from './chapters';
+export {
+  createChapterMetadata,
+  createQuickDraftsInboxChapter,
+  QUICK_DRAFTS_INBOX_CHAPTER_ID,
+  QUICK_DRAFTS_INBOX_CHAPTER_TITLE,
+  renameChapter,
+} from './chapters';
 export type { DocumentSession, ReorderDocumentDirection } from './document-session';
 export {
+  addChapterToSession,
   addDocumentToSession,
   createDocumentSession,
   createDocumentSessionFromBooksAndDocuments,
+  createDocumentSessionFromBooksChaptersAndDocuments,
   createDocumentSessionFromDocuments,
   createDraftInSession,
-  getActiveBook,
-  getActiveDocument,
-  getActiveDocumentOrNull,
+  renameActiveChapter,
   renameActiveDocument,
   reorderDocument,
   selectActiveBook,
+  selectActiveChapter,
   selectActiveDocument,
 } from './document-session';
+export {
+  getActiveBook,
+  getActiveChapter,
+  getActiveChapterOrNull,
+  getActiveDocument,
+  getActiveDocumentOrNull,
+} from './document-session-selectors';
 export type { CreateDocumentUpdateRecordInput } from './document-updates';
 export { createDocumentUpdateRecord, sortDocumentUpdatesForReplay } from './document-updates';
 export type {
