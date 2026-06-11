@@ -3,9 +3,9 @@ import {
   type DocumentMetadata,
   QUICK_DRAFTS_INBOX_CHAPTER_ID,
 } from '@writer/core';
-import { WritingEditor } from '@writer/editor';
+import { WritingEditor, type WritingEditorRef } from '@writer/editor';
 import { WritingShell } from '@writer/ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWritingWorkspace } from './document-session-state';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { LibraryScreen } from './library-screen';
@@ -82,7 +82,7 @@ function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState }) {
         <div className="mt-8 flex justify-center gap-2">
           <button
             className="rounded-full bg-[#30302d] px-4 py-2 text-white"
-            onClick={workspace.createChapter}
+            onClick={() => workspace.createChapter()}
             type="button"
           >
             Create first chapter
@@ -122,6 +122,7 @@ function EpisodeSurface({ workspace }: { workspace: WritingWorkspaceState }) {
   const activeDocument = workspace.activeDocument as DocumentMetadata;
   const [wordCount, setWordCount] = useState(0);
   const initialUpdates = workspace.documentUpdates[activeDocument.id] ?? EMPTY_DOCUMENT_UPDATES;
+  const editorRef = useRef<WritingEditorRef>(null);
 
   return (
     <article className="mx-auto min-h-screen w-full max-w-[52rem] bg-white px-12 pt-12 pb-24">
@@ -135,7 +136,11 @@ function EpisodeSurface({ workspace }: { workspace: WritingWorkspaceState }) {
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
           </p>
         </div>
-        <DocumentTitleInput document={activeDocument} onRename={workspace.renameDocumentTitle} />
+        <DocumentTitleInput
+          document={activeDocument}
+          onRename={workspace.renameDocumentTitle}
+          onSubmit={() => editorRef.current?.focus()}
+        />
       </header>
 
       <WritingEditor
@@ -144,6 +149,7 @@ function EpisodeSurface({ workspace }: { workspace: WritingWorkspaceState }) {
         initialUpdates={initialUpdates}
         onDocumentUpdate={workspace.recordDocumentUpdate}
         onWordCountChange={setWordCount}
+        ref={editorRef}
       />
     </article>
   );
@@ -157,10 +163,15 @@ function ChapterTitleInput({
   onRename: (title: string) => void;
 }) {
   const [title, setTitle] = useState(chapter.title);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTitle(chapter.title);
   }, [chapter.title]);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const commitTitle = () => {
     if (title.trim().length === 0) {
@@ -183,6 +194,7 @@ function ChapterTitleInput({
         }
       }}
       placeholder="Untitled chapter"
+      ref={inputRef}
       value={title}
     />
   );
@@ -191,15 +203,22 @@ function ChapterTitleInput({
 function DocumentTitleInput({
   document,
   onRename,
+  onSubmit,
 }: {
   document: DocumentMetadata;
   onRename: (title: string) => void;
+  onSubmit?: () => void;
 }) {
   const [title, setTitle] = useState(document.title);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTitle(document.title);
   }, [document.title]);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const commitTitle = () => {
     if (title.trim().length === 0) {
@@ -219,9 +238,11 @@ function DocumentTitleInput({
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.currentTarget.blur();
+          onSubmit?.();
         }
       }}
       placeholder={`Untitled ${document.kind}`}
+      ref={inputRef}
       value={title}
     />
   );
