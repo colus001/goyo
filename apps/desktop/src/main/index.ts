@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { BookMetadata, DocumentMetadata } from '@writer/core';
+import type { BookMetadata, ChapterMetadata, DocumentMetadata } from '@writer/core';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import { createDesktopLocalStore } from './document-metadata-store';
 
@@ -14,6 +14,15 @@ function registerDocumentIpc() {
       store.saveBook(book);
     } catch (error) {
       console.error('Failed to save book metadata', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('chapters:list', () => store.listChapters());
+  ipcMain.handle('chapters:saveMetadata', (_event, chapter: ChapterMetadata) => {
+    try {
+      store.saveChapter(chapter);
+    } catch (error) {
+      console.error('Failed to save chapter metadata', getErrorMessage(error));
       throw error;
     }
   });

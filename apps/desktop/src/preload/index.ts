@@ -1,4 +1,9 @@
-import type { BookMetadata, DocumentMetadata, DocumentUpdateRecord } from '@writer/core';
+import type {
+  BookMetadata,
+  ChapterMetadata,
+  DocumentMetadata,
+  DocumentUpdateRecord,
+} from '@writer/core';
 import { contextBridge, ipcRenderer } from 'electron';
 
 const desktopApi = {
@@ -6,6 +11,11 @@ const desktopApi = {
     list: () => ipcRenderer.invoke('books:list') as Promise<BookMetadata[]>,
     saveMetadata: (book: BookMetadata) =>
       ipcRenderer.invoke('books:saveMetadata', book) as Promise<void>,
+  },
+  chapters: {
+    list: () => ipcRenderer.invoke('chapters:list') as Promise<ChapterMetadata[]>,
+    saveMetadata: (chapter: ChapterMetadata) =>
+      ipcRenderer.invoke('chapters:saveMetadata', chapter) as Promise<void>,
   },
   documents: {
     list: () => ipcRenderer.invoke('documents:list') as Promise<DocumentMetadata[]>,
