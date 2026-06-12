@@ -6,6 +6,7 @@ import type {
   DocumentSnapshotRecord,
   SyncQueueItem,
 } from '@writer/core';
+import { APP_NAME } from '@writer/shared';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import type { AppUiState } from '../shared/app-ui-state';
 import { createDesktopLocalStore } from './document-metadata-store';
@@ -188,7 +189,8 @@ function createWindow() {
     height: 860,
     minWidth: 960,
     minHeight: 640,
-    title: 'Writer',
+    icon: join(__dirname, '../../../../assets/logo.png'),
+    title: APP_NAME,
     backgroundColor: '#f4efe6',
     show: false,
     webPreferences: {
@@ -212,7 +214,7 @@ function createWindow() {
 }
 
 void app.whenReady().then(() => {
-  app.setName('Writer');
+  app.setName(APP_NAME);
   registerDocumentIpc();
   createApplicationMenu();
   createWindow();

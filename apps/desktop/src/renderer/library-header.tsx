@@ -1,6 +1,7 @@
 import { ArrowDownWideNarrow, Check, FilePlus2, PenLine } from 'lucide-react';
 import type { ReactElement, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import logoMark from './logo.svg';
 
 export type LibrarySortMode = 'title' | 'updated';
 
@@ -20,9 +21,14 @@ export function LibraryHeader({
 
   return (
     <>
-      <p className="mb-3 font-semibold text-[#9b958b] text-xs uppercase tracking-[0.18em]">
-        Library
-      </p>
+      <div className="mb-3 flex items-center gap-2.5">
+        <img
+          alt=""
+          className="size-7 rounded-md shadow-[0_5px_12px_rgba(53,92,125,0.18)]"
+          src={logoMark}
+        />
+        <p className="font-semibold text-[#9b958b] text-xs uppercase tracking-[0.18em]">Goyo</p>
+      </div>
       <div className="mb-10 flex items-end justify-between gap-8 border-[#ded7cb] border-b pb-7">
         <div>
           <h1 className="font-semibold text-[2.55rem] leading-none tracking-[-0.06em]">
