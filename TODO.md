@@ -132,10 +132,11 @@
 - [x] Add move up/down chapter ordering controls.
 - [x] Add calm central writing surface.
 - [ ] Add quiet toolbar or command surface.
-- [ ] Restore the last app state on launch, including the previous book, selected episode, sidebar state, and focused writing mode where practical.
-- [ ] Persist app UI state locally, including last route, selected book, selected episode, sidebar collapse state, chapter expansion state, and focused writing mode.
-- [ ] Add a startup restore flow that opens the last valid workspace state, falling back safely to the library if the saved book or episode was archived or deleted.
-- [ ] Add tests or manual verification for startup restore with normal books, Quick Drafts, archived items, and empty workspaces.
+- [x] Restore the last app state on launch, including the previous book, selected episode, sidebar collapse state, and chapter expansion state.
+- [x] Persist app UI state locally, including last route, selected book, selected episode, sidebar collapse state, and chapter expansion state.
+- [x] Add a startup restore flow that opens the last valid workspace state, falling back safely to the library if the saved book or episode was archived or deleted.
+- [x] Add tests or manual verification for startup restore with normal books, Quick Drafts, archived items, and empty workspaces.
+- [ ] Persist focused writing mode once it is exposed as separate UI state.
 - [ ] Add a settings menu or settings surface for app-level preferences.
 - [ ] Add a settings storage foundation for app-level preferences.
 - [ ] Add a setting to enable or disable restoring the last workspace on launch.
@@ -193,6 +194,8 @@
 - [x] Verified out-of-order remote update upload is returned in replay order by `created_at, id` and cleaned up test D1 rows.
 - [x] Verified two-client remote CRDT update replay preserves both clients' edits and cleaned up test D1 rows.
 - [x] Treat `afterUpdateId` pull checkpoints as the current equivalent sync metadata for avoiding full document transfer; state-vector diff remains available in core for future finer-grained sync.
+- [x] Added desktop-local `app_ui_state` persistence for last screen, active book/chapter/document, sidebar collapse, and expanded chapters.
+- [x] Added startup restore fallback tests for valid documents, missing books, Quick Drafts, and empty workspaces.
 
 ## Milestone 9: Recovery And Version Safety
 
