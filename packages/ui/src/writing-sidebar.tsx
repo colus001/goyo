@@ -82,8 +82,8 @@ function SidebarContent({
   return (
     <div className="h-full min-h-0 overflow-hidden">
       <div
-        className={`grid h-full min-h-0 w-[200%] grid-cols-2 transition-transform duration-[280ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
-          sidebarView === 'book' ? '-translate-x-1/2' : 'translate-x-0'
+        className={`relative grid h-full min-h-0 w-[200%] grid-cols-2 transition-[left] duration-[280ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+          sidebarView === 'book' ? '-left-full' : 'left-0'
         }`}
       >
         <div
