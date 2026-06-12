@@ -10,12 +10,14 @@ import type { WritingWorkspaceState } from './document-workspace-types';
 
 const EMPTY_DOCUMENT_UPDATES: Uint8Array[] = [];
 
+interface WordCountState {
+  documentId?: string;
+  wordCount: number;
+}
+
 export function WritingWorkspaceScreen({ workspace }: { workspace: WritingWorkspaceState }) {
   const activeDocument = workspace.activeDocument as DocumentMetadata | undefined;
-  const [wordCountState, setWordCountState] = useState<{
-    documentId?: string;
-    wordCount: number;
-  }>({ wordCount: 0 });
+  const [wordCountState, setWordCountState] = useState<WordCountState>({ wordCount: 0 });
   const wordCount =
     activeDocument && wordCountState.documentId === activeDocument.id
       ? wordCountState.wordCount
@@ -25,7 +27,9 @@ export function WritingWorkspaceScreen({ workspace }: { workspace: WritingWorksp
     <WritingShell
       activeChapterId={workspace.session?.activeChapterId ?? undefined}
       activeDocumentId={workspace.session?.activeDocumentId ?? undefined}
-      breadcrumb={activeDocument ? formatEpisodeBreadcrumb(workspace, activeDocument) : undefined}
+      breadcrumbSegments={
+        activeDocument ? getEpisodeBreadcrumbSegments(workspace, activeDocument) : undefined
+      }
       bookAccentColor={workspace.activeBook?.accentColor}
       bookTitle={workspace.activeBook?.title}
       chapters={(workspace.session?.chapters ?? [])
@@ -74,7 +78,7 @@ function WritingWorkspaceContent({
   workspace,
 }: {
   activeDocument?: DocumentMetadata;
-  onWordCountStateChange: (state: { documentId?: string; wordCount: number }) => void;
+  onWordCountStateChange: (state: WordCountState) => void;
   workspace: WritingWorkspaceState;
 }) {
   if (activeDocument) {
@@ -294,17 +298,15 @@ function DocumentTitleInput({
   );
 }
 
-function formatEpisodeBreadcrumb(
+function getEpisodeBreadcrumbSegments(
   workspace: WritingWorkspaceState,
   document: DocumentMetadata,
-): string {
+): string[] {
   return [
     workspace.activeBook?.title,
     workspace.activeChapter?.title,
-    formatDocumentKind(document.kind),
-  ]
-    .filter(Boolean)
-    .join(' / ');
+    document.title || `Untitled ${document.kind}`,
+  ].filter((segment): segment is string => Boolean(segment));
 }
 
 function isComposing(event: KeyboardEvent<HTMLInputElement>): boolean {

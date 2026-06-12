@@ -8,7 +8,7 @@ export interface WritingShellProps {
   activeDocumentId?: string;
   bookAccentColor?: string;
   bookTitle?: string;
-  breadcrumb?: string;
+  breadcrumbSegments?: string[];
   chapters?: Array<{
     id: string;
     isSystem?: boolean;
@@ -64,7 +64,7 @@ export function WritingShell(props: WritingShellProps): ReactElement {
         activeDocument={getActiveDocument(normalizedProps)}
         activeMoveTarget={getActiveMoveTarget(normalizedProps)}
         bookTitle={normalizedProps.bookTitle}
-        breadcrumb={normalizedProps.breadcrumb}
+        breadcrumbSegments={normalizedProps.breadcrumbSegments}
         isSidebarCollapsed={isSidebarCollapsed}
         onCreateChapter={normalizedProps.onCreateChapter}
         onCreateDocument={normalizedProps.onCreateDocument}

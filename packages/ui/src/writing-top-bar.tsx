@@ -1,4 +1,4 @@
-import { ChevronUp, Menu } from 'lucide-react';
+import { ChevronRight, ChevronUp, Menu } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import type { WritingShellProps } from './writing-shell';
 
@@ -14,7 +14,7 @@ export function WritingTopBar({
   activeDocument,
   activeMoveTarget,
   bookTitle,
-  breadcrumb,
+  breadcrumbSegments,
   isSidebarCollapsed,
   onCreateChapter,
   onCreateDocument,
@@ -25,7 +25,7 @@ export function WritingTopBar({
   activeDocument?: DocumentItem;
   activeMoveTarget: ActiveMoveTarget | null;
   bookTitle: string;
-  breadcrumb?: string;
+  breadcrumbSegments?: string[];
   isSidebarCollapsed: boolean;
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
@@ -33,16 +33,13 @@ export function WritingTopBar({
   onToggleSidebar: () => void;
   wordCountLabel?: string;
 }): ReactElement {
-  const currentTitle =
-    activeDocument?.title || activeMoveTarget?.title || bookTitle;
+  const currentTitle = activeDocument?.title || activeMoveTarget?.title || bookTitle;
 
   return (
     <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[#deded9] border-b bg-[#fbfbfa] py-0 pr-3 pl-22 [-webkit-app-region:drag]">
       <div className="flex min-w-0 items-center gap-1.5">
         <CommandButton
-          label={
-            isSidebarCollapsed ? 'Show manuscript list' : 'Hide manuscript list'
-          }
+          label={isSidebarCollapsed ? 'Show manuscript list' : 'Hide manuscript list'}
           onClick={onToggleSidebar}
         >
           <Menu aria-hidden="true" size={17} strokeWidth={2.1} />
@@ -51,14 +48,13 @@ export function WritingTopBar({
           <ChevronUp aria-hidden="true" size={17} strokeWidth={2.1} />
         </CommandButton>
         <div className="ml-2 min-w-0 border-[#e7e3dc] border-l pl-3">
-          <p className="truncate font-medium text-[#57534d] text-sm tracking-[-0.01em]">
-            {currentTitle}
-          </p>
-          {breadcrumb ? (
-            <p className="truncate text-[#9a958d] text-[0.7rem] tracking-[0.01em]">
-              {breadcrumb}
+          {breadcrumbSegments && breadcrumbSegments.length > 0 ? (
+            <BreadcrumbTrail segments={breadcrumbSegments} />
+          ) : (
+            <p className="truncate font-medium text-[#57534d] text-sm tracking-[-0.01em]">
+              {currentTitle}
             </p>
-          ) : null}
+          )}
         </div>
       </div>
       <div className="flex items-center gap-1.5">
@@ -83,6 +79,26 @@ export function WritingTopBar({
         </TextCommandButton>
       </div>
     </header>
+  );
+}
+
+function BreadcrumbTrail({ segments }: { segments: string[] }): ReactElement {
+  return (
+    <div className="flex min-w-0 items-center gap-1.5 font-medium text-[#57534d] text-sm tracking-[-0.01em]">
+      {segments.map((segment, index) => (
+        <span className="contents" key={segment}>
+          {index > 0 ? (
+            <ChevronRight
+              aria-hidden="true"
+              className="shrink-0 text-[#c8c1b8]"
+              size={14}
+              strokeWidth={1.8}
+            />
+          ) : null}
+          <span className="min-w-0 truncate last:text-[#3f3b36]">{segment}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 
