@@ -1,3 +1,4 @@
+// biome-ignore lint/nursery/noExcessiveLinesPerFile: This module owns the current SQLite schema and migrations until the store is split by concern.
 import { Buffer } from 'node:buffer';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -6,7 +7,9 @@ import type {
   ChapterMetadata,
   DocumentKind,
   DocumentMetadata,
+  DocumentSnapshotRecord,
   DocumentUpdateRecord,
+  SyncQueueItem,
 } from '@writer/core';
 import { DEFAULT_BOOK_ACCENT_COLOR } from '@writer/core';
 import Database from 'better-sqlite3';
@@ -55,21 +58,50 @@ interface DocumentUpdateRow {
   created_at: string;
 }
 
+interface DocumentSnapshotRow {
+  id: string;
+  document_id: string;
+  last_update_id: string | null;
+  snapshot_blob: Buffer;
+  created_at: string;
+}
+
+interface SyncQueueRow {
+  id: string;
+  document_id: string;
+  kind: SyncQueueItem['kind'];
+  record_id: string;
+  created_at: string;
+  attempts: number;
+  last_attempt_at: string | null;
+}
+
 interface SerializedDocumentUpdateRecord extends Omit<DocumentUpdateRecord, 'update'> {
   update: ArrayBuffer | ArrayLike<number> | Uint8Array;
 }
 
+interface SerializedDocumentSnapshotRecord extends Omit<DocumentSnapshotRecord, 'snapshot'> {
+  snapshot: ArrayBuffer | ArrayLike<number> | Uint8Array;
+}
+
 export interface DesktopLocalStore {
   appendDocumentUpdate(update: SerializedDocumentUpdateRecord): void;
+  enqueueSyncItem(item: SyncQueueItem): void;
+  getLatestDocumentSnapshot(documentId: string): DocumentSnapshotRecord | null;
   listBooks(): BookMetadata[];
   listChapters(): ChapterMetadata[];
   listDocuments(): DocumentMetadata[];
   listDocumentUpdates(documentId: string): DocumentUpdateRecord[];
+  listDocumentUpdatesAfter(documentId: string, updateId: string): DocumentUpdateRecord[];
+  listPendingSyncItems(): SyncQueueItem[];
+  markSyncItemCompleted(syncItemId: string, completedAt: string): void;
   saveBook(book: BookMetadata): void;
   saveChapter(chapter: ChapterMetadata): void;
   saveDocument(document: DocumentMetadata): void;
+  saveDocumentSnapshot(snapshot: SerializedDocumentSnapshotRecord): void;
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: Schema setup and prepared statements need to stay in one SQLite initialization scope.
 export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore {
   const databasePath = join(userDataPath, 'writer.sqlite');
 
@@ -116,6 +148,33 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
 
     CREATE INDEX IF NOT EXISTS document_updates_document_replay_idx
       ON document_updates(document_id, created_at, id);
+
+    CREATE TABLE IF NOT EXISTS document_snapshots (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      last_update_id TEXT,
+      snapshot_blob BLOB NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS document_snapshots_latest_idx
+      ON document_snapshots(document_id, created_at DESC, id DESC);
+
+    CREATE TABLE IF NOT EXISTS sync_queue (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      record_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      last_attempt_at TEXT,
+      completed_at TEXT,
+      FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS sync_queue_pending_idx
+      ON sync_queue(completed_at, created_at, id);
   `);
 
   ensureDocumentColumn(database, 'book_id', `TEXT NOT NULL DEFAULT '${DEFAULT_BOOK_ID}'`);
@@ -123,6 +182,7 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
   ensureNullableDocumentChapterId(database);
   ensureDocumentColumn(database, 'kind', "TEXT NOT NULL DEFAULT 'episode'");
   ensureDocumentColumn(database, 'sort_order', 'INTEGER NOT NULL DEFAULT 0');
+  ensureSnapshotColumn(database, 'last_update_id', 'TEXT');
   ensureBookColumn(
     database,
     'accent_color',
@@ -187,9 +247,56 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     WHERE document_id = ?
     ORDER BY created_at ASC, id ASC;
   `);
+  const listDocumentUpdatesAfterStatement = database.prepare(`
+    WITH checkpoint AS (
+      SELECT created_at, id
+      FROM document_updates
+      WHERE document_id = @documentId AND id = @updateId
+    )
+    SELECT updates.id, updates.document_id, updates.client_id, updates.update_blob, updates.created_at
+    FROM document_updates updates
+    LEFT JOIN checkpoint ON TRUE
+    WHERE updates.document_id = @documentId
+      AND (
+        checkpoint.id IS NULL
+        OR updates.created_at > checkpoint.created_at
+        OR (updates.created_at = checkpoint.created_at AND updates.id > checkpoint.id)
+      )
+    ORDER BY updates.created_at ASC, updates.id ASC;
+  `);
   const appendDocumentUpdateStatement = database.prepare(`
     INSERT OR IGNORE INTO document_updates (id, document_id, client_id, update_blob, created_at)
     VALUES (@id, @documentId, @clientId, @update, @createdAt);
+  `);
+  const saveDocumentSnapshotStatement = database.prepare(`
+    INSERT OR IGNORE INTO document_snapshots (
+      id, document_id, last_update_id, snapshot_blob, created_at
+    )
+    VALUES (@id, @documentId, @lastUpdateId, @snapshot, @createdAt);
+  `);
+  const getLatestDocumentSnapshotStatement = database.prepare(`
+    SELECT id, document_id, last_update_id, snapshot_blob, created_at
+    FROM document_snapshots
+    WHERE document_id = ?
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1;
+  `);
+  const enqueueSyncItemStatement = database.prepare(`
+    INSERT OR IGNORE INTO sync_queue (
+      id, document_id, kind, record_id, created_at, attempts, last_attempt_at, completed_at
+    )
+    VALUES (@id, @documentId, @kind, @recordId, @createdAt, @attempts, @lastAttemptAt, NULL);
+  `);
+  const listPendingSyncItemsStatement = database.prepare(`
+    SELECT id, document_id, kind, record_id, created_at, attempts, last_attempt_at
+    FROM sync_queue
+    WHERE completed_at IS NULL
+    ORDER BY created_at ASC, id ASC;
+  `);
+  const markSyncItemCompletedStatement = database.prepare(`
+    UPDATE sync_queue
+    SET completed_at = @completedAt
+    WHERE id = @syncItemId;
   `);
 
   return {
@@ -198,6 +305,14 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
         ...update,
         update: toUpdateBuffer(update.update),
       });
+    },
+    enqueueSyncItem(item) {
+      enqueueSyncItemStatement.run(item);
+    },
+    getLatestDocumentSnapshot(documentId) {
+      const row = getLatestDocumentSnapshotStatement.get(documentId);
+
+      return row ? rowToDocumentSnapshotRecord(row) : null;
     },
     listBooks() {
       return listBooksStatement.all().map(rowToBookMetadata);
@@ -211,6 +326,17 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     listDocumentUpdates(documentId) {
       return listDocumentUpdatesStatement.all(documentId).map(rowToDocumentUpdateRecord);
     },
+    listDocumentUpdatesAfter(documentId, updateId) {
+      return listDocumentUpdatesAfterStatement
+        .all({ documentId, updateId })
+        .map(rowToDocumentUpdateRecord);
+    },
+    listPendingSyncItems() {
+      return listPendingSyncItemsStatement.all().map(rowToSyncQueueItem);
+    },
+    markSyncItemCompleted(syncItemId, completedAt) {
+      markSyncItemCompletedStatement.run({ completedAt, syncItemId });
+    },
     saveBook(book) {
       saveBookStatement.run(book);
     },
@@ -219,6 +345,12 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     saveDocument(document) {
       saveDocumentStatement.run(document);
+    },
+    saveDocumentSnapshot(snapshot) {
+      saveDocumentSnapshotStatement.run({
+        ...snapshot,
+        snapshot: toUpdateBuffer(snapshot.snapshot),
+      });
     },
   };
 }
@@ -291,6 +423,20 @@ function ensureBookColumn(
   database.exec(`ALTER TABLE books ADD COLUMN ${columnName} ${columnDefinition};`);
 }
 
+function ensureSnapshotColumn(
+  database: Database.Database,
+  columnName: string,
+  columnDefinition: string,
+) {
+  const columns = database.pragma('table_info(document_snapshots)') as Array<{ name: string }>;
+
+  if (columns.some(({ name }) => name === columnName)) {
+    return;
+  }
+
+  database.exec(`ALTER TABLE document_snapshots ADD COLUMN ${columnName} ${columnDefinition};`);
+}
+
 function ensureDefaultBook(database: Database.Database) {
   const timestampRow = database
     .prepare('SELECT MIN(created_at) AS created_at FROM documents;')
@@ -340,6 +486,32 @@ function rowToDocumentUpdateRecord(row: unknown): DocumentUpdateRecord {
     documentId: update.document_id,
     id: update.id,
     update: new Uint8Array(update.update_blob),
+  };
+}
+
+function rowToDocumentSnapshotRecord(row: unknown): DocumentSnapshotRecord {
+  const snapshot = row as DocumentSnapshotRow;
+
+  return {
+    createdAt: snapshot.created_at,
+    documentId: snapshot.document_id,
+    id: snapshot.id,
+    lastUpdateId: snapshot.last_update_id,
+    snapshot: new Uint8Array(snapshot.snapshot_blob),
+  };
+}
+
+function rowToSyncQueueItem(row: unknown): SyncQueueItem {
+  const item = row as SyncQueueRow;
+
+  return {
+    attempts: item.attempts,
+    createdAt: item.created_at,
+    documentId: item.document_id,
+    id: item.id,
+    kind: item.kind,
+    lastAttemptAt: item.last_attempt_at,
+    recordId: item.record_id,
   };
 }
 

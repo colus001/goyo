@@ -2,7 +2,9 @@ import type {
   BookMetadata,
   ChapterMetadata,
   DocumentMetadata,
+  DocumentSnapshotRecord,
   DocumentUpdateRecord,
+  SyncQueueItem,
 } from '@writer/core';
 import { contextBridge, ipcRenderer } from 'electron';
 
@@ -27,6 +29,26 @@ const desktopApi = {
       ipcRenderer.invoke('documentUpdates:append', update) as Promise<void>,
     list: (documentId: string) =>
       ipcRenderer.invoke('documentUpdates:list', documentId) as Promise<DocumentUpdateRecord[]>,
+    listAfter: (documentId: string, updateId: string) =>
+      ipcRenderer.invoke('documentUpdates:listAfter', documentId, updateId) as Promise<
+        DocumentUpdateRecord[]
+      >,
+  },
+  documentSnapshots: {
+    getLatest: (documentId: string) =>
+      ipcRenderer.invoke(
+        'documentSnapshots:getLatest',
+        documentId,
+      ) as Promise<DocumentSnapshotRecord | null>,
+    save: (snapshot: DocumentSnapshotRecord) =>
+      ipcRenderer.invoke('documentSnapshots:save', snapshot) as Promise<void>,
+  },
+  syncQueue: {
+    enqueue: (item: SyncQueueItem) =>
+      ipcRenderer.invoke('syncQueue:enqueue', item) as Promise<void>,
+    listPending: () => ipcRenderer.invoke('syncQueue:listPending') as Promise<SyncQueueItem[]>,
+    markCompleted: (syncItemId: string, completedAt: string) =>
+      ipcRenderer.invoke('syncQueue:markCompleted', syncItemId, completedAt) as Promise<void>,
   },
   platform: process.platform,
 } as const;

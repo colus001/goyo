@@ -2,7 +2,9 @@ import type {
   BookMetadata,
   ChapterMetadata,
   DocumentMetadata,
+  DocumentSnapshotRecord,
   DocumentUpdateRecord,
+  SyncQueueItem,
 } from '@writer/core';
 
 declare global {
@@ -23,6 +25,16 @@ declare global {
       documentUpdates: {
         append: (update: DocumentUpdateRecord) => Promise<void>;
         list: (documentId: string) => Promise<DocumentUpdateRecord[]>;
+        listAfter: (documentId: string, updateId: string) => Promise<DocumentUpdateRecord[]>;
+      };
+      documentSnapshots: {
+        getLatest: (documentId: string) => Promise<DocumentSnapshotRecord | null>;
+        save: (snapshot: DocumentSnapshotRecord) => Promise<void>;
+      };
+      syncQueue: {
+        enqueue: (item: SyncQueueItem) => Promise<void>;
+        listPending: () => Promise<SyncQueueItem[]>;
+        markCompleted: (syncItemId: string, completedAt: string) => Promise<void>;
       };
       platform: string;
     };

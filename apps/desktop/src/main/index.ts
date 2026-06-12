@@ -1,5 +1,11 @@
 import { join } from 'node:path';
-import type { BookMetadata, ChapterMetadata, DocumentMetadata } from '@writer/core';
+import type {
+  BookMetadata,
+  ChapterMetadata,
+  DocumentMetadata,
+  DocumentSnapshotRecord,
+  SyncQueueItem,
+} from '@writer/core';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import { createDesktopLocalStore } from './document-metadata-store';
 
@@ -38,11 +44,42 @@ function registerDocumentIpc() {
   ipcMain.handle('documentUpdates:list', (_event, documentId: string) =>
     store.listDocumentUpdates(documentId),
   );
+  ipcMain.handle('documentUpdates:listAfter', (_event, documentId: string, updateId: string) =>
+    store.listDocumentUpdatesAfter(documentId, updateId),
+  );
   ipcMain.handle('documentUpdates:append', (_event, update) => {
     try {
       store.appendDocumentUpdate(update);
     } catch (error) {
       console.error('Failed to append document update', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('documentSnapshots:getLatest', (_event, documentId: string) =>
+    store.getLatestDocumentSnapshot(documentId),
+  );
+  ipcMain.handle('documentSnapshots:save', (_event, snapshot: DocumentSnapshotRecord) => {
+    try {
+      store.saveDocumentSnapshot(snapshot);
+    } catch (error) {
+      console.error('Failed to save document snapshot', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('syncQueue:listPending', () => store.listPendingSyncItems());
+  ipcMain.handle('syncQueue:enqueue', (_event, item: SyncQueueItem) => {
+    try {
+      store.enqueueSyncItem(item);
+    } catch (error) {
+      console.error('Failed to enqueue sync item', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('syncQueue:markCompleted', (_event, syncItemId: string, completedAt: string) => {
+    try {
+      store.markSyncItemCompleted(syncItemId, completedAt);
+    } catch (error) {
+      console.error('Failed to mark sync item completed', getErrorMessage(error));
       throw error;
     }
   });
