@@ -95,8 +95,8 @@
 
 - [x] Add Cloudflare Worker health endpoint.
 - [x] Configure Wrangler for local development.
-- [ ] Re-evaluate Drizzle or another typed SQL layer before building the D1 schema.
-- [ ] If adopting Drizzle, introduce it at the persistence boundary rather than in `packages/core`.
+- [x] Re-evaluate Drizzle or another typed SQL layer before building the D1 schema.
+- [x] If adopting Drizzle, introduce it at the persistence boundary rather than in `packages/core`.
 - [x] Create initial D1 schema.
 - [x] Add `documents` table.
 - [x] Add `document_updates` table.
@@ -106,9 +106,9 @@
 - [ ] Add document metadata API.
 - [x] Add CRDT update upload API.
 - [x] Add CRDT update download API.
-- [ ] Add snapshot read/write API.
-- [ ] Ensure D1 remains the canonical remote store.
-- [ ] Ensure KV is not required to restore document content.
+- [x] Add snapshot read/write API.
+- [x] Ensure D1 remains the canonical remote store.
+- [x] Ensure KV is not required to restore document content.
 
 ## Milestone 7: Incremental Remote Sync
 
@@ -178,6 +178,9 @@
 - [x] Created Cloudflare D1 database `writer-sync` and initial Worker migration for documents, CRDT updates, snapshots, and sync clients.
 - [x] Applied initial D1 migration locally and remotely with Wrangler CLI.
 - [x] Added idempotent Worker CRDT update upload and ordered update download APIs using D1 as the canonical store.
+- [x] Added idempotent Worker snapshot upload and latest snapshot read APIs using D1 as the canonical store.
+- [x] Re-evaluated Drizzle for Worker D1 persistence and kept raw SQL migrations/queries for now to prioritize explicit CRDT update and snapshot storage semantics.
+- [x] Verified remote document content can be restored from D1-backed update logs and snapshots without KV.
 
 ## Milestone 9: Recovery And Version Safety
 
