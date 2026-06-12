@@ -1,37 +1,63 @@
 import type { ReactElement, ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { APP_FONTS } from '../shared/app-fonts';
 import type { AppSettings } from '../shared/app-settings';
 import { APP_THEMES, type AppTheme } from '../shared/app-themes';
 import { CustomThemeEditor } from './custom-theme-editor';
+import { DiscardSettingsDialog, SettingsHeader } from './settings-actions';
+import { getThemeStyle } from './theme-style';
 
 type AppearanceTab = 'custom' | 'themes';
 
 export function SettingsScreen({
   settings,
-  onChangeSettings,
   onClose,
+  onSaveSettings,
 }: {
   settings: AppSettings;
-  onChangeSettings: (settings: AppSettings) => void;
   onClose: () => void;
+  onSaveSettings: (settings: AppSettings) => void;
 }): ReactElement {
   const [appearanceTab, setAppearanceTab] = useState<AppearanceTab>('themes');
+  const [draftSettings, setDraftSettings] = useState(settings);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+  const hasChanges = JSON.stringify(draftSettings) !== JSON.stringify(settings);
+
+  const requestClose = useCallback(() => {
+    if (hasChanges) {
+      setIsDiscardConfirmOpen(true);
+      return;
+    }
+
+    onClose();
+  }, [hasChanges, onClose]);
+
+  useEffect(() => {
+    setDraftSettings(settings);
+  }, [settings]);
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        if (isDiscardConfirmOpen) {
+          setIsDiscardConfirmOpen(false);
+          return;
+        }
+
+        requestClose();
       }
     };
 
     window.addEventListener('keydown', closeOnEscape);
 
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [onClose]);
+  }, [isDiscardConfirmOpen, requestClose]);
 
   return (
-    <main className="h-screen overflow-y-auto bg-[var(--goyo-app)] px-8 py-9 text-[var(--goyo-text)]">
+    <main
+      className="h-screen overflow-y-auto bg-[var(--goyo-app)] px-8 py-9 text-[var(--goyo-text)]"
+      style={getThemeStyle(draftSettings)}
+    >
       <div className="mx-auto grid max-w-[72rem] gap-8 lg:grid-cols-[13rem_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-9 lg:self-start" aria-label="Settings sections">
           <p className="mb-4 font-medium text-[var(--goyo-text-faint)] text-xs uppercase tracking-[0.18em]">
@@ -45,74 +71,89 @@ export function SettingsScreen({
         </aside>
 
         <div className="min-w-0 rounded-3xl border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] p-6 shadow-[0_18px_60px_rgba(31,29,25,0.14)]">
-          <div className="flex items-start justify-between gap-6">
-            <div>
-              <p className="mb-2 font-medium text-[var(--goyo-text-faint)] text-xs uppercase tracking-[0.16em]">
-                Preferences
-              </p>
-              <h1
-                className="font-semibold text-[var(--goyo-text)] text-[1.8rem] leading-tight tracking-[-0.055em]"
-                id="settings-title"
-              >
-                Writing preferences
-              </h1>
-            </div>
-            <button
-              className="cursor-pointer rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95"
-              onClick={onClose}
-              type="button"
-            >
-              Done
-            </button>
-          </div>
+          <SettingsHeader
+            hasChanges={hasChanges}
+            onCancel={requestClose}
+            onSave={() => {
+              onSaveSettings(draftSettings);
+              onClose();
+            }}
+          />
 
-          <div className="mt-8 space-y-7">
-            <SettingsSection title="Writing">
-              <div className="space-y-3">
-                <label className="flex cursor-pointer items-start justify-between gap-6 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-4">
-                  <span>
-                    <span className="block font-medium text-[var(--goyo-text)]">
-                      Restore last workspace on launch
-                    </span>
-                    <span className="mt-1 block text-[var(--goyo-text-muted)] text-sm leading-relaxed">
-                      Reopen the last book and document when Goyo starts. Turning this off starts in
-                      the library without deleting your saved workspace state.
-                    </span>
-                  </span>
-                  <input
-                    checked={settings.restoreLastWorkspaceOnLaunch}
-                    className="mt-1 size-4 accent-[var(--goyo-accent)]"
-                    onChange={(event) =>
-                      onChangeSettings({
-                        ...settings,
-                        restoreLastWorkspaceOnLaunch: event.target.checked,
-                      })
-                    }
-                    type="checkbox"
-                  />
-                </label>
-                <FontPicker onChangeSettings={onChangeSettings} settings={settings} />
-              </div>
-            </SettingsSection>
-
-            <SettingsSection title="Appearance">
-              <AppearanceSettings
-                activeTab={appearanceTab}
-                onChangeSettings={onChangeSettings}
-                onChangeTab={setAppearanceTab}
-                settings={settings}
-              />
-            </SettingsSection>
-
-            <SettingsSection title="Sync & Account">
-              <p className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/45 p-4 text-[var(--goyo-text-muted)] text-sm leading-relaxed">
-                Sync and account preferences will appear here once account management is available.
-              </p>
-            </SettingsSection>
-          </div>
+          <SettingsSections
+            appearanceTab={appearanceTab}
+            onChangeAppearanceTab={setAppearanceTab}
+            onChangeSettings={setDraftSettings}
+            settings={draftSettings}
+          />
         </div>
       </div>
+      {isDiscardConfirmOpen ? (
+        <DiscardSettingsDialog
+          onCancel={() => setIsDiscardConfirmOpen(false)}
+          onDiscard={onClose}
+        />
+      ) : null}
     </main>
+  );
+}
+
+function SettingsSections({
+  appearanceTab,
+  onChangeAppearanceTab,
+  onChangeSettings,
+  settings,
+}: {
+  appearanceTab: AppearanceTab;
+  onChangeAppearanceTab: (tab: AppearanceTab) => void;
+  onChangeSettings: (settings: AppSettings) => void;
+  settings: AppSettings;
+}): ReactElement {
+  return (
+    <div className="mt-8 space-y-7">
+      <SettingsSection title="Writing">
+        <div className="space-y-3">
+          <label className="flex cursor-pointer items-start justify-between gap-6 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-4">
+            <span>
+              <span className="block font-medium text-[var(--goyo-text)]">
+                Restore last workspace on launch
+              </span>
+              <span className="mt-1 block text-[var(--goyo-text-muted)] text-sm leading-relaxed">
+                Reopen the last book and document when Goyo starts. Turning this off starts in the
+                library without deleting your saved workspace state.
+              </span>
+            </span>
+            <input
+              checked={settings.restoreLastWorkspaceOnLaunch}
+              className="mt-1 size-4 accent-[var(--goyo-accent)]"
+              onChange={(event) =>
+                onChangeSettings({
+                  ...settings,
+                  restoreLastWorkspaceOnLaunch: event.target.checked,
+                })
+              }
+              type="checkbox"
+            />
+          </label>
+          <FontPicker onChangeSettings={onChangeSettings} settings={settings} />
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="Appearance">
+        <AppearanceSettings
+          activeTab={appearanceTab}
+          onChangeSettings={onChangeSettings}
+          onChangeTab={onChangeAppearanceTab}
+          settings={settings}
+        />
+      </SettingsSection>
+
+      <SettingsSection title="Sync & Account">
+        <p className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/45 p-4 text-[var(--goyo-text-muted)] text-sm leading-relaxed">
+          Sync and account preferences will appear here once account management is available.
+        </p>
+      </SettingsSection>
+    </div>
   );
 }
 

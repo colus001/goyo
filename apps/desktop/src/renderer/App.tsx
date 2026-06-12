@@ -19,8 +19,8 @@ export function App() {
     return (
       <div style={themeStyle}>
         <SettingsScreen
-          onChangeSettings={workspace.updateAppSettings}
           onClose={workspace.closeSettings}
+          onSaveSettings={workspace.updateAppSettings}
           settings={workspace.appSettings}
         />
       </div>
