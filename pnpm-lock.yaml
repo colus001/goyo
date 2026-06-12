@@ -90,9 +90,6 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.3.0
         version: 4.3.0(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.3)(jiti@2.7.0)(yaml@2.9.0))
-      '@writer/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       react:
         specifier: ^19.2.6
         version: 19.2.7
