@@ -6,6 +6,7 @@ import { APP_THEMES, type AppTheme } from '../shared/app-themes';
 import { CustomThemeEditor } from './custom-theme-editor';
 import { DiscardSettingsDialog, SettingsHeader } from './settings-actions';
 import { getThemeStyle } from './theme-style';
+import { WindowDragRegion } from './window-drag-region';
 
 type AppearanceTab = 'custom' | 'themes';
 
@@ -58,6 +59,7 @@ export function SettingsScreen({
       className="h-screen overflow-y-auto bg-[var(--goyo-app)] px-8 py-9 text-[var(--goyo-text)]"
       style={getThemeStyle(draftSettings)}
     >
+      <WindowDragRegion />
       <div className="mx-auto grid max-w-[72rem] gap-8 lg:grid-cols-[13rem_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-9 lg:self-start" aria-label="Settings sections">
           <p className="mb-4 font-medium text-[var(--goyo-text-faint)] text-xs uppercase tracking-[0.18em]">

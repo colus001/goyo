@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { LibraryHeader, type LibrarySortMode } from './library-header';
 import { LibraryOverlays } from './library-overlays';
+import { WindowDragRegion } from './window-drag-region';
 
 type ContextMenuState = { bookId: string; x: number; y: number } | null;
 
@@ -42,6 +43,7 @@ export function LibraryScreen({
 
   return (
     <main className="h-screen overflow-y-auto bg-[var(--goyo-app)] px-10 py-10 text-[var(--goyo-text)]">
+      <WindowDragRegion />
       <section className="mx-auto max-w-[64rem]">
         <LibraryHeader
           onOpenNewBookModal={() => setIsNewBookModalOpen(true)}
@@ -92,7 +94,7 @@ function LibraryBookList({
   openContextMenu: ContextMenuState;
 }): ReactElement {
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] items-start gap-x-7 gap-y-9">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] items-start gap-3">
       {books.map((book) => (
         <BookCard
           book={book}
@@ -141,10 +143,10 @@ function BookCard({
   return (
     <div className="relative">
       <button
-        className={`group relative aspect-[3/4] w-full max-w-[13.5rem] cursor-pointer overflow-hidden rounded-r-xl rounded-l-md border text-left shadow-[7px_10px_18px_rgba(72,61,48,0.08)] outline-none transition hover:-translate-y-0.5 hover:shadow-[10px_14px_24px_rgba(72,61,48,0.11)] ${
+        className={`group relative min-h-32 w-full cursor-pointer overflow-hidden rounded-2xl border px-4 py-4 text-left outline-none transition hover:border-[var(--goyo-border-strong)] hover:bg-[var(--goyo-raised)] ${
           isQuickDrafts
-            ? 'border-[var(--goyo-border-strong)] bg-[var(--goyo-panel)]'
-            : 'border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)]'
+            ? 'border-[var(--goyo-border)] bg-[var(--goyo-panel)]'
+            : 'border-[var(--goyo-border)] bg-[var(--goyo-paper)]/62'
         }`}
         onClick={() => {
           onCloseMenu();
@@ -159,39 +161,31 @@ function BookCard({
         }}
         type="button"
       >
-        {isQuickDrafts ? (
-          <QuickDraftsCoverMark />
-        ) : (
-          <BookCoverMark accentColor={book.accentColor} />
-        )}
-        <span className="relative flex h-full flex-col px-8 pt-8 pb-7">
-          <span
-            className={`mb-6 h-px w-10 ${
-              isQuickDrafts ? 'bg-[var(--goyo-border-strong)]' : 'bg-[var(--goyo-border)]'
-            }`}
-            aria-hidden="true"
-          />
-          {isQuickDrafts ? (
-            <span className="mb-2 font-medium text-[var(--goyo-text-faint)] text-[0.62rem] uppercase tracking-[0.16em]">
-              System inbox
+        <span className="relative flex min-h-24 flex-col">
+          <span className="mb-4 flex items-center gap-2">
+            <span
+              className="size-2.5 rounded-full"
+              style={{
+                backgroundColor: isQuickDrafts ? 'var(--goyo-text-faint)' : book.accentColor,
+              }}
+              aria-hidden="true"
+            />
+            <span className="font-medium text-[var(--goyo-text-faint)] text-[0.66rem] uppercase tracking-[0.16em]">
+              {isQuickDrafts ? 'System inbox' : 'Book'}
             </span>
-          ) : null}
-          <span className="block font-semibold text-[var(--goyo-text)] text-[1.22rem] leading-tight tracking-[-0.04em]">
+          </span>
+          {isQuickDrafts ? <span className="sr-only">System inbox</span> : null}
+          <span className="block font-semibold text-[var(--goyo-text)] text-[1.05rem] leading-tight tracking-[-0.035em]">
             {book.title}
           </span>
-          <span
-            className={`mt-auto block border-t pt-3 text-xs leading-snug ${
-              isQuickDrafts
-                ? 'border-[var(--goyo-border-strong)] text-[var(--goyo-text-muted)]'
-                : 'border-[var(--goyo-border)] text-[var(--goyo-text-faint)]'
-            }`}
-          >
+          <span className="mt-auto block pt-5 text-[var(--goyo-text-muted)] text-sm leading-snug">
             {isQuickDrafts ? 'Draft inbox' : `Updated ${formatDocumentDate(book.updatedAt)}`}
           </span>
         </span>
       </button>
       {menuPosition && !isQuickDrafts ? (
         <BookContextMenu
+          accentColor={book.accentColor}
           onClose={onCloseMenu}
           onDelete={onDeleteBook}
           onUpdateAccentColor={onUpdateAccentColor}
@@ -203,49 +197,15 @@ function BookCard({
   );
 }
 
-function BookCoverMark({ accentColor }: { accentColor: string }): ReactElement {
-  return (
-    <>
-      <span
-        className="absolute inset-y-0 left-0 w-5"
-        style={{ backgroundColor: accentColor }}
-        aria-hidden="true"
-      />
-      <span className="absolute inset-y-0 left-5 w-px bg-[var(--goyo-border)]" aria-hidden="true" />
-    </>
-  );
-}
-
-function QuickDraftsCoverMark(): ReactElement {
-  return (
-    <>
-      <span
-        className="absolute inset-y-0 left-0 w-3 bg-[var(--goyo-accent-soft)]"
-        aria-hidden="true"
-      />
-      <span
-        className="absolute top-6 right-5 left-8 h-px bg-[var(--goyo-border)]"
-        aria-hidden="true"
-      />
-      <span
-        className="absolute top-10 right-8 left-8 h-px bg-[var(--goyo-border)]"
-        aria-hidden="true"
-      />
-      <span
-        className="absolute top-14 right-12 left-8 h-px bg-[var(--goyo-border)]"
-        aria-hidden="true"
-      />
-    </>
-  );
-}
-
 function BookContextMenu({
+  accentColor,
   onClose,
   onDelete,
   onUpdateAccentColor,
   x,
   y,
 }: {
+  accentColor: string;
   onClose: () => void;
   onDelete: () => void;
   onUpdateAccentColor: (accentColor: string) => void;
@@ -254,13 +214,13 @@ function BookContextMenu({
 }): ReactElement {
   return (
     <div
-      className="fixed z-50 min-w-40 rounded-lg border border-[#deded8] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+      className="fixed z-50 min-w-40 rounded-lg border border-[var(--goyo-border)] bg-[var(--goyo-raised)] py-1 shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
       role="menu"
       style={{ left: x, top: y }}
     >
       <div className="px-3 pt-2 pb-2">
-        <p className="mb-2 font-medium text-[#8d887e] text-[0.68rem] uppercase tracking-[0.14em]">
-          Cover color
+        <p className="mb-2 font-medium text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.14em]">
+          Accent
         </p>
         <div className="flex gap-1.5">
           {BOOK_ACCENT_COLORS.map((accentColor) => (
@@ -277,11 +237,28 @@ function BookContextMenu({
               type="button"
             />
           ))}
+          <label className="relative grid size-5 cursor-pointer place-items-center overflow-hidden rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-paper)] outline-none transition hover:scale-110">
+            <span
+              className="absolute inset-1 rounded-full"
+              style={{ backgroundColor: accentColor }}
+            />
+            <input
+              aria-label="Choose custom accent color"
+              className="absolute inset-0 size-full cursor-pointer opacity-0"
+              onChange={(event) => {
+                event.stopPropagation();
+                onUpdateAccentColor(event.target.value.toUpperCase());
+                onClose();
+              }}
+              type="color"
+              value={accentColor}
+            />
+          </label>
         </div>
       </div>
-      <div className="my-1 h-px bg-[#ededeb]" />
+      <div className="my-1 h-px bg-[var(--goyo-border)]" />
       <button
-        className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[#b44b43] text-sm hover:bg-[#f4f4f1]"
+        className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[var(--goyo-danger)] text-sm hover:bg-[var(--goyo-accent-soft)]"
         onClick={(event) => {
           event.stopPropagation();
           onDelete();
