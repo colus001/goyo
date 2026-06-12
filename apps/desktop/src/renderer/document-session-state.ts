@@ -28,14 +28,17 @@ import { moveChapter } from './document-workspace-chapter-actions';
 import { archiveBook, archiveChapter, archiveDocument } from './document-workspace-delete-actions';
 import { createEpisodeAfter } from './document-workspace-episode-actions';
 import type {
+  DocumentSnapshotMap,
   DocumentUpdateMap,
   SaveStatus,
   WorkspaceScreen,
   WritingWorkspaceState,
 } from './document-workspace-types';
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: This hook assembles the workspace API from local state and action wiring.
 export function useWritingWorkspace(): WritingWorkspaceState {
   const [clientId] = useState(() => `client_${globalThis.crypto.randomUUID()}`);
+  const [documentSnapshots, setDocumentSnapshots] = useState<DocumentSnapshotMap>({});
   const [documentUpdates, setDocumentUpdates] = useState<DocumentUpdateMap>({});
   const [screen, setScreen] = useState<WorkspaceScreen>('loading');
   const [session, setSession] = useState<DocumentSession | null>(null);
@@ -44,7 +47,12 @@ export function useWritingWorkspace(): WritingWorkspaceState {
   const activeChapter = session ? getActiveChapterOrNull(session) : null;
   const activeBook = session ? getActiveBook(session) : null;
 
-  useLoadDocumentUpdates(activeDocument?.id ?? null, setDocumentUpdates, setSaveStatus);
+  useLoadDocumentContent(
+    activeDocument?.id ?? null,
+    setDocumentSnapshots,
+    setDocumentUpdates,
+    setSaveStatus,
+  );
   useLoadWorkspace(setSession, setSaveStatus, setScreen);
 
   return {
@@ -63,14 +71,15 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     deleteBook: (bookId) => archiveBook(bookId, setSession, setSaveStatus),
     deleteChapter: (chapterId) => archiveChapter(chapterId, setSession, setSaveStatus),
     deleteDocument: (documentId) => archiveDocument(documentId, setSession, setSaveStatus),
+    documentSnapshots,
     documentUpdates,
     moveChapter: (chapterId, direction) =>
       moveChapter(chapterId, direction, setSession, setSaveStatus),
     moveDocument: (documentId, direction) =>
       moveDocument(documentId, direction, setSession, setSaveStatus),
     openDocument: (documentId) => openDocument(documentId, setSession),
-    recordDocumentUpdate: (update) =>
-      recordDocumentUpdate(activeDocument?.id, clientId, update, setSaveStatus),
+    recordDocumentUpdate: (update, snapshot) =>
+      recordDocumentUpdate(activeDocument?.id, clientId, update, setSaveStatus, snapshot),
     renameBook: (title) => renameBook(session, title, setSession, setSaveStatus),
     renameChapterTitle: (title) => renameChapterTitle(session, title, setSession, setSaveStatus),
     renameDocumentTitle: (title) =>
@@ -122,8 +131,9 @@ function useLoadWorkspace(
   }, [setSaveStatus, setScreen, setSession]);
 }
 
-function useLoadDocumentUpdates(
+function useLoadDocumentContent(
   documentId: string | null,
+  setDocumentSnapshots: Dispatch<SetStateAction<DocumentSnapshotMap>>,
   setDocumentUpdates: Dispatch<SetStateAction<DocumentUpdateMap>>,
   setSaveStatus: (saveStatus: SaveStatus) => void,
 ) {
@@ -135,10 +145,20 @@ function useLoadDocumentUpdates(
     const loadedDocumentId = documentId;
     let isCancelled = false;
 
-    async function loadDocumentUpdates() {
-      const updates = await window.writerDesktop.documentUpdates.list(loadedDocumentId);
+    async function loadDocumentContent() {
+      const snapshot = await window.writerDesktop.documentSnapshots.getLatest(loadedDocumentId);
+      const updates = snapshot?.lastUpdateId
+        ? await window.writerDesktop.documentUpdates.listAfter(
+            loadedDocumentId,
+            snapshot.lastUpdateId,
+          )
+        : await window.writerDesktop.documentUpdates.list(loadedDocumentId);
 
       if (!isCancelled) {
+        setDocumentSnapshots((current) => ({
+          ...current,
+          [loadedDocumentId]: snapshot?.snapshot,
+        }));
         setDocumentUpdates((current) => ({
           ...current,
           [loadedDocumentId]: updates.map(({ update }) => update),
@@ -146,10 +166,10 @@ function useLoadDocumentUpdates(
       }
     }
 
-    void loadDocumentUpdates().catch(() => setSaveStatus('Save failed'));
+    void loadDocumentContent().catch(() => setSaveStatus('Save failed'));
 
     return () => {
       isCancelled = true;
     };
-  }, [documentId, setDocumentUpdates, setSaveStatus]);
+  }, [documentId, setDocumentSnapshots, setDocumentUpdates, setSaveStatus]);
 }

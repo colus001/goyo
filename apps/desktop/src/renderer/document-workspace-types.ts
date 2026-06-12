@@ -12,6 +12,7 @@ export type SaveStatus =
   | 'Saving locally'
   | 'Save failed';
 export type WorkspaceScreen = 'book' | 'library' | 'loading';
+export type DocumentSnapshotMap = Record<string, Uint8Array | undefined>;
 export type DocumentUpdateMap = Record<string, Uint8Array[]>;
 
 export interface WritingWorkspaceState {
@@ -27,11 +28,12 @@ export interface WritingWorkspaceState {
   deleteBook: (bookId: string) => void;
   deleteChapter: (chapterId: string) => void;
   deleteDocument: (documentId: string) => void;
+  documentSnapshots: DocumentSnapshotMap;
   documentUpdates: DocumentUpdateMap;
   moveChapter: (chapterId: string, direction: 'down' | 'up') => void;
   moveDocument: (documentId: string, direction: 'down' | 'up') => void;
   openDocument: (documentId: string) => void;
-  recordDocumentUpdate: (update: Uint8Array) => void;
+  recordDocumentUpdate: (update: Uint8Array, snapshot?: Uint8Array) => void;
   renameBook: (title: string) => void;
   renameChapterTitle: (title: string) => void;
   renameDocumentTitle: (title: string) => void;

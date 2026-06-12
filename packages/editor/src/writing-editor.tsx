@@ -2,14 +2,17 @@ import Collaboration from '@tiptap/extension-collaboration';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { MouseEvent, ReactElement } from 'react';
-import { forwardRef, useEffect, useImperativeHandle, useMemo } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import * as Y from 'yjs';
+
+const SNAPSHOT_UPDATE_INTERVAL = 50;
 
 export interface WritingEditorProps {
   documentId: string;
   focusOnMount?: boolean;
+  initialSnapshot?: Uint8Array;
   initialUpdates?: Uint8Array[];
-  onDocumentUpdate?: (update: Uint8Array) => void;
+  onDocumentUpdate?: (update: Uint8Array, snapshot?: Uint8Array) => void;
   onWordCountChange?: (wordCount: number) => void;
 }
 
@@ -19,10 +22,17 @@ export interface WritingEditorRef {
 
 export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
   function WritingEditor(
-    { documentId, focusOnMount = false, initialUpdates = [], onDocumentUpdate, onWordCountChange },
+    {
+      documentId,
+      focusOnMount = false,
+      initialSnapshot,
+      initialUpdates = [],
+      onDocumentUpdate,
+      onWordCountChange,
+    },
     ref,
   ): ReactElement {
-    const yDocument = useYDocument(initialUpdates);
+    const yDocument = useYDocument(initialUpdates, initialSnapshot);
     const content = useMemo(() => yDocument.getXmlFragment(documentId), [documentId, yDocument]);
     const editor = useWritingTiptapEditor(content, yDocument);
 
@@ -58,16 +68,23 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
   },
 );
 
-function useYDocument(initialUpdates: Uint8Array[]): Y.Doc {
+function useYDocument(
+  initialUpdates: Uint8Array[],
+  initialSnapshot: Uint8Array | undefined,
+): Y.Doc {
   return useMemo(() => {
     const document = new Y.Doc();
+
+    if (initialSnapshot) {
+      Y.applyUpdate(document, initialSnapshot);
+    }
 
     for (const update of initialUpdates) {
       Y.applyUpdate(document, update);
     }
 
     return document;
-  }, [initialUpdates]);
+  }, [initialSnapshot, initialUpdates]);
 }
 
 function useWritingTiptapEditor(content: Y.XmlFragment, yDocument: Y.Doc) {
@@ -101,14 +118,24 @@ function useEditorMountFocus(editor: ReturnType<typeof useEditor>, focusOnMount:
 
 function useDocumentUpdateEmitter(
   yDocument: Y.Doc,
-  onDocumentUpdate: ((update: Uint8Array) => void) | undefined,
+  onDocumentUpdate: ((update: Uint8Array, snapshot?: Uint8Array) => void) | undefined,
 ) {
+  const updateCountRef = useRef(0);
+
   useEffect(() => {
     if (!onDocumentUpdate) {
       return;
     }
 
-    const emitDocumentUpdate = (update: Uint8Array) => onDocumentUpdate(update);
+    const emitDocumentUpdate = (update: Uint8Array) => {
+      updateCountRef.current += 1;
+      const snapshot =
+        updateCountRef.current % SNAPSHOT_UPDATE_INTERVAL === 0
+          ? Y.encodeStateAsUpdate(yDocument)
+          : undefined;
+
+      onDocumentUpdate(update, snapshot);
+    };
 
     yDocument.on('update', emitDocumentUpdate);
 

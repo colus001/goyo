@@ -22,6 +22,7 @@ import {
 import type { Dispatch, SetStateAction } from 'react';
 import { getNextChapterOrder, getNextDocumentOrder } from './document-workspace-ordering';
 import {
+  createSnapshotForDocumentUpdate,
   createUntitledDocument,
   persistBookMetadata,
   persistChapterMetadata,
@@ -267,6 +268,7 @@ export function recordDocumentUpdate(
   clientId: string,
   update: Uint8Array,
   setSaveStatus: (saveStatus: SaveStatus) => void,
+  snapshot?: Uint8Array,
 ) {
   if (!documentId) {
     return;
@@ -280,5 +282,9 @@ export function recordDocumentUpdate(
     update,
   });
 
-  void persistDocumentUpdate(documentUpdate, setSaveStatus);
+  void persistDocumentUpdate(
+    documentUpdate,
+    setSaveStatus,
+    snapshot ? createSnapshotForDocumentUpdate(documentUpdate, snapshot) : undefined,
+  );
 }

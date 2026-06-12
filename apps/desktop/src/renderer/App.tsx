@@ -122,6 +122,7 @@ function ChapterSurface({ workspace }: { workspace: WritingWorkspaceState }) {
 function EpisodeSurface({ workspace }: { workspace: WritingWorkspaceState }) {
   const activeDocument = workspace.activeDocument as DocumentMetadata;
   const [wordCount, setWordCount] = useState(0);
+  const initialSnapshot = workspace.documentSnapshots[activeDocument.id];
   const initialUpdates = workspace.documentUpdates[activeDocument.id] ?? EMPTY_DOCUMENT_UPDATES;
   const editorRef = useRef<WritingEditorRef>(null);
   const hasTitle = activeDocument.title.trim().length > 0;
@@ -147,6 +148,7 @@ function EpisodeSurface({ workspace }: { workspace: WritingWorkspaceState }) {
         documentId={activeDocument.id}
         focusOnMount={hasTitle}
         key={activeDocument.id}
+        initialSnapshot={initialSnapshot}
         initialUpdates={initialUpdates}
         onDocumentUpdate={workspace.recordDocumentUpdate}
         onWordCountChange={setWordCount}
