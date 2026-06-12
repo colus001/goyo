@@ -1,4 +1,5 @@
 import { useWritingWorkspace } from './document-session-state';
+import { LibraryScreen } from './library-screen';
 import { SettingsScreen } from './settings-modal';
 import { getThemeStyle } from './theme-style';
 import { useGlobalSettingsShortcut } from './use-global-settings-shortcut';
@@ -22,6 +23,14 @@ export function App() {
           onSaveSettings={workspace.updateAppSettings}
           settings={workspace.appSettings}
         />
+      </div>
+    );
+  }
+
+  if (workspace.screen === 'library') {
+    return (
+      <div style={themeStyle}>
+        <LibraryScreen onOpenSettings={workspace.showSettings} workspace={workspace} />
       </div>
     );
   }

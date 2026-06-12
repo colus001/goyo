@@ -65,3 +65,94 @@ input {
 .ProseMirror:focus {
   outline: none;
 }
+
+.goyo-onboarding-drift {
+  background:
+    radial-gradient(
+      circle at 18% 20%,
+      color-mix(in srgb, var(--goyo-accent) 14%, transparent),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 78% 18%,
+      color-mix(in srgb, var(--goyo-accent-soft) 72%, transparent),
+      transparent 24rem
+    ),
+    linear-gradient(
+      120deg,
+      transparent 0 43%,
+      color-mix(in srgb, var(--goyo-border) 42%, transparent) 43% 43.4%,
+      transparent 43.4% 100%
+    );
+  transform: translate3d(0, 0, 0);
+  animation: goyo-paper-drift 14s ease-in-out infinite alternate;
+}
+
+.goyo-onboarding-rise {
+  animation: goyo-onboarding-rise 780ms cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.goyo-onboarding-logo {
+  animation: goyo-logo-breathe 3.6s ease-in-out infinite;
+}
+
+.goyo-onboarding-delay-1 {
+  animation-delay: 90ms;
+}
+
+.goyo-onboarding-delay-2 {
+  animation-delay: 170ms;
+}
+
+.goyo-onboarding-delay-3 {
+  animation-delay: 250ms;
+}
+
+.goyo-onboarding-delay-4 {
+  animation-delay: 340ms;
+}
+
+.goyo-onboarding-delay-5 {
+  animation-delay: 440ms;
+}
+
+@keyframes goyo-onboarding-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes goyo-logo-breathe {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg) scale(1);
+  }
+
+  50% {
+    transform: translateY(-3px) rotate(1deg) scale(1.035);
+  }
+}
+
+@keyframes goyo-paper-drift {
+  from {
+    transform: translate3d(-0.75rem, -0.5rem, 0) scale(1.015);
+  }
+
+  to {
+    transform: translate3d(0.75rem, 0.5rem, 0) scale(1.035);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goyo-onboarding-drift,
+  .goyo-onboarding-logo,
+  .goyo-onboarding-rise {
+    animation: none;
+  }
+}

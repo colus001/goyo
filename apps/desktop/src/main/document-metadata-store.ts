@@ -19,9 +19,6 @@ import type { AppUiState } from '../shared/app-ui-state';
 import { DEFAULT_APP_UI_STATE_ID } from '../shared/app-ui-state';
 
 const DEFAULT_BOOK_ID = 'book_default';
-const DEFAULT_BOOK_TITLE = 'Untitled book';
-const DEFAULT_CHAPTER_ID = 'chapter_default';
-const DEFAULT_CHAPTER_TITLE = 'Untitled chapter';
 
 interface BookMetadataRow {
   accent_color: string | null;
@@ -98,6 +95,7 @@ interface SerializedDocumentSnapshotRecord extends Omit<DocumentSnapshotRecord, 
 
 export interface DesktopLocalStore {
   appendDocumentUpdate(update: SerializedDocumentUpdateRecord): void;
+  close(): void;
   enqueueSyncItem(item: SyncQueueItem): void;
   getAppSettings(): AppSettings;
   getAppUiState(): AppUiState | null;
@@ -218,7 +216,6 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     'accent_color',
     `TEXT NOT NULL DEFAULT '${DEFAULT_BOOK_ACCENT_COLOR}'`,
   );
-  ensureDefaultContainers(database);
 
   const listBooksStatement = database.prepare(`
     SELECT id, title, accent_color, created_at, updated_at, archived_at
@@ -363,13 +360,15 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
       value = excluded.value,
       updated_at = excluded.updated_at;
   `);
-
   return {
     appendDocumentUpdate(update) {
       appendDocumentUpdateStatement.run({
         ...update,
         update: toUpdateBuffer(update.update),
       });
+    },
+    close() {
+      database.close();
     },
     enqueueSyncItem(item) {
       enqueueSyncItemStatement.run(item);
@@ -489,11 +488,6 @@ function rowToAppUiState(row: unknown): AppUiState | null {
   };
 }
 
-function ensureDefaultContainers(database: Database.Database) {
-  ensureDefaultBook(database);
-  ensureDefaultChapter(database);
-}
-
 function ensureDocumentColumn(
   database: Database.Database,
   columnName: string,
@@ -569,34 +563,6 @@ function ensureSnapshotColumn(
   }
 
   database.exec(`ALTER TABLE document_snapshots ADD COLUMN ${columnName} ${columnDefinition};`);
-}
-
-function ensureDefaultBook(database: Database.Database) {
-  const timestampRow = database
-    .prepare('SELECT MIN(created_at) AS created_at FROM documents;')
-    .get() as { created_at: string | null } | undefined;
-  const now = timestampRow?.created_at ?? new Date().toISOString();
-
-  database
-    .prepare(`
-      INSERT OR IGNORE INTO books (id, title, accent_color, created_at, updated_at, archived_at)
-      VALUES (?, ?, ?, ?, ?, NULL);
-    `)
-    .run(DEFAULT_BOOK_ID, DEFAULT_BOOK_TITLE, DEFAULT_BOOK_ACCENT_COLOR, now, now);
-}
-
-function ensureDefaultChapter(database: Database.Database) {
-  const timestampRow = database
-    .prepare('SELECT MIN(created_at) AS created_at FROM documents;')
-    .get() as { created_at: string | null } | undefined;
-  const now = timestampRow?.created_at ?? new Date().toISOString();
-
-  database
-    .prepare(`
-      INSERT OR IGNORE INTO chapters (id, book_id, title, sort_order, created_at, updated_at, archived_at)
-      VALUES (?, ?, ?, 0, ?, ?, NULL);
-    `)
-    .run(DEFAULT_CHAPTER_ID, DEFAULT_BOOK_ID, DEFAULT_CHAPTER_TITLE, now, now);
 }
 
 function toUpdateBuffer(update: SerializedDocumentUpdateRecord['update']): Buffer {

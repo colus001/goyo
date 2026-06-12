@@ -9,13 +9,7 @@
         "src/renderer/desktop-api.d.ts",
         "src/renderer/main.tsx"
       ],
-      "ignore": [
-        "src/renderer/library-header.tsx",
-        "src/renderer/library-overlays.tsx",
-        "src/renderer/library-screen.tsx",
-        "src/renderer/new-book-modal.tsx"
-      ],
-      "ignoreDependencies": ["lucide-react", "tailwindcss"],
+      "ignoreDependencies": ["tailwindcss"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "apps/web": {

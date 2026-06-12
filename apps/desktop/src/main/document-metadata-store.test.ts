@@ -14,6 +14,16 @@ afterEach(() => {
   }
 });
 
+describe.skipIf(!canRunNativeSqliteTests)('desktop local metadata store initialization', () => {
+  it('starts without creating placeholder books or chapters', () => {
+    const store = createTestStore();
+
+    expect(store.listBooks()).toEqual([]);
+    expect(store.listChapters()).toEqual([]);
+    expect(store.listDocuments()).toEqual([]);
+  });
+});
+
 describe.skipIf(!canRunNativeSqliteTests)('desktop local document snapshot store', () => {
   it('round trips the latest document snapshot as a Uint8Array', () => {
     const store = createTestStore();
@@ -116,7 +126,7 @@ function canCreateDesktopLocalStore(): boolean {
   const path = mkdtempSync(join(tmpdir(), 'writer-store-'));
 
   try {
-    createDesktopLocalStore(path);
+    createDesktopLocalStore(path).close();
     return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('NODE_MODULE_VERSION')) {
