@@ -7,12 +7,18 @@ import type {
   SyncQueueItem,
 } from '@writer/core';
 import { contextBridge, ipcRenderer } from 'electron';
+import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 
 const desktopApi = {
   appUiState: {
     get: () => ipcRenderer.invoke('appUiState:get') as Promise<AppUiState | null>,
     save: (state: AppUiState) => ipcRenderer.invoke('appUiState:save', state) as Promise<void>,
+  },
+  appSettings: {
+    get: () => ipcRenderer.invoke('appSettings:get') as Promise<AppSettings>,
+    save: (settings: AppSettings) =>
+      ipcRenderer.invoke('appSettings:save', settings) as Promise<void>,
   },
   books: {
     list: () => ipcRenderer.invoke('books:list') as Promise<BookMetadata[]>,

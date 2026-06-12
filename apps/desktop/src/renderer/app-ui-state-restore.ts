@@ -8,6 +8,7 @@ import {
   selectActiveChapter,
   selectActiveDocument,
 } from '@writer/core';
+import { type AppSettings, DEFAULT_APP_SETTINGS } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 import type { WorkspaceScreen } from './document-workspace-types';
 
@@ -23,11 +24,13 @@ export function restoreWorkspaceState({
   chapters,
   documents,
   savedState,
+  settings = DEFAULT_APP_SETTINGS,
 }: {
   books: BookMetadata[];
   chapters: ChapterMetadata[];
   documents: DocumentMetadata[];
   savedState: AppUiState | null;
+  settings?: AppSettings;
 }): RestoredWorkspaceState {
   if (books.length === 0 && chapters.length === 0 && documents.length === 0) {
     return createEmptyRestore(savedState);
@@ -42,7 +45,12 @@ export function restoreWorkspaceState({
   return {
     expandedChapterIds: selectRestoredExpandedChapterIds(chapters, savedState),
     isSidebarCollapsed: savedState?.isSidebarCollapsed ?? false,
-    screen: savedState?.lastScreen === 'book' && hasSavedActiveBook ? 'book' : 'library',
+    screen:
+      settings.restoreLastWorkspaceOnLaunch &&
+      savedState?.lastScreen === 'book' &&
+      hasSavedActiveBook
+        ? 'book'
+        : 'library',
     session: restoredSession,
   };
 }

@@ -5,6 +5,7 @@ import type {
   DocumentMetadata,
   DocumentSession,
 } from '@writer/core';
+import type { AppSettings } from '../shared/app-settings';
 
 export type SaveStatus =
   | 'Loading local documents'
@@ -12,7 +13,7 @@ export type SaveStatus =
   | 'Saving locally'
   | 'Save failed';
 export type SyncStatus = 'Offline' | 'Sync idle' | 'Sync pending' | 'Synced' | 'Syncing';
-export type WorkspaceScreen = 'book' | 'library' | 'loading';
+export type WorkspaceScreen = 'book' | 'library' | 'loading' | 'settings';
 export type DocumentSnapshotMap = Record<string, Uint8Array | undefined>;
 export type DocumentUpdateMap = Record<string, Uint8Array[]>;
 
@@ -20,6 +21,7 @@ export interface WritingWorkspaceState {
   activeBook: BookMetadata | null;
   activeChapter: ChapterMetadata | null;
   activeDocument: DocumentMetadata | null;
+  appSettings: AppSettings;
   createBook: () => void;
   createBookWithDetails: (title: string, accentColor: string) => void;
   createChapter: (title?: string) => void;
@@ -42,13 +44,16 @@ export interface WritingWorkspaceState {
   renameDocumentTitle: (title: string) => void;
   saveStatus: SaveStatus;
   screen: WorkspaceScreen;
+  closeSettings: () => void;
   selectBook: (bookId: string) => void;
   selectChapter: (chapterId: string) => void;
   setExpandedChapterIds: (chapterIds: string[]) => void;
   setSidebarCollapsed: (isCollapsed: boolean) => void;
   session: DocumentSession | null;
   showLibrary: () => void;
+  showSettings: () => void;
   startQuickDraft: () => void;
   syncStatus: SyncStatus;
+  updateAppSettings: (settings: AppSettings) => void;
   updateBookAccentColor: (bookId: string, accentColor: string) => void;
 }

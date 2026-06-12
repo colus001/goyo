@@ -11,7 +11,13 @@ interface WordCountState {
   wordCount: number;
 }
 
-export function WritingWorkspaceScreen({ workspace }: { workspace: WritingWorkspaceState }) {
+export function WritingWorkspaceScreen({
+  onOpenSettings,
+  workspace,
+}: {
+  onOpenSettings: () => void;
+  workspace: WritingWorkspaceState;
+}) {
   const activeDocument = workspace.activeDocument as DocumentMetadata | undefined;
   const editorRef = useRef<WritingEditorRef>(null);
   const [wordCountState, setWordCountState] = useState<WordCountState>({ wordCount: 0 });
@@ -49,6 +55,7 @@ export function WritingWorkspaceScreen({ workspace }: { workspace: WritingWorksp
       onMoveDocument={workspace.moveDocument}
       onRenameBook={workspace.renameBook}
       onRenameChapter={workspace.renameChapterTitle}
+      onOpenSettings={onOpenSettings}
       onSelectDocument={workspace.openDocument}
       onSidebarCollapsedChange={workspace.setSidebarCollapsed}
       onShowLibrary={workspace.showLibrary}

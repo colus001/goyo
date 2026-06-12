@@ -58,8 +58,8 @@ export function ChapterRow({
           aria-current={isActive && !activeDocumentId ? 'page' : undefined}
           className={`w-full cursor-pointer rounded-lg border-l-3 px-3 py-2.5 pr-14 text-left outline-none transition ${
             isActive
-              ? 'border-transparent bg-[#f0eee9] text-[#252522]'
-              : 'border-transparent text-[#6f6f68] hover:bg-[#f5f3ee]'
+              ? 'border-transparent bg-[var(--goyo-active-row)] text-[var(--goyo-text)]'
+              : 'border-transparent text-[var(--goyo-text-muted)] hover:bg-[var(--goyo-accent-soft)]'
           }`}
           onClick={() => {
             onCloseMenu();

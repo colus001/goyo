@@ -73,6 +73,10 @@ function NewBookModalDialog({
       <p className="mb-3 font-medium text-[#8d887e] text-xs uppercase tracking-[0.16em]">
         New book
       </p>
+      <p className="mb-4 text-[#746f66] text-sm leading-relaxed">
+        Use a book for essays, fiction, notes, or any long-form project. You can start with loose
+        documents and add chapters later.
+      </p>
       <input
         aria-label="Book title"
         className="block w-full rounded-md bg-transparent px-1 font-semibold text-[#25231f] text-[1.35rem] leading-tight tracking-[-0.045em] outline-none placeholder:text-[#b8b1a5]"

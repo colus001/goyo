@@ -13,7 +13,7 @@ export function BookEpisodeList(props: BookEpisodeListProps): ReactElement | nul
   return (
     <section className="py-1.5" data-sidebar-item>
       <p className="px-3 pb-1 font-semibold text-[#a09a91] text-[0.68rem] uppercase tracking-[0.13em]">
-        Unfiled
+        Documents
       </p>
       <div className="pl-1">
         {props.documents.map((document, index) => (

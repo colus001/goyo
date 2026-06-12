@@ -31,11 +31,11 @@ export function DocumentRow({
 }): ReactElement {
   return (
     <div
-      className={`group/document-row relative rounded-md transition ${isActive ? 'bg-white' : 'hover:bg-[#f5f5f2]'}`}
+      className={`group/document-row relative rounded-md transition ${isActive ? 'bg-[var(--goyo-paper)]' : 'hover:bg-[var(--goyo-accent-soft)]'}`}
     >
       <FloatingInsertButton onInsert={onInsertBefore} placement="top" />
       {isActive ? (
-        <span className="absolute top-2 bottom-2 left-0 w-0.5 rounded-full bg-[#d65a53]" />
+        <span className="absolute top-2 bottom-2 left-0 w-0.5 rounded-full bg-[var(--goyo-accent)]" />
       ) : null}
       <button
         aria-current={isActive ? 'page' : undefined}
@@ -50,7 +50,7 @@ export function DocumentRow({
         }}
         type="button"
       >
-        <p className="truncate font-medium text-[#292927] text-[0.9rem] tracking-[-0.005em]">
+        <p className="truncate font-medium text-[var(--goyo-text)] text-[0.9rem] tracking-[-0.005em]">
           {document.title || 'Untitled'}
         </p>
       </button>

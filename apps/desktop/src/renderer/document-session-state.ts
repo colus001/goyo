@@ -6,6 +6,7 @@ import {
 } from '@writer/core';
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useState } from 'react';
+import { type AppSettings, DEFAULT_APP_SETTINGS } from '../shared/app-settings';
 import { createAppUiState, saveAppUiState } from './app-ui-state-persistence';
 import { restoreWorkspaceState } from './app-ui-state-restore';
 import {
@@ -46,6 +47,8 @@ export function useWritingWorkspace(): WritingWorkspaceState {
   const [expandedChapterIds, setExpandedChapterIds] = useState<string[]>([]);
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
+  const [settingsReturnScreen, setSettingsReturnScreen] = useState<WorkspaceScreen>('library');
   const [screen, setScreen] = useState<WorkspaceScreen>('loading');
   const [session, setSession] = useState<DocumentSession | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('Loading local documents');
@@ -65,6 +68,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     setSaveStatus,
     setScreen,
     setSidebarCollapsed,
+    setAppSettings,
     setExpandedChapterIds,
     setHasLoadedWorkspace,
   );
@@ -81,6 +85,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     activeBook,
     activeChapter,
     activeDocument,
+    appSettings,
     createBook: () => createBook(setSession, setScreen, setSaveStatus),
     createBookWithDetails: (title, accentColor) =>
       createBookWithDetails(title, accentColor, setSession, setScreen, setSaveStatus),
@@ -97,6 +102,8 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     documentUpdates,
     expandedChapterIds,
     isSidebarCollapsed,
+    closeSettings: () =>
+      setScreen(settingsReturnScreen === 'settings' ? 'library' : settingsReturnScreen),
     moveChapter: (chapterId, direction) =>
       moveChapter(chapterId, direction, setSession, setSaveStatus),
     moveDocument: (documentId, direction) =>
@@ -117,8 +124,17 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     setSidebarCollapsed,
     session,
     showLibrary: () => setScreen('library'),
+    showSettings: () => {
+      if (screen === 'settings') {
+        return;
+      }
+
+      setSettingsReturnScreen(screen === 'loading' ? 'library' : screen);
+      setScreen('settings');
+    },
     startQuickDraft: () => startQuickDraft(setSession, setScreen, setSaveStatus),
     syncStatus,
+    updateAppSettings: (settings) => updateAppSettings(settings, setAppSettings, setSaveStatus),
     updateBookAccentColor: (bookId, accentColor) =>
       updateBookAccentColor(bookId, accentColor, setSession, setSaveStatus),
   };
@@ -129,6 +145,7 @@ function useLoadWorkspace(
   setSaveStatus: (saveStatus: SaveStatus) => void,
   setScreen: (screen: WorkspaceScreen) => void,
   setSidebarCollapsed: (isCollapsed: boolean) => void,
+  setAppSettings: (settings: AppSettings) => void,
   setExpandedChapterIds: (chapterIds: string[]) => void,
   setHasLoadedWorkspace: (hasLoadedWorkspace: boolean) => void,
 ) {
@@ -136,19 +153,27 @@ function useLoadWorkspace(
     let isCancelled = false;
 
     async function loadWorkspace() {
-      const [books, chapters, documents, savedState] = await Promise.all([
+      const [books, chapters, documents, savedState, settings] = await Promise.all([
         window.writerDesktop.books.list(),
         window.writerDesktop.chapters.list(),
         window.writerDesktop.documents.list(),
         window.writerDesktop.appUiState.get(),
+        window.writerDesktop.appSettings.get(),
       ]);
 
       if (isCancelled) {
         return;
       }
 
-      const restoredState = restoreWorkspaceState({ books, chapters, documents, savedState });
+      const restoredState = restoreWorkspaceState({
+        books,
+        chapters,
+        documents,
+        savedState,
+        settings,
+      });
 
+      setAppSettings(settings);
       setSession(restoredState.session);
       setSidebarCollapsed(restoredState.isSidebarCollapsed);
       setExpandedChapterIds(restoredState.expandedChapterIds);
@@ -168,8 +193,23 @@ function useLoadWorkspace(
     setSaveStatus,
     setScreen,
     setSession,
+    setAppSettings,
     setSidebarCollapsed,
   ]);
+}
+
+function updateAppSettings(
+  settings: AppSettings,
+  setAppSettings: (settings: AppSettings) => void,
+  setSaveStatus: (saveStatus: SaveStatus) => void,
+) {
+  setAppSettings(settings);
+  setSaveStatus('Saving locally');
+
+  void window.writerDesktop.appSettings
+    .save(settings)
+    .then(() => setSaveStatus('Saved locally'))
+    .catch(() => setSaveStatus('Save failed'));
 }
 
 function usePersistAppUiState({
@@ -186,7 +226,7 @@ function usePersistAppUiState({
   session: DocumentSession | null;
 }) {
   useEffect(() => {
-    if (!hasLoadedWorkspace || screen === 'loading') {
+    if (!hasLoadedWorkspace || screen === 'loading' || screen === 'settings') {
       return;
     }
 

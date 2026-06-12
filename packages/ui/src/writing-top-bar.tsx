@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronUp, Menu, Plus } from 'lucide-react';
+import { ChevronRight, ChevronUp, Menu, Plus, Settings } from 'lucide-react';
 import type { ReactElement, ReactNode, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { WritingShellProps } from './writing-shell';
@@ -19,6 +19,7 @@ export function WritingTopBar({
   isSidebarCollapsed,
   onCreateChapter,
   onCreateDocument,
+  onOpenSettings,
   onShowLibrary,
   onToggleSidebar,
   wordCountLabel,
@@ -30,6 +31,7 @@ export function WritingTopBar({
   isSidebarCollapsed: boolean;
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
+  onOpenSettings?: () => void;
   onShowLibrary?: () => void;
   onToggleSidebar: () => void;
   wordCountLabel?: string;
@@ -37,7 +39,7 @@ export function WritingTopBar({
   const currentTitle = activeDocument?.title || activeMoveTarget?.title || bookTitle;
 
   return (
-    <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[#e9e6df] border-b bg-white py-0 pr-3 pl-22 [-webkit-app-region:drag]">
+    <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[var(--goyo-border)] border-b bg-[var(--goyo-paper)] py-0 pr-3 pl-22 [-webkit-app-region:drag]">
       <div className="flex min-w-0 items-center gap-1.5">
         <CommandButton
           label={isSidebarCollapsed ? 'Show manuscript list' : 'Hide manuscript list'}
@@ -52,7 +54,7 @@ export function WritingTopBar({
           {breadcrumbSegments && breadcrumbSegments.length > 0 ? (
             <BreadcrumbTrail segments={breadcrumbSegments} />
           ) : (
-            <p className="truncate font-semibold text-[#3f3b36] text-[1rem] tracking-[-0.035em]">
+            <p className="truncate font-semibold text-[var(--goyo-text)] text-[1rem] tracking-[-0.035em]">
               {currentTitle}
             </p>
           )}
@@ -60,10 +62,13 @@ export function WritingTopBar({
       </div>
       <div className="flex items-center gap-1.5">
         {wordCountLabel ? (
-          <p className="mr-2 hidden whitespace-nowrap font-medium text-[#9a958d] text-[0.68rem] uppercase tracking-[0.13em] sm:block">
+          <p className="mr-2 hidden whitespace-nowrap font-medium text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.13em] sm:block">
             {wordCountLabel}
           </p>
         ) : null}
+        <CommandButton label="Settings" onClick={onOpenSettings}>
+          <Settings aria-hidden="true" size={16} strokeWidth={2.1} />
+        </CommandButton>
         <CreateMenuButton onCreateChapter={onCreateChapter} onCreateDocument={onCreateDocument} />
       </div>
     </header>
@@ -72,18 +77,18 @@ export function WritingTopBar({
 
 function BreadcrumbTrail({ segments }: { segments: string[] }): ReactElement {
   return (
-    <div className="flex min-w-0 items-center gap-1.5 font-semibold text-[#57534d] text-[1rem] tracking-[-0.035em]">
+    <div className="flex min-w-0 items-center gap-1.5 font-semibold text-[var(--goyo-text-muted)] text-[1rem] tracking-[-0.035em]">
       {segments.map((segment, index) => (
         <span className="contents" key={segment}>
           {index > 0 ? (
             <ChevronRight
               aria-hidden="true"
-              className="shrink-0 text-[#c8c1b8]"
+              className="shrink-0 text-[var(--goyo-border-strong)]"
               size={14}
               strokeWidth={1.8}
             />
           ) : null}
-          <span className="min-w-0 truncate last:text-[#3f3b36]">{segment}</span>
+          <span className="min-w-0 truncate last:text-[var(--goyo-text)]">{segment}</span>
         </span>
       ))}
     </div>
@@ -104,7 +109,7 @@ function CommandButton({
   return (
     <button
       aria-label={label}
-      className="grid size-8 cursor-pointer place-items-center rounded-lg text-[#817d75] outline-none transition hover:bg-[#f1eee8] hover:text-[#302e29] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#817d75] [-webkit-app-region:no-drag]"
+      className="grid size-8 cursor-pointer place-items-center rounded-lg text-[var(--goyo-text-faint)] outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[var(--goyo-text-faint)] [-webkit-app-region:no-drag]"
       disabled={disabled}
       onClick={onClick}
       title={label}
@@ -134,7 +139,7 @@ function CreateMenuButton({
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label="Create"
-        className="grid size-8 cursor-pointer place-items-center rounded-lg text-[#6b665f] outline-none transition hover:bg-[#f1eee8] hover:text-[#302e29] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#6b665f]"
+        className="grid size-8 cursor-pointer place-items-center rounded-lg text-[var(--goyo-text-muted)] outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[var(--goyo-text-muted)]"
         disabled={isDisabled}
         onClick={() => setIsOpen((current) => !current)}
         title="Create"

@@ -34,7 +34,7 @@ export function WritingSidebar({
 
   return (
     <aside
-      className={`flex h-full min-h-0 flex-col overflow-hidden border-[#deded9] border-r bg-[#fbfbfa] ${
+      className={`flex h-full min-h-0 flex-col overflow-hidden border-[var(--goyo-border)] border-r bg-[var(--goyo-panel)] ${
         isCollapsed ? 'pointer-events-none border-r-0' : ''
       }`}
       aria-label="Manuscript navigation"
@@ -42,11 +42,11 @@ export function WritingSidebar({
     >
       {!isCollapsed ? (
         <>
-          <header className="border-[#e4e0d8] border-b bg-[#fbfaf7] px-3 py-3">
-            <label className="flex h-9 items-center gap-2 rounded-lg border border-[#e1ddd5] bg-white/70 px-2.5 text-[#9b958b] text-xs uppercase tracking-[0.14em]">
+          <header className="border-[var(--goyo-border)] border-b bg-[var(--goyo-panel)] px-3 py-3">
+            <label className="flex h-9 items-center gap-2 rounded-lg border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 px-2.5 text-[var(--goyo-text-faint)] text-xs uppercase tracking-[0.14em]">
               <Search aria-hidden="true" size={15} strokeWidth={2.1} />
               <input
-                className="min-w-0 flex-1 bg-transparent text-[#5f5b53] outline-none placeholder:text-[#a9a39a]"
+                className="min-w-0 flex-1 bg-transparent text-[var(--goyo-text-muted)] outline-none placeholder:text-[var(--goyo-text-faint)]"
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search"
                 type="search"

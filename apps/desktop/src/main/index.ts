@@ -8,6 +8,7 @@ import type {
 } from '@writer/core';
 import { APP_NAME } from '@writer/shared';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 import { createDesktopLocalStore } from './document-metadata-store';
 import {
@@ -29,6 +30,15 @@ function registerDocumentIpc() {
       store.saveAppUiState(state);
     } catch (error) {
       console.error('Failed to save app UI state', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('appSettings:get', () => store.getAppSettings());
+  ipcMain.handle('appSettings:save', (_event, settings: AppSettings) => {
+    try {
+      store.saveAppSettings(settings);
+    } catch (error) {
+      console.error('Failed to save app settings', getErrorMessage(error));
       throw error;
     }
   });

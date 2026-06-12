@@ -33,6 +33,7 @@ export interface WritingShellProps {
   onDeleteDocument?: (documentId: string) => void;
   onMoveChapter?: (chapterId: string, direction: 'down' | 'up') => void;
   onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
+  onOpenSettings?: () => void;
   onRenameBook?: (title: string) => void;
   onRenameChapter?: (chapterId: string, title: string) => void;
   onSelectDocument?: (documentId: string) => void;
@@ -58,7 +59,7 @@ export function WritingShell(props: WritingShellProps): ReactElement {
   };
 
   return (
-    <main className="grid h-screen grid-rows-[3.35rem_minmax(0,1fr)] overflow-hidden bg-[#f7f7f5] font-sans text-[#252525]">
+    <main className="grid h-screen grid-rows-[3.35rem_minmax(0,1fr)] overflow-hidden bg-[var(--goyo-app)] text-[var(--goyo-text)] [font-family:var(--goyo-ui-font-family)]">
       <WritingTopBar
         activeDocument={getActiveDocument(normalizedProps)}
         activeMoveTarget={getActiveMoveTarget(normalizedProps)}
@@ -67,6 +68,7 @@ export function WritingShell(props: WritingShellProps): ReactElement {
         isSidebarCollapsed={isSidebarCollapsed}
         onCreateChapter={normalizedProps.onCreateChapter}
         onCreateDocument={normalizedProps.onCreateDocument}
+        onOpenSettings={normalizedProps.onOpenSettings}
         onShowLibrary={normalizedProps.onShowLibrary}
         onToggleSidebar={toggleSidebar}
         wordCountLabel={normalizedProps.wordCountLabel}
@@ -170,7 +172,10 @@ function WritingShellBody({
         expandedChapterIds={expandedChapterIds}
       />
 
-      <section className="h-full min-h-0 overflow-y-auto bg-white" aria-label="Writing surface">
+      <section
+        className="h-full min-h-0 overflow-y-auto bg-[var(--goyo-paper)]"
+        aria-label="Writing surface"
+      >
         {children ?? <EmptyWritingSurface />}
       </section>
     </div>
@@ -184,12 +189,12 @@ interface WritingShellBodyProps extends Omit<WritingShellProps, 'isSidebarCollap
 
 function EmptyWritingSurface(): ReactElement {
   return (
-    <article className="mx-auto min-h-full w-full max-w-[60rem] cursor-text bg-[#ffffff] px-18 py-16">
-      <p className="mb-4 font-medium text-[#999991] text-xs uppercase tracking-[0.13em]">
+    <article className="mx-auto min-h-full w-full max-w-[60rem] cursor-text bg-[var(--goyo-paper)] px-18 py-16">
+      <p className="mb-4 font-medium text-[var(--goyo-text-faint)] text-xs uppercase tracking-[0.13em]">
         No draft selected
       </p>
       <h2 className="mt-0 mb-6 font-semibold text-[2.75rem] tracking-[-0.045em]">Untitled draft</h2>
-      <p className="max-w-[42rem] text-[#4d4d49] text-xl leading-[1.75]">
+      <p className="max-w-[42rem] text-[var(--goyo-text-muted)] text-xl leading-[1.75]">
         Choose a draft from the manuscript list or create a new section to begin writing.
       </p>
     </article>

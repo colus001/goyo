@@ -13,15 +13,18 @@ const EMPTY_DOCUMENT_UPDATES: Uint8Array[] = [];
 
 export function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState }) {
   return (
-    <article className="mx-auto grid min-h-full w-full max-w-[52rem] place-items-center bg-white px-12 py-16">
+    <article className="mx-auto grid min-h-full w-full max-w-[52rem] place-items-center bg-[var(--goyo-paper)] px-12 py-16">
       <div className="max-w-[34rem] text-center">
-        <p className="mb-3 font-semibold text-[#999991] text-xs uppercase tracking-[0.14em]">
+        <p className="mb-3 font-semibold text-[var(--goyo-text-faint)] text-xs uppercase tracking-[0.14em]">
           Empty book
         </p>
-        <h2 className="font-semibold text-[2rem] tracking-[-0.04em]">Start this manuscript</h2>
+        <h2 className="font-semibold text-[2rem] tracking-[-0.04em]">Start with a document</h2>
+        <p className="mt-4 text-[var(--goyo-text-muted)] leading-relaxed">
+          Draft an essay as a standalone document, or add chapters later for a longer manuscript.
+        </p>
         <div className="mt-8 flex justify-center gap-2">
           <button
-            className="rounded-full bg-[#30302d] px-4 py-2 text-white"
+            className="rounded-full bg-[var(--goyo-accent)] px-4 py-2 text-white hover:bg-[var(--goyo-accent-hover)]"
             onClick={() => workspace.createDocument('episode')}
             type="button"
           >
@@ -48,8 +51,8 @@ export function EpisodeSurface({
   const hasTitle = activeDocument.title.trim().length > 0;
 
   return (
-    <article className="mx-auto flex min-h-full w-full max-w-[52rem] flex-col bg-white px-12 pt-12 pb-24">
-      <header className="mb-9 border-[#ecece8] border-b pb-6">
+    <article className="mx-auto flex min-h-full w-full max-w-[52rem] flex-col bg-[var(--goyo-paper)] px-12 pt-12 pb-24 [font-family:var(--goyo-writing-font-family)]">
+      <header className="mb-9 border-[var(--goyo-border)] border-b pb-6">
         <DocumentTitleInput
           autoFocus={!hasTitle}
           document={activeDocument}
@@ -109,7 +112,7 @@ function DocumentTitleInput({
   return (
     <input
       aria-label={`${formatDocumentKind(document.kind)} title`}
-      className="w-full bg-transparent font-semibold text-[#242421] text-[2rem] leading-tight tracking-[-0.04em] outline-none placeholder:text-[#b5b5ae]"
+      className="w-full bg-transparent font-semibold text-[var(--goyo-text)] text-[2rem] leading-tight tracking-[-0.04em] outline-none placeholder:text-[var(--goyo-text-faint)] [font-family:var(--goyo-writing-font-family)]"
       onBlur={commitTitle}
       onChange={(event) => setTitle(event.target.value)}
       onKeyDown={(event) => {

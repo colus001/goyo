@@ -6,6 +6,7 @@ import type {
   DocumentUpdateRecord,
   SyncQueueItem,
 } from '@writer/core';
+import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 
 declare global {
@@ -14,6 +15,10 @@ declare global {
       appUiState: {
         get: () => Promise<AppUiState | null>;
         save: (state: AppUiState) => Promise<void>;
+      };
+      appSettings: {
+        get: () => Promise<AppSettings>;
+        save: (settings: AppSettings) => Promise<void>;
       };
       books: {
         list: () => Promise<BookMetadata[]>;

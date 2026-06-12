@@ -4,13 +4,19 @@ import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { LibraryHeader, type LibrarySortMode } from './library-header';
-import { NewBookModal } from './new-book-modal';
+import { LibraryOverlays } from './library-overlays';
 
 type ContextMenuState = { bookId: string; x: number; y: number } | null;
 
 const BOOK_ACCENT_COLORS = ['#a6534b', '#b68243', '#6f7f5f', '#4f6f64', '#52697f', '#6b5876'];
 
-export function LibraryScreen({ workspace }: { workspace: WritingWorkspaceState }): ReactElement {
+export function LibraryScreen({
+  onOpenSettings,
+  workspace,
+}: {
+  onOpenSettings: () => void;
+  workspace: WritingWorkspaceState;
+}): ReactElement {
   const books = workspace.session?.books ?? [];
   const [openContextMenu, setOpenContextMenu] = useState<ContextMenuState>(null);
   const [bookPendingDelete, setBookPendingDelete] = useState<BookMetadata | null>(null);
@@ -35,10 +41,11 @@ export function LibraryScreen({ workspace }: { workspace: WritingWorkspaceState 
   }, [openContextMenu]);
 
   return (
-    <main className="h-screen overflow-y-auto bg-[#f8f6f1] px-10 py-10 text-[#252525]">
+    <main className="h-screen overflow-y-auto bg-[var(--goyo-app)] px-10 py-10 text-[var(--goyo-text)]">
       <section className="mx-auto max-w-[64rem]">
         <LibraryHeader
           onOpenNewBookModal={() => setIsNewBookModalOpen(true)}
+          onOpenSettings={onOpenSettings}
           onStartQuickDraft={workspace.startQuickDraft}
           onSortModeChange={setSortMode}
           sortMode={sortMode}
@@ -54,23 +61,15 @@ export function LibraryScreen({ workspace }: { workspace: WritingWorkspaceState 
           onUpdateAccentColor={workspace.updateBookAccentColor}
         />
       </section>
-      {bookPendingDelete ? (
-        <DeleteBookDialog
-          book={bookPendingDelete}
-          onCancel={() => setBookPendingDelete(null)}
-          onConfirm={() => {
-            workspace.deleteBook(bookPendingDelete.id);
-            setBookPendingDelete(null);
-          }}
-        />
-      ) : null}
-      {isNewBookModalOpen ? (
-        <NewBookModal
-          accentColors={BOOK_ACCENT_COLORS}
-          onClose={() => setIsNewBookModalOpen(false)}
-          onCreate={workspace.createBookWithDetails}
-        />
-      ) : null}
+      <LibraryOverlays
+        accentColors={BOOK_ACCENT_COLORS}
+        bookPendingDelete={bookPendingDelete}
+        isNewBookModalOpen={isNewBookModalOpen}
+        onCloseNewBookModal={() => setIsNewBookModalOpen(false)}
+        onCreateBook={workspace.createBookWithDetails}
+        onDeleteBook={workspace.deleteBook}
+        onSetBookPendingDelete={setBookPendingDelete}
+      />
     </main>
   );
 }
@@ -112,7 +111,7 @@ function LibraryBookList({
         />
       ))}
       {books.length === 0 ? (
-        <div className="col-span-full rounded-xl border border-[#e4dfd6] bg-white p-8 text-[#777771]">
+        <div className="col-span-full rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)] p-8 text-[var(--goyo-text-muted)]">
           No books yet. Create one or start writing without a book.
         </div>
       ) : null}
@@ -143,7 +142,9 @@ function BookCard({
     <div className="relative">
       <button
         className={`group relative aspect-[3/4] w-full max-w-[13.5rem] cursor-pointer overflow-hidden rounded-r-xl rounded-l-md border text-left shadow-[7px_10px_18px_rgba(72,61,48,0.08)] outline-none transition hover:-translate-y-0.5 hover:shadow-[10px_14px_24px_rgba(72,61,48,0.11)] ${
-          isQuickDrafts ? 'border-[#d4d7d0] bg-[#f5f5f0]' : 'border-[#d8d0c3] bg-[#fbf7ee]'
+          isQuickDrafts
+            ? 'border-[var(--goyo-border-strong)] bg-[var(--goyo-panel)]'
+            : 'border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)]'
         }`}
         onClick={() => {
           onCloseMenu();
@@ -165,20 +166,24 @@ function BookCard({
         )}
         <span className="relative flex h-full flex-col px-8 pt-8 pb-7">
           <span
-            className={`mb-6 h-px w-10 ${isQuickDrafts ? 'bg-[#c7cbc4]' : 'bg-[#d2c7b8]'}`}
+            className={`mb-6 h-px w-10 ${
+              isQuickDrafts ? 'bg-[var(--goyo-border-strong)]' : 'bg-[var(--goyo-border)]'
+            }`}
             aria-hidden="true"
           />
           {isQuickDrafts ? (
-            <span className="mb-2 font-medium text-[#7f877b] text-[0.62rem] uppercase tracking-[0.16em]">
+            <span className="mb-2 font-medium text-[var(--goyo-text-faint)] text-[0.62rem] uppercase tracking-[0.16em]">
               System inbox
             </span>
           ) : null}
-          <span className="block font-semibold text-[#26231e] text-[1.22rem] leading-tight tracking-[-0.04em]">
+          <span className="block font-semibold text-[var(--goyo-text)] text-[1.22rem] leading-tight tracking-[-0.04em]">
             {book.title}
           </span>
           <span
             className={`mt-auto block border-t pt-3 text-xs leading-snug ${
-              isQuickDrafts ? 'border-[#d4d7d0] text-[#737b70]' : 'border-[#d9cfbf] text-[#867d70]'
+              isQuickDrafts
+                ? 'border-[var(--goyo-border-strong)] text-[var(--goyo-text-muted)]'
+                : 'border-[var(--goyo-border)] text-[var(--goyo-text-faint)]'
             }`}
           >
             {isQuickDrafts ? 'Draft inbox' : `Updated ${formatDocumentDate(book.updatedAt)}`}
@@ -206,7 +211,7 @@ function BookCoverMark({ accentColor }: { accentColor: string }): ReactElement {
         style={{ backgroundColor: accentColor }}
         aria-hidden="true"
       />
-      <span className="absolute inset-y-0 left-5 w-px bg-[#d9cfc0]" aria-hidden="true" />
+      <span className="absolute inset-y-0 left-5 w-px bg-[var(--goyo-border)]" aria-hidden="true" />
     </>
   );
 }
@@ -214,74 +219,23 @@ function BookCoverMark({ accentColor }: { accentColor: string }): ReactElement {
 function QuickDraftsCoverMark(): ReactElement {
   return (
     <>
-      <span className="absolute inset-y-0 left-0 w-3 bg-[#d7dbd2]" aria-hidden="true" />
-      <span className="absolute top-6 right-5 left-8 h-px bg-[#d9ddd5]" aria-hidden="true" />
-      <span className="absolute top-10 right-8 left-8 h-px bg-[#e1e4dc]" aria-hidden="true" />
-      <span className="absolute top-14 right-12 left-8 h-px bg-[#e1e4dc]" aria-hidden="true" />
+      <span
+        className="absolute inset-y-0 left-0 w-3 bg-[var(--goyo-accent-soft)]"
+        aria-hidden="true"
+      />
+      <span
+        className="absolute top-6 right-5 left-8 h-px bg-[var(--goyo-border)]"
+        aria-hidden="true"
+      />
+      <span
+        className="absolute top-10 right-8 left-8 h-px bg-[var(--goyo-border)]"
+        aria-hidden="true"
+      />
+      <span
+        className="absolute top-14 right-12 left-8 h-px bg-[var(--goyo-border)]"
+        aria-hidden="true"
+      />
     </>
-  );
-}
-
-function DeleteBookDialog({
-  book,
-  onCancel,
-  onConfirm,
-}: {
-  book: BookMetadata;
-  onCancel: () => void;
-  onConfirm: () => void;
-}): ReactElement {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onCancel();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onCancel]);
-
-  return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-[#1f1d19]/20 px-6">
-      <div
-        aria-labelledby="delete-book-title"
-        aria-modal="true"
-        className="w-full max-w-md rounded-2xl border border-[#ded8ce] bg-[#fffefb] p-6 shadow-[0_24px_80px_rgba(31,29,25,0.24)]"
-        role="dialog"
-      >
-        <p className="mb-2 font-medium text-[#9b514a] text-xs uppercase tracking-[0.16em]">
-          Delete book
-        </p>
-        <h2
-          className="font-semibold text-[#25231f] text-[1.55rem] leading-tight tracking-[-0.045em]"
-          id="delete-book-title"
-        >
-          Delete “{book.title}”?
-        </h2>
-        <p className="mt-3 text-[#746f66] leading-relaxed">
-          This removes the book and its chapters from the library. Your local data is archived, not
-          permanently erased.
-        </p>
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            className="cursor-pointer rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] outline-none transition hover:bg-[#e3dfd6]"
-            onClick={onCancel}
-            type="button"
-          >
-            Cancel
-          </button>
-          <button
-            className="cursor-pointer rounded-full bg-[#9b514a] px-4 py-2 font-medium text-white outline-none transition hover:bg-[#82423c]"
-            onClick={onConfirm}
-            type="button"
-          >
-            Delete book
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 

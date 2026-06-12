@@ -1,4 +1,4 @@
-import { ArrowDownWideNarrow, Check, FilePlus2, PenLine } from 'lucide-react';
+import { ArrowDownWideNarrow, Check, FilePlus2, PenLine, Settings } from 'lucide-react';
 import type { ReactElement, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import logoMark from './logo.svg';
@@ -7,11 +7,13 @@ export type LibrarySortMode = 'title' | 'updated';
 
 export function LibraryHeader({
   onOpenNewBookModal,
+  onOpenSettings,
   onSortModeChange,
   onStartQuickDraft,
   sortMode,
 }: {
   onOpenNewBookModal: () => void;
+  onOpenSettings: () => void;
   onSortModeChange: (sortMode: LibrarySortMode) => void;
   onStartQuickDraft: () => void;
   sortMode: LibrarySortMode;
@@ -27,21 +29,32 @@ export function LibraryHeader({
           className="size-7 rounded-md shadow-[0_5px_12px_rgba(53,92,125,0.18)]"
           src={logoMark}
         />
-        <p className="font-semibold text-[#9b958b] text-xs uppercase tracking-[0.18em]">Goyo</p>
+        <p className="font-semibold text-[var(--goyo-text-faint)] text-xs uppercase tracking-[0.18em]">
+          Goyo
+        </p>
       </div>
-      <div className="mb-10 flex items-end justify-between gap-8 border-[#ded7cb] border-b pb-7">
+      <div className="mb-10 flex items-end justify-between gap-8 border-[var(--goyo-border-strong)] border-b pb-7">
         <div>
           <h1 className="font-semibold text-[2.55rem] leading-none tracking-[-0.06em]">
             Choose a book
           </h1>
-          <p className="mt-3 max-w-[31rem] text-[#746f66]">
+          <p className="mt-3 max-w-[31rem] text-[var(--goyo-text-muted)]">
             Open a manuscript, create a book, or start a quick draft.
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
+          <button
+            aria-label="Settings"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text-muted)] outline-none transition hover:brightness-95"
+            onClick={onOpenSettings}
+            type="button"
+          >
+            <Settings aria-hidden="true" size={16} />
+            Settings
+          </button>
           <div className="relative" ref={sortControlRef}>
             <button
-              className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#f1eee8] px-4 py-2 font-medium text-[#575149] outline-none transition hover:bg-[#e9e4dc]"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text-muted)] outline-none transition hover:brightness-95"
               onClick={() => setIsSortMenuOpen((current) => !current)}
               type="button"
             >
@@ -61,7 +74,7 @@ export function LibraryHeader({
             ) : null}
           </div>
           <button
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#30302d] px-4 py-2 font-medium text-white shadow-sm outline-none transition hover:bg-[#1f1f1d]"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--goyo-accent)] px-4 py-2 font-medium text-white shadow-sm outline-none transition hover:bg-[var(--goyo-accent-hover)]"
             onClick={onOpenNewBookModal}
             type="button"
           >
@@ -69,7 +82,7 @@ export function LibraryHeader({
             New book
           </button>
           <button
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] outline-none transition hover:bg-[#e3dfd6]"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95"
             onClick={onStartQuickDraft}
             type="button"
           >

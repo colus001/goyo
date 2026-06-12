@@ -13,6 +13,8 @@ import type {
 } from '@writer/core';
 import { DEFAULT_BOOK_ACCENT_COLOR } from '@writer/core';
 import Database from 'better-sqlite3';
+import type { AppSettings } from '../shared/app-settings';
+import { DEFAULT_APP_SETTINGS, normalizeAppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 import { DEFAULT_APP_UI_STATE_ID } from '../shared/app-ui-state';
 
@@ -82,6 +84,10 @@ interface AppUiStateRow {
   state_json: string;
 }
 
+interface AppSettingsRow {
+  value: string;
+}
+
 interface SerializedDocumentUpdateRecord extends Omit<DocumentUpdateRecord, 'update'> {
   update: ArrayBuffer | ArrayLike<number> | Uint8Array;
 }
@@ -93,6 +99,7 @@ interface SerializedDocumentSnapshotRecord extends Omit<DocumentSnapshotRecord, 
 export interface DesktopLocalStore {
   appendDocumentUpdate(update: SerializedDocumentUpdateRecord): void;
   enqueueSyncItem(item: SyncQueueItem): void;
+  getAppSettings(): AppSettings;
   getAppUiState(): AppUiState | null;
   getDocumentSnapshot(snapshotId: string): DocumentSnapshotRecord | null;
   getLatestDocumentSnapshot(documentId: string): DocumentSnapshotRecord | null;
@@ -109,6 +116,7 @@ export interface DesktopLocalStore {
   saveDocument(document: DocumentMetadata): void;
   saveDocumentSnapshot(snapshot: SerializedDocumentSnapshotRecord): void;
   saveAppUiState(state: AppUiState): void;
+  saveAppSettings(settings: AppSettings): void;
 }
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: Schema setup and prepared statements need to stay in one SQLite initialization scope.
@@ -189,6 +197,12 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     CREATE TABLE IF NOT EXISTS app_ui_state (
       id TEXT PRIMARY KEY,
       state_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
   `);
@@ -337,6 +351,18 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
       state_json = excluded.state_json,
       updated_at = excluded.updated_at;
   `);
+  const getAppSettingsStatement = database.prepare(`
+    SELECT value
+    FROM app_settings
+    WHERE key = 'app';
+  `);
+  const saveAppSettingsStatement = database.prepare(`
+    INSERT INTO app_settings (key, value, updated_at)
+    VALUES ('app', @value, @updatedAt)
+    ON CONFLICT(key) DO UPDATE SET
+      value = excluded.value,
+      updated_at = excluded.updated_at;
+  `);
 
   return {
     appendDocumentUpdate(update) {
@@ -347,6 +373,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     enqueueSyncItem(item) {
       enqueueSyncItemStatement.run(item);
+    },
+    getAppSettings() {
+      const row = getAppSettingsStatement.get();
+
+      return row ? rowToAppSettings(row) : DEFAULT_APP_SETTINGS;
     },
     getAppUiState() {
       const row = getAppUiStateStatement.get(DEFAULT_APP_UI_STATE_ID);
@@ -411,7 +442,25 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
         updatedAt: state.updatedAt,
       });
     },
+    saveAppSettings(settings) {
+      saveAppSettingsStatement.run({
+        updatedAt: new Date().toISOString(),
+        value: JSON.stringify(settings),
+      });
+    },
   };
+}
+
+function rowToAppSettings(row: unknown): AppSettings {
+  let settings: Partial<AppSettings>;
+
+  try {
+    settings = JSON.parse((row as AppSettingsRow).value) as Partial<AppSettings>;
+  } catch {
+    return DEFAULT_APP_SETTINGS;
+  }
+
+  return normalizeAppSettings(settings);
 }
 
 function rowToAppUiState(row: unknown): AppUiState | null {

@@ -8,6 +8,7 @@ import {
   QUICK_DRAFTS_INBOX_CHAPTER_ID,
 } from '@writer/core';
 import { describe, expect, it } from 'vitest';
+import { type AppSettings, DEFAULT_APP_SETTINGS } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 import { restoreWorkspaceState } from './app-ui-state-restore';
 
@@ -55,6 +56,36 @@ describe('restoreWorkspaceState selection', () => {
 
     expect(restored.screen).toBe('library');
     expect(restored.session?.activeBookId).toBe(book.id);
+  });
+});
+
+describe('restoreWorkspaceState launch preference', () => {
+  it('starts in the library without discarding saved selection when launch restore is disabled', () => {
+    const book = createBookMetadata({ id: 'book_a', now: NOW, title: 'Book A' });
+    const chapter = createChapterMetadata({ bookId: book.id, id: 'chapter_a', now: NOW });
+    const document = createDocumentMetadata({
+      bookId: book.id,
+      chapterId: chapter.id,
+      id: 'doc_a',
+      now: NOW,
+    });
+
+    const restored = restoreWorkspaceState({
+      books: [book],
+      chapters: [chapter],
+      documents: [document],
+      savedState: createSavedState({
+        activeBookId: book.id,
+        activeChapterId: chapter.id,
+        activeDocumentId: document.id,
+        lastScreen: 'book',
+      }),
+      settings: createSettings({ restoreLastWorkspaceOnLaunch: false }),
+    });
+
+    expect(restored.screen).toBe('library');
+    expect(restored.session?.activeBookId).toBe(book.id);
+    expect(restored.session?.activeDocumentId).toBe(document.id);
   });
 });
 
@@ -109,5 +140,12 @@ function createSavedState(state: Partial<AppUiState>): AppUiState {
     lastScreen: 'book',
     updatedAt: NOW,
     ...state,
+  };
+}
+
+function createSettings(settings: Partial<AppSettings>): AppSettings {
+  return {
+    ...DEFAULT_APP_SETTINGS,
+    ...settings,
   };
 }
