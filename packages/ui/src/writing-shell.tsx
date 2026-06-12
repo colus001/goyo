@@ -21,6 +21,8 @@ export interface WritingShellProps {
     title: string;
     updatedAt: string;
   }>;
+  expandedChapterIds?: string[];
+  isSidebarCollapsed?: boolean;
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
   onCreateDocumentInChapter?: (chapterId: string, kind: 'draft' | 'episode' | 'note') => void;
@@ -33,7 +35,9 @@ export interface WritingShellProps {
   onRenameChapter?: (title: string) => void;
   onSelectChapter?: (chapterId: string) => void;
   onSelectDocument?: (documentId: string) => void;
+  onExpandedChapterIdsChange?: (chapterIds: string[]) => void;
   onShowLibrary?: () => void;
+  onSidebarCollapsedChange?: (isCollapsed: boolean) => void;
   status?: string;
 }
 
@@ -45,6 +49,8 @@ export function WritingShell({
   chapters = [],
   children,
   documents = [],
+  expandedChapterIds,
+  isSidebarCollapsed: controlledSidebarCollapsed,
   onCreateChapter,
   onCreateDocument,
   onCreateDocumentInChapter,
@@ -57,10 +63,22 @@ export function WritingShell({
   onRenameChapter,
   onSelectChapter,
   onSelectDocument,
+  onExpandedChapterIdsChange,
   onShowLibrary,
+  onSidebarCollapsedChange,
   status = 'Local session',
 }: WritingShellProps): ReactElement {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [localSidebarCollapsed, setLocalSidebarCollapsed] = useState(false);
+  const isSidebarCollapsed = controlledSidebarCollapsed ?? localSidebarCollapsed;
+  const toggleSidebar = () => {
+    const nextValue = !isSidebarCollapsed;
+
+    if (controlledSidebarCollapsed === undefined) {
+      setLocalSidebarCollapsed(nextValue);
+    }
+
+    onSidebarCollapsedChange?.(nextValue);
+  };
 
   return (
     <main
@@ -86,10 +104,12 @@ export function WritingShell({
         onMoveDocument={onMoveDocument}
         onRenameBook={onRenameBook}
         onRenameChapter={onRenameChapter}
+        onExpandedChapterIdsChange={onExpandedChapterIdsChange}
         onSelectChapter={onSelectChapter}
         onSelectDocument={onSelectDocument}
         onShowLibrary={onShowLibrary}
-        onToggle={() => setIsSidebarCollapsed((current) => !current)}
+        onToggle={toggleSidebar}
+        expandedChapterIds={expandedChapterIds}
         status={status}
       />
 

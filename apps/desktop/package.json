@@ -15,6 +15,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "@writer/core": "workspace:*",
     "@writer/editor": "workspace:*",
+    "@writer/shared": "workspace:*",
     "@writer/ui": "workspace:*",
     "better-sqlite3": "^12.10.0",
     "electron-vite": "^5.0.0",

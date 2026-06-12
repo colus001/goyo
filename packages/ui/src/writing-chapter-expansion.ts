@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { WritingShellProps } from './writing-shell';
 
 type ChapterItem = NonNullable<WritingShellProps['chapters']>[number];
@@ -13,23 +13,41 @@ export interface ChapterExpansionActions {
 export function useExpandedChapters(
   activeDocumentId: string | undefined,
   documents: DocumentItem[],
+  controlledExpandedChapterIds?: string[],
+  onExpandedChapterIdsChange?: (chapterIds: string[]) => void,
 ): [Set<string>, ChapterExpansionActions] {
   const [expandedChapterIds, setExpandedChapterIds] = useState<Set<string>>(() => new Set());
+  const currentExpandedChapterIds = controlledExpandedChapterIds
+    ? new Set(controlledExpandedChapterIds)
+    : expandedChapterIds;
+
+  const setNextExpandedChapterIds = useCallback(
+    (nextValues: Set<string>) => {
+      if (controlledExpandedChapterIds === undefined) {
+        setExpandedChapterIds(nextValues);
+      }
+
+      onExpandedChapterIdsChange?.([...nextValues]);
+    },
+    [controlledExpandedChapterIds, onExpandedChapterIdsChange],
+  );
 
   useEffect(() => {
     const chapterId = documents.find((document) => document.id === activeDocumentId)?.chapterId;
 
-    if (chapterId) {
-      setExpandedChapterIds((current) => new Set(current).add(chapterId));
+    if (chapterId && !currentExpandedChapterIds.has(chapterId)) {
+      setNextExpandedChapterIds(new Set(currentExpandedChapterIds).add(chapterId));
     }
-  }, [activeDocumentId, documents]);
+  }, [activeDocumentId, documents, currentExpandedChapterIds, setNextExpandedChapterIds]);
 
   return [
-    expandedChapterIds,
+    currentExpandedChapterIds,
     {
-      collapseAll: () => setExpandedChapterIds(new Set()),
-      openAll: (chapters) => setExpandedChapterIds(new Set(chapters.map((chapter) => chapter.id))),
-      toggle: (chapterId) => setExpandedChapterIds((current) => toggleSetValue(current, chapterId)),
+      collapseAll: () => setNextExpandedChapterIds(new Set()),
+      openAll: (chapters) =>
+        setNextExpandedChapterIds(new Set(chapters.map((chapter) => chapter.id))),
+      toggle: (chapterId) =>
+        setNextExpandedChapterIds(toggleSetValue(currentExpandedChapterIds, chapterId)),
     },
   ];
 }

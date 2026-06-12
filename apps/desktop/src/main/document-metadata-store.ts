@@ -13,6 +13,8 @@ import type {
 } from '@writer/core';
 import { DEFAULT_BOOK_ACCENT_COLOR } from '@writer/core';
 import Database from 'better-sqlite3';
+import type { AppUiState } from '../shared/app-ui-state';
+import { DEFAULT_APP_UI_STATE_ID } from '../shared/app-ui-state';
 
 const DEFAULT_BOOK_ID = 'book_default';
 const DEFAULT_BOOK_TITLE = 'Untitled book';
@@ -76,6 +78,10 @@ interface SyncQueueRow {
   last_attempt_at: string | null;
 }
 
+interface AppUiStateRow {
+  state_json: string;
+}
+
 interface SerializedDocumentUpdateRecord extends Omit<DocumentUpdateRecord, 'update'> {
   update: ArrayBuffer | ArrayLike<number> | Uint8Array;
 }
@@ -87,6 +93,8 @@ interface SerializedDocumentSnapshotRecord extends Omit<DocumentSnapshotRecord, 
 export interface DesktopLocalStore {
   appendDocumentUpdate(update: SerializedDocumentUpdateRecord): void;
   enqueueSyncItem(item: SyncQueueItem): void;
+  getAppUiState(): AppUiState | null;
+  getDocumentSnapshot(snapshotId: string): DocumentSnapshotRecord | null;
   getLatestDocumentSnapshot(documentId: string): DocumentSnapshotRecord | null;
   listBooks(): BookMetadata[];
   listChapters(): ChapterMetadata[];
@@ -94,11 +102,13 @@ export interface DesktopLocalStore {
   listDocumentUpdates(documentId: string): DocumentUpdateRecord[];
   listDocumentUpdatesAfter(documentId: string, updateId: string): DocumentUpdateRecord[];
   listPendingSyncItems(): SyncQueueItem[];
+  markSyncItemAttempted(syncItemId: string, attemptedAt: string): void;
   markSyncItemCompleted(syncItemId: string, completedAt: string): void;
   saveBook(book: BookMetadata): void;
   saveChapter(chapter: ChapterMetadata): void;
   saveDocument(document: DocumentMetadata): void;
   saveDocumentSnapshot(snapshot: SerializedDocumentSnapshotRecord): void;
+  saveAppUiState(state: AppUiState): void;
 }
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: Schema setup and prepared statements need to stay in one SQLite initialization scope.
@@ -175,6 +185,12 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
 
     CREATE INDEX IF NOT EXISTS sync_queue_pending_idx
       ON sync_queue(completed_at, created_at, id);
+
+    CREATE TABLE IF NOT EXISTS app_ui_state (
+      id TEXT PRIMARY KEY,
+      state_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 
   ensureDocumentColumn(database, 'book_id', `TEXT NOT NULL DEFAULT '${DEFAULT_BOOK_ID}'`);
@@ -281,6 +297,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     ORDER BY created_at DESC, id DESC
     LIMIT 1;
   `);
+  const getDocumentSnapshotStatement = database.prepare(`
+    SELECT id, document_id, last_update_id, snapshot_blob, created_at
+    FROM document_snapshots
+    WHERE id = ?;
+  `);
   const enqueueSyncItemStatement = database.prepare(`
     INSERT OR IGNORE INTO sync_queue (
       id, document_id, kind, record_id, created_at, attempts, last_attempt_at, completed_at
@@ -298,6 +319,24 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     SET completed_at = @completedAt
     WHERE id = @syncItemId;
   `);
+  const markSyncItemAttemptedStatement = database.prepare(`
+    UPDATE sync_queue
+    SET attempts = attempts + 1,
+      last_attempt_at = @attemptedAt
+    WHERE id = @syncItemId;
+  `);
+  const getAppUiStateStatement = database.prepare(`
+    SELECT state_json
+    FROM app_ui_state
+    WHERE id = ?;
+  `);
+  const saveAppUiStateStatement = database.prepare(`
+    INSERT INTO app_ui_state (id, state_json, updated_at)
+    VALUES (@id, @stateJson, @updatedAt)
+    ON CONFLICT(id) DO UPDATE SET
+      state_json = excluded.state_json,
+      updated_at = excluded.updated_at;
+  `);
 
   return {
     appendDocumentUpdate(update) {
@@ -308,6 +347,16 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     enqueueSyncItem(item) {
       enqueueSyncItemStatement.run(item);
+    },
+    getAppUiState() {
+      const row = getAppUiStateStatement.get(DEFAULT_APP_UI_STATE_ID);
+
+      return row ? rowToAppUiState(row) : null;
+    },
+    getDocumentSnapshot(snapshotId) {
+      const row = getDocumentSnapshotStatement.get(snapshotId);
+
+      return row ? rowToDocumentSnapshotRecord(row) : null;
     },
     getLatestDocumentSnapshot(documentId) {
       const row = getLatestDocumentSnapshotStatement.get(documentId);
@@ -334,6 +383,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     listPendingSyncItems() {
       return listPendingSyncItemsStatement.all().map(rowToSyncQueueItem);
     },
+    markSyncItemAttempted(syncItemId, attemptedAt) {
+      markSyncItemAttemptedStatement.run({ attemptedAt, syncItemId });
+    },
     markSyncItemCompleted(syncItemId, completedAt) {
       markSyncItemCompletedStatement.run({ completedAt, syncItemId });
     },
@@ -352,6 +404,39 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
         snapshot: toUpdateBuffer(snapshot.snapshot),
       });
     },
+    saveAppUiState(state) {
+      saveAppUiStateStatement.run({
+        id: DEFAULT_APP_UI_STATE_ID,
+        stateJson: JSON.stringify(state),
+        updatedAt: state.updatedAt,
+      });
+    },
+  };
+}
+
+function rowToAppUiState(row: unknown): AppUiState | null {
+  let state: Partial<AppUiState>;
+
+  try {
+    state = JSON.parse((row as AppUiStateRow).state_json) as Partial<AppUiState>;
+  } catch {
+    return null;
+  }
+
+  if (state.lastScreen !== 'book' && state.lastScreen !== 'library') {
+    return null;
+  }
+
+  return {
+    activeBookId: typeof state.activeBookId === 'string' ? state.activeBookId : null,
+    activeChapterId: typeof state.activeChapterId === 'string' ? state.activeChapterId : null,
+    activeDocumentId: typeof state.activeDocumentId === 'string' ? state.activeDocumentId : null,
+    expandedChapterIds: Array.isArray(state.expandedChapterIds)
+      ? state.expandedChapterIds.filter((id): id is string => typeof id === 'string')
+      : [],
+    isSidebarCollapsed: state.isSidebarCollapsed === true,
+    lastScreen: state.lastScreen,
+    updatedAt: typeof state.updatedAt === 'string' ? state.updatedAt : new Date().toISOString(),
   };
 }
 

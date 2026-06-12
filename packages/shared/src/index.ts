@@ -1,4 +1,4 @@
-export const APP_NAME = 'Writer';
+export const APP_NAME = 'Goyo';
 
 export type BookId = string;
 export type ChapterId = string;

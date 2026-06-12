@@ -11,6 +11,7 @@ export type SaveStatus =
   | 'Saved locally'
   | 'Saving locally'
   | 'Save failed';
+export type SyncStatus = 'Offline' | 'Sync idle' | 'Sync pending' | 'Synced' | 'Syncing';
 export type WorkspaceScreen = 'book' | 'library' | 'loading';
 export type DocumentSnapshotMap = Record<string, Uint8Array | undefined>;
 export type DocumentUpdateMap = Record<string, Uint8Array[]>;
@@ -30,6 +31,8 @@ export interface WritingWorkspaceState {
   deleteDocument: (documentId: string) => void;
   documentSnapshots: DocumentSnapshotMap;
   documentUpdates: DocumentUpdateMap;
+  expandedChapterIds: string[];
+  isSidebarCollapsed: boolean;
   moveChapter: (chapterId: string, direction: 'down' | 'up') => void;
   moveDocument: (documentId: string, direction: 'down' | 'up') => void;
   openDocument: (documentId: string) => void;
@@ -41,8 +44,11 @@ export interface WritingWorkspaceState {
   screen: WorkspaceScreen;
   selectBook: (bookId: string) => void;
   selectChapter: (chapterId: string) => void;
+  setExpandedChapterIds: (chapterIds: string[]) => void;
+  setSidebarCollapsed: (isCollapsed: boolean) => void;
   session: DocumentSession | null;
   showLibrary: () => void;
   startQuickDraft: () => void;
+  syncStatus: SyncStatus;
   updateBookAccentColor: (bookId: string, accentColor: string) => void;
 }

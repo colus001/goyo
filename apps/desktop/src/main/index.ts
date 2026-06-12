@@ -6,9 +6,16 @@ import type {
   DocumentSnapshotRecord,
   SyncQueueItem,
 } from '@writer/core';
+import { APP_NAME } from '@writer/shared';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import type { AppUiState } from '../shared/app-ui-state';
 import { createDesktopLocalStore } from './document-metadata-store';
-import { pullRemoteDocumentUpdates, pushPendingDocumentUpdates } from './remote-sync';
+import {
+  pullRemoteDocumentSnapshots,
+  pullRemoteDocumentUpdates,
+  pushPendingDocumentSnapshots,
+  pushPendingDocumentUpdates,
+} from './remote-sync';
 
 const isDevelopment = !app.isPackaged;
 
@@ -16,6 +23,15 @@ const isDevelopment = !app.isPackaged;
 function registerDocumentIpc() {
   const store = createDesktopLocalStore(app.getPath('userData'));
 
+  ipcMain.handle('appUiState:get', () => store.getAppUiState());
+  ipcMain.handle('appUiState:save', (_event, state: AppUiState) => {
+    try {
+      store.saveAppUiState(state);
+    } catch (error) {
+      console.error('Failed to save app UI state', getErrorMessage(error));
+      throw error;
+    }
+  });
   ipcMain.handle('books:list', () => store.listBooks());
   ipcMain.handle('books:saveMetadata', (_event, book: BookMetadata) => {
     try {
@@ -93,11 +109,27 @@ function registerDocumentIpc() {
       throw error;
     }
   });
+  ipcMain.handle('sync:pushPendingSnapshots', async () => {
+    try {
+      return await pushPendingDocumentSnapshots(store);
+    } catch (error) {
+      console.error('Failed to push pending document snapshots', getErrorMessage(error));
+      throw error;
+    }
+  });
   ipcMain.handle('sync:pullRemoteUpdates', async () => {
     try {
       return await pullRemoteDocumentUpdates(store);
     } catch (error) {
       console.error('Failed to pull remote document updates', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('sync:pullRemoteSnapshots', async () => {
+    try {
+      return await pullRemoteDocumentSnapshots(store);
+    } catch (error) {
+      console.error('Failed to pull remote document snapshots', getErrorMessage(error));
       throw error;
     }
   });
@@ -157,7 +189,8 @@ function createWindow() {
     height: 860,
     minWidth: 960,
     minHeight: 640,
-    title: 'Writer',
+    icon: join(__dirname, '../../../../assets/logo.png'),
+    title: APP_NAME,
     backgroundColor: '#f4efe6',
     show: false,
     webPreferences: {
@@ -181,7 +214,7 @@ function createWindow() {
 }
 
 void app.whenReady().then(() => {
-  app.setName('Writer');
+  app.setName(APP_NAME);
   registerDocumentIpc();
   createApplicationMenu();
   createWindow();

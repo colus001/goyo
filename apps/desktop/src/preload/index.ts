@@ -7,8 +7,13 @@ import type {
   SyncQueueItem,
 } from '@writer/core';
 import { contextBridge, ipcRenderer } from 'electron';
+import type { AppUiState } from '../shared/app-ui-state';
 
 const desktopApi = {
+  appUiState: {
+    get: () => ipcRenderer.invoke('appUiState:get') as Promise<AppUiState | null>,
+    save: (state: AppUiState) => ipcRenderer.invoke('appUiState:save', state) as Promise<void>,
+  },
   books: {
     list: () => ipcRenderer.invoke('books:list') as Promise<BookMetadata[]>,
     saveMetadata: (book: BookMetadata) =>
@@ -56,9 +61,19 @@ const desktopApi = {
         pushedUpdateCount: number;
         skippedUpdateCount: number;
       }>,
+    pushPendingSnapshots: () =>
+      ipcRenderer.invoke('sync:pushPendingSnapshots') as Promise<{
+        pushedSnapshotCount: number;
+        skippedSnapshotCount: number;
+      }>,
     pullRemoteUpdates: () =>
       ipcRenderer.invoke('sync:pullRemoteUpdates') as Promise<{
         pulledUpdateCount: number;
+        skippedDocumentCount: number;
+      }>,
+    pullRemoteSnapshots: () =>
+      ipcRenderer.invoke('sync:pullRemoteSnapshots') as Promise<{
+        pulledSnapshotCount: number;
         skippedDocumentCount: number;
       }>,
   },

@@ -38,6 +38,9 @@ importers:
       '@writer/editor':
         specifier: workspace:*
         version: link:../../packages/editor
+      '@writer/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@writer/ui':
         specifier: workspace:*
         version: link:../../packages/ui

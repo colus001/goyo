@@ -6,10 +6,15 @@ import type {
   DocumentUpdateRecord,
   SyncQueueItem,
 } from '@writer/core';
+import type { AppUiState } from '../shared/app-ui-state';
 
 declare global {
   interface Window {
     writerDesktop: {
+      appUiState: {
+        get: () => Promise<AppUiState | null>;
+        save: (state: AppUiState) => Promise<void>;
+      };
       books: {
         list: () => Promise<BookMetadata[]>;
         saveMetadata: (book: BookMetadata) => Promise<void>;
@@ -40,6 +45,14 @@ declare global {
         pullRemoteUpdates: () => Promise<{
           pulledUpdateCount: number;
           skippedDocumentCount: number;
+        }>;
+        pullRemoteSnapshots: () => Promise<{
+          pulledSnapshotCount: number;
+          skippedDocumentCount: number;
+        }>;
+        pushPendingSnapshots: () => Promise<{
+          pushedSnapshotCount: number;
+          skippedSnapshotCount: number;
         }>;
         pushPendingUpdates: () => Promise<{
           pushedUpdateCount: number;

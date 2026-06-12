@@ -1,5 +1,4 @@
 import {
-  createDocumentSessionFromBooksChaptersAndDocuments,
   type DocumentSession,
   getActiveBook,
   getActiveChapterOrNull,
@@ -7,6 +6,8 @@ import {
 } from '@writer/core';
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useState } from 'react';
+import { createAppUiState, saveAppUiState } from './app-ui-state-persistence';
+import { restoreWorkspaceState } from './app-ui-state-restore';
 import {
   createBook,
   createChapter,
@@ -31,18 +32,24 @@ import type {
   DocumentSnapshotMap,
   DocumentUpdateMap,
   SaveStatus,
+  SyncStatus,
   WorkspaceScreen,
   WritingWorkspaceState,
 } from './document-workspace-types';
+import { useRemoteSync } from './use-remote-sync';
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: This hook assembles the workspace API from local state and action wiring.
 export function useWritingWorkspace(): WritingWorkspaceState {
   const [clientId] = useState(() => `client_${globalThis.crypto.randomUUID()}`);
   const [documentSnapshots, setDocumentSnapshots] = useState<DocumentSnapshotMap>({});
   const [documentUpdates, setDocumentUpdates] = useState<DocumentUpdateMap>({});
+  const [expandedChapterIds, setExpandedChapterIds] = useState<string[]>([]);
+  const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [screen, setScreen] = useState<WorkspaceScreen>('loading');
   const [session, setSession] = useState<DocumentSession | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('Loading local documents');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('Sync idle');
   const activeDocument = session ? getActiveDocumentOrNull(session) : null;
   const activeChapter = session ? getActiveChapterOrNull(session) : null;
   const activeBook = session ? getActiveBook(session) : null;
@@ -53,8 +60,22 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     setDocumentUpdates,
     setSaveStatus,
   );
-  useLoadWorkspace(setSession, setSaveStatus, setScreen);
-  useSyncOnStartup();
+  useLoadWorkspace(
+    setSession,
+    setSaveStatus,
+    setScreen,
+    setSidebarCollapsed,
+    setExpandedChapterIds,
+    setHasLoadedWorkspace,
+  );
+  useRemoteSync(setSyncStatus);
+  usePersistAppUiState({
+    expandedChapterIds,
+    hasLoadedWorkspace,
+    isSidebarCollapsed,
+    screen,
+    session,
+  });
 
   return {
     activeBook,
@@ -74,6 +95,8 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     deleteDocument: (documentId) => archiveDocument(documentId, setSession, setSaveStatus),
     documentSnapshots,
     documentUpdates,
+    expandedChapterIds,
+    isSidebarCollapsed,
     moveChapter: (chapterId, direction) =>
       moveChapter(chapterId, direction, setSession, setSaveStatus),
     moveDocument: (documentId, direction) =>
@@ -89,52 +112,48 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     screen,
     selectBook: (bookId) => selectBook(bookId, setSession, setScreen),
     selectChapter: (chapterId) => selectChapter(chapterId, setSession),
+    setExpandedChapterIds,
+    setSidebarCollapsed,
     session,
     showLibrary: () => setScreen('library'),
     startQuickDraft: () => startQuickDraft(setSession, setScreen, setSaveStatus),
+    syncStatus,
     updateBookAccentColor: (bookId, accentColor) =>
       updateBookAccentColor(bookId, accentColor, setSession, setSaveStatus),
   };
-}
-
-function useSyncOnStartup() {
-  useEffect(() => {
-    async function syncDocuments() {
-      await window.writerDesktop.sync.pushPendingUpdates();
-      await window.writerDesktop.sync.pullRemoteUpdates();
-    }
-
-    void syncDocuments().catch(() => {
-      // Local writes remain safe; failed remote sync stays pending for a later retry.
-    });
-  }, []);
 }
 
 function useLoadWorkspace(
   setSession: Dispatch<SetStateAction<DocumentSession | null>>,
   setSaveStatus: (saveStatus: SaveStatus) => void,
   setScreen: (screen: WorkspaceScreen) => void,
+  setSidebarCollapsed: (isCollapsed: boolean) => void,
+  setExpandedChapterIds: (chapterIds: string[]) => void,
+  setHasLoadedWorkspace: (hasLoadedWorkspace: boolean) => void,
 ) {
   useEffect(() => {
     let isCancelled = false;
 
     async function loadWorkspace() {
-      const [books, chapters, documents] = await Promise.all([
+      const [books, chapters, documents, savedState] = await Promise.all([
         window.writerDesktop.books.list(),
         window.writerDesktop.chapters.list(),
         window.writerDesktop.documents.list(),
+        window.writerDesktop.appUiState.get(),
       ]);
 
       if (isCancelled) {
         return;
       }
 
-      if (books.length > 0 || chapters.length > 0 || documents.length > 0) {
-        setSession(createDocumentSessionFromBooksChaptersAndDocuments(books, chapters, documents));
-      }
+      const restoredState = restoreWorkspaceState({ books, chapters, documents, savedState });
 
+      setSession(restoredState.session);
+      setSidebarCollapsed(restoredState.isSidebarCollapsed);
+      setExpandedChapterIds(restoredState.expandedChapterIds);
       setSaveStatus('Saved locally');
-      setScreen('library');
+      setScreen(restoredState.screen);
+      setHasLoadedWorkspace(true);
     }
 
     void loadWorkspace().catch(() => setSaveStatus('Save failed'));
@@ -142,7 +161,36 @@ function useLoadWorkspace(
     return () => {
       isCancelled = true;
     };
-  }, [setSaveStatus, setScreen, setSession]);
+  }, [
+    setExpandedChapterIds,
+    setHasLoadedWorkspace,
+    setSaveStatus,
+    setScreen,
+    setSession,
+    setSidebarCollapsed,
+  ]);
+}
+
+function usePersistAppUiState({
+  expandedChapterIds,
+  hasLoadedWorkspace,
+  isSidebarCollapsed,
+  screen,
+  session,
+}: {
+  expandedChapterIds: string[];
+  hasLoadedWorkspace: boolean;
+  isSidebarCollapsed: boolean;
+  screen: WorkspaceScreen;
+  session: DocumentSession | null;
+}) {
+  useEffect(() => {
+    if (!hasLoadedWorkspace || screen === 'loading') {
+      return;
+    }
+
+    saveAppUiState(createAppUiState({ expandedChapterIds, isSidebarCollapsed, screen, session }));
+  }, [expandedChapterIds, hasLoadedWorkspace, isSidebarCollapsed, screen, session]);
 }
 
 function useLoadDocumentContent(
