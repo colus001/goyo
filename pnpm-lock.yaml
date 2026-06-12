@@ -143,6 +143,9 @@ importers:
       '@writer/shared':
         specifier: workspace:*
         version: link:../shared
+      yjs:
+        specifier: ^13.6.31
+        version: 13.6.31
     devDependencies:
       typescript:
         specifier: latest

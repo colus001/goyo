@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@writer/shared": "workspace:*"
+    "@writer/shared": "workspace:*",
+    "yjs": "^13.6.31"
   },
   "devDependencies": {
     "typescript": "latest"

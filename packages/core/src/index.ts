@@ -16,6 +16,13 @@ export {
   QUICK_DRAFTS_INBOX_CHAPTER_TITLE,
   renameChapter,
 } from './chapters';
+export type {
+  CrdtAdapter,
+  CrdtDocument,
+  CrdtSnapshot,
+  CrdtStateVector,
+  CrdtUpdate,
+} from './crdt';
 export type { DocumentSession } from './document-session';
 export {
   addChapterToSession,
@@ -64,3 +71,5 @@ export type {
   SyncState,
 } from './sync';
 export { createSyncQueueItem, sortSyncQueueItemsForProcessing } from './sync';
+export type { YjsCrdtDocument } from './yjs-crdt';
+export { createYjsCrdtAdapter } from './yjs-crdt';
