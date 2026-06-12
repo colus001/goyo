@@ -58,10 +58,7 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
 
     return (
       // biome-ignore lint/a11y/noStaticElementInteractions: Empty writing space should focus the Tiptap editor like a native editor surface.
-      <div
-        className="min-h-[calc(100vh-11rem)] max-w-[48rem] cursor-text"
-        onMouseDown={focusEditor}
-      >
+      <div className="max-w-[48rem] flex-1 cursor-text" onMouseDown={focusEditor}>
         <EditorContent editor={editor} />
       </div>
     );
@@ -94,7 +91,7 @@ function useWritingTiptapEditor(content: Y.XmlFragment, yDocument: Y.Doc) {
         attributes: {
           'aria-label': 'Writing editor',
           class:
-            'min-h-[calc(100vh-11rem)] cursor-text outline-none text-[1.25rem] leading-[1.85] text-[#2f2f2b] selection:bg-[#f0d6d3]',
+            'min-h-full cursor-text outline-none text-[1.25rem] leading-[1.85] text-[#2f2f2b] selection:bg-[#f0d6d3]',
         },
       },
       extensions: [

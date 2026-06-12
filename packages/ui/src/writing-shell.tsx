@@ -173,7 +173,7 @@ function WritingShellBody({
         expandedChapterIds={expandedChapterIds}
       />
 
-      <section className="min-h-0 overflow-y-auto bg-white" aria-label="Writing surface">
+      <section className="h-full min-h-0 overflow-y-auto bg-white" aria-label="Writing surface">
         {children ?? <EmptyWritingSurface />}
       </section>
     </div>
@@ -187,7 +187,7 @@ interface WritingShellBodyProps extends Omit<WritingShellProps, 'isSidebarCollap
 
 function EmptyWritingSurface(): ReactElement {
   return (
-    <article className="mx-auto min-h-screen w-full max-w-[60rem] cursor-text bg-[#ffffff] px-18 py-16">
+    <article className="mx-auto min-h-full w-full max-w-[60rem] cursor-text bg-[#ffffff] px-18 py-16">
       <p className="mb-4 font-medium text-[#999991] text-xs uppercase tracking-[0.13em]">
         No draft selected
       </p>

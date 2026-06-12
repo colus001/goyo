@@ -105,7 +105,7 @@ function formatWorkspaceStatus(workspace: WritingWorkspaceState) {
 
 function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState }) {
   return (
-    <article className="mx-auto grid min-h-screen w-full max-w-[52rem] place-items-center bg-white px-12 py-16">
+    <article className="mx-auto grid min-h-full w-full max-w-[52rem] place-items-center bg-white px-12 py-16">
       <div className="max-w-[34rem] text-center">
         <p className="mb-3 font-semibold text-[#999991] text-xs uppercase tracking-[0.14em]">
           Empty book
@@ -132,7 +132,7 @@ function ChapterSurface({ workspace }: { workspace: WritingWorkspaceState }) {
       .length ?? 0;
 
   return (
-    <article className="mx-auto grid min-h-screen w-full max-w-[52rem] place-items-center bg-white px-12 py-16">
+    <article className="mx-auto grid min-h-full w-full max-w-[52rem] place-items-center bg-white px-12 py-16">
       <div className="max-w-[34rem] text-center">
         <ChapterTitleInput chapter={chapter} onRename={workspace.renameChapterTitle} />
         {episodeCount === 0 ? (
@@ -164,7 +164,7 @@ function EpisodeSurface({
   const hasTitle = activeDocument.title.trim().length > 0;
 
   return (
-    <article className="mx-auto min-h-screen w-full max-w-[52rem] bg-white px-12 pt-12 pb-24">
+    <article className="mx-auto flex min-h-full w-full max-w-[52rem] flex-col bg-white px-12 pt-12 pb-24">
       <header className="mb-9 border-[#ecece8] border-b pb-6">
         <DocumentTitleInput
           autoFocus={!hasTitle}
