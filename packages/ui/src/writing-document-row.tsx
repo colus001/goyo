@@ -51,7 +51,7 @@ export function DocumentRow({
         type="button"
       >
         <p className="truncate font-medium text-[#292927] text-[0.9rem] tracking-[-0.005em]">
-          {document.title || 'Untitled episode'}
+          {document.title || 'Untitled'}
         </p>
       </button>
       <div className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 transition group-hover/document-row:opacity-100">
@@ -84,7 +84,7 @@ function MoveButton({
 }): ReactElement {
   return (
     <button
-      aria-label={`Move ${document.title || 'Untitled episode'} ${direction}`}
+      aria-label={`Move ${document.title || 'Untitled'} ${direction}`}
       className="grid size-6 cursor-pointer place-items-center rounded text-[#9b9b94] outline-none hover:bg-[#e9e9e4] hover:text-[#55554f]"
       onClick={(event) => {
         event.stopPropagation();
@@ -119,7 +119,7 @@ export function FloatingInsertButton({
       }`}
     >
       <button
-        aria-label="Insert episode here"
+        aria-label="Insert document here"
         className="absolute top-1/2 left-1/2 grid size-6 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-[#d8d8d2] bg-[#fbfbfa] text-[#777771] opacity-0 outline-none shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition hover:border-[#c7c7bf] hover:bg-white hover:text-[#30302d] hover:opacity-100 group-hover/insert:opacity-100"
         onClick={(event) => {
           event.stopPropagation();

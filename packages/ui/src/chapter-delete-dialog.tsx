@@ -43,8 +43,8 @@ export function ChapterDeleteDialog({
           Delete “{chapter.title}”?
         </h2>
         <p className="mt-3 text-[#746f66] leading-relaxed">
-          This removes the chapter and its episodes from this book. Your local data is archived, not
-          permanently erased.
+          This removes the chapter and its documents from this book. Your local data is archived,
+          not permanently erased.
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button

@@ -37,7 +37,7 @@ export function WritingTopBar({
   const currentTitle = activeDocument?.title || activeMoveTarget?.title || bookTitle;
 
   return (
-    <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[#deded9] border-b bg-[#fbfbfa] py-0 pr-3 pl-22 [-webkit-app-region:drag]">
+    <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[#e9e6df] border-b bg-white py-0 pr-3 pl-22 [-webkit-app-region:drag]">
       <div className="flex min-w-0 items-center gap-1.5">
         <CommandButton
           label={isSidebarCollapsed ? 'Show manuscript list' : 'Hide manuscript list'}
@@ -48,11 +48,11 @@ export function WritingTopBar({
         <CommandButton label="Library" onClick={onShowLibrary}>
           <ChevronUp aria-hidden="true" size={17} strokeWidth={2.1} />
         </CommandButton>
-        <div className="ml-2 min-w-0 border-[#e7e3dc] border-l pl-3">
+        <div className="ml-3 min-w-0">
           {breadcrumbSegments && breadcrumbSegments.length > 0 ? (
             <BreadcrumbTrail segments={breadcrumbSegments} />
           ) : (
-            <p className="truncate font-medium text-[#57534d] text-sm tracking-[-0.01em]">
+            <p className="truncate font-semibold text-[#3f3b36] text-[1rem] tracking-[-0.035em]">
               {currentTitle}
             </p>
           )}
@@ -72,7 +72,7 @@ export function WritingTopBar({
 
 function BreadcrumbTrail({ segments }: { segments: string[] }): ReactElement {
   return (
-    <div className="flex min-w-0 items-center gap-1.5 font-medium text-[#57534d] text-sm tracking-[-0.01em]">
+    <div className="flex min-w-0 items-center gap-1.5 font-semibold text-[#57534d] text-[1rem] tracking-[-0.035em]">
       {segments.map((segment, index) => (
         <span className="contents" key={segment}>
           {index > 0 ? (
@@ -201,18 +201,18 @@ function CreateMenu({
       role="menu"
     >
       <CreateMenuItem
-        disabled={!onCreateChapter}
-        label="New chapter"
+        disabled={!onCreateDocument}
+        label="New document"
         onClick={() => {
-          onCreateChapter?.();
+          onCreateDocument?.('episode');
           onClose();
         }}
       />
       <CreateMenuItem
-        disabled={!onCreateDocument}
-        label="New episode"
+        disabled={!onCreateChapter}
+        label="New chapter"
         onClick={() => {
-          onCreateDocument?.('episode');
+          onCreateChapter?.();
           onClose();
         }}
       />

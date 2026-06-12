@@ -121,7 +121,7 @@
 - [x] Add subtle sync status UI.
 - [x] Handle offline mode without blocking local editing.
 - [x] Handle reconnect after offline edits.
-- [ ] Verify same-document editing from two desktop app instances.
+- [x] Verify same-document editing from two desktop app instances.
 - [x] Verify duplicated sync requests are safe.
 - [x] Verify delayed or out-of-order remote updates are safe.
 
@@ -144,7 +144,7 @@
 - [ ] Define a light-first appearance color system with a small fixed UI palette.
 - [ ] Defer dark theme and user theme selection until the settings surface is implemented.
 - [x] Add keyboard shortcuts for primary writing actions.
-- [x] Add keyboard shortcuts for sidebar toggle, new episode, new chapter, focus editor, and return to library.
+- [x] Add keyboard shortcuts for sidebar toggle, new document, new chapter, focus editor, and return to library.
 - [x] Add word count.
 - [x] Add document status metadata.
 - [x] Add focused writing mode.
@@ -158,7 +158,6 @@
 - [x] Focus titled episodes into the editor body and untitled episodes into the title input.
 - [x] Protect Korean/IME title entry from Enter composition bugs.
 - [x] Add search.
-- [ ] Add basic tags or labels.
 - [ ] Support essay-style document workflows.
 - [x] Support basic fiction chapter workflows.
 - [x] Support fiction episode workflows inside and outside chapters.

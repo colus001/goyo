@@ -25,7 +25,7 @@ export function SidebarEmptySpaceContextMenu({
         [
           {
             icon: <Plus aria-hidden="true" size={15} />,
-            label: 'New episode',
+            label: 'New document',
             onSelect: onNewEpisode,
           },
           {
