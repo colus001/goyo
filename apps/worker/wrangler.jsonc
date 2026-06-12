@@ -5,5 +5,12 @@
   "compatibility_date": "2026-06-11",
   "observability": {
     "enabled": true
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "writer-sync",
+      "database_id": "a1577590-0b95-4bfb-9103-e224ef86407d"
+    }
+  ]
 }
