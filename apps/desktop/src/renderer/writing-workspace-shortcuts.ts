@@ -1,0 +1,95 @@
+import type { DocumentMetadata } from '@writer/core';
+import type { WritingEditorRef } from '@writer/editor';
+import { type RefObject, useEffect } from 'react';
+import type { WritingWorkspaceState } from './document-workspace-types';
+
+export function useWorkspaceKeyboardShortcuts(
+  workspace: WritingWorkspaceState,
+  activeDocument: DocumentMetadata | undefined,
+  editorRef: RefObject<WritingEditorRef | null>,
+) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const action = getWorkspaceShortcutAction(event, activeDocument);
+
+      if (!action) {
+        return;
+      }
+
+      event.preventDefault();
+      runWorkspaceShortcut(action, workspace, editorRef);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeDocument, editorRef, workspace]);
+}
+
+type WorkspaceShortcutAction =
+  | 'create-chapter'
+  | 'create-episode'
+  | 'focus-editor'
+  | 'show-library'
+  | 'toggle-sidebar';
+
+function getWorkspaceShortcutAction(
+  event: KeyboardEvent,
+  activeDocument: DocumentMetadata | undefined,
+): WorkspaceShortcutAction | null {
+  if (event.isComposing || !(event.metaKey || event.ctrlKey)) {
+    return null;
+  }
+
+  const key = event.key.toLowerCase();
+
+  if (key === '\\') {
+    return 'toggle-sidebar';
+  }
+
+  if (event.shiftKey && key === 'e') {
+    return 'create-episode';
+  }
+
+  if (event.shiftKey && key === 'c') {
+    return 'create-chapter';
+  }
+
+  if (event.shiftKey && key === 'l') {
+    return 'show-library';
+  }
+
+  if (!event.shiftKey && key === 'l' && activeDocument) {
+    return 'focus-editor';
+  }
+
+  return null;
+}
+
+function runWorkspaceShortcut(
+  action: WorkspaceShortcutAction,
+  workspace: WritingWorkspaceState,
+  editorRef: RefObject<WritingEditorRef | null>,
+) {
+  if (action === 'toggle-sidebar') {
+    workspace.setSidebarCollapsed(!workspace.isSidebarCollapsed);
+    return;
+  }
+
+  if (action === 'create-episode') {
+    workspace.createDocument('episode');
+    return;
+  }
+
+  if (action === 'create-chapter') {
+    workspace.createChapter();
+    return;
+  }
+
+  if (action === 'show-library') {
+    workspace.showLibrary();
+    return;
+  }
+
+  editorRef.current?.focus();
+}

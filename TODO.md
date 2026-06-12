@@ -131,20 +131,20 @@
 - [x] Add move up/down document ordering controls.
 - [x] Add move up/down chapter ordering controls.
 - [x] Add calm central writing surface.
-- [ ] Add quiet toolbar or command surface.
+- [x] Add quiet toolbar or command surface.
 - [x] Restore the last app state on launch, including the previous book, selected episode, sidebar collapse state, and chapter expansion state.
 - [x] Persist app UI state locally, including last route, selected book, selected episode, sidebar collapse state, and chapter expansion state.
 - [x] Add a startup restore flow that opens the last valid workspace state, falling back safely to the library if the saved book or episode was archived or deleted.
 - [x] Add tests or manual verification for startup restore with normal books, Quick Drafts, archived items, and empty workspaces.
-- [ ] Persist focused writing mode once it is exposed as separate UI state.
+- [x] Persist focused writing mode once it is exposed as separate UI state.
 - [ ] Add a settings menu or settings surface for app-level preferences.
 - [ ] Add a settings storage foundation for app-level preferences.
 - [ ] Add a setting to enable or disable restoring the last workspace on launch.
 - [ ] Add initial settings sections for writing preferences, appearance placeholders, and future sync/account preferences.
 - [ ] Define a light-first appearance color system with a small fixed UI palette.
 - [ ] Defer dark theme and user theme selection until the settings surface is implemented.
-- [ ] Add keyboard shortcuts for primary writing actions.
-- [ ] Add keyboard shortcuts for sidebar toggle, new episode, new chapter, focus editor, and return to library.
+- [x] Add keyboard shortcuts for primary writing actions.
+- [x] Add keyboard shortcuts for sidebar toggle, new episode, new chapter, focus editor, and return to library.
 - [x] Add word count.
 - [x] Add document status metadata.
 - [x] Add focused writing mode.
@@ -157,7 +157,7 @@
 - [x] Keep chapter expansion state independent from chapter or episode selection.
 - [x] Focus titled episodes into the editor body and untitled episodes into the title input.
 - [x] Protect Korean/IME title entry from Enter composition bugs.
-- [ ] Add search.
+- [x] Add search.
 - [ ] Add basic tags or labels.
 - [ ] Support essay-style document workflows.
 - [x] Support basic fiction chapter workflows.

@@ -1,0 +1,212 @@
+import type { ChapterMetadata, DocumentMetadata } from '@writer/core';
+import { WritingEditor, type WritingEditorRef } from '@writer/editor';
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import type { WritingWorkspaceState } from './document-workspace-types';
+
+const EMPTY_DOCUMENT_UPDATES: Uint8Array[] = [];
+
+export function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState }) {
+  return (
+    <article className="mx-auto grid min-h-full w-full max-w-[52rem] place-items-center bg-white px-12 py-16">
+      <div className="max-w-[34rem] text-center">
+        <p className="mb-3 font-semibold text-[#999991] text-xs uppercase tracking-[0.14em]">
+          Empty book
+        </p>
+        <h2 className="font-semibold text-[2rem] tracking-[-0.04em]">Start this manuscript</h2>
+        <div className="mt-8 flex justify-center gap-2">
+          <button
+            className="rounded-full bg-[#30302d] px-4 py-2 text-white"
+            onClick={() => workspace.createDocument('episode')}
+            type="button"
+          >
+            New episode
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function ChapterSurface({ workspace }: { workspace: WritingWorkspaceState }) {
+  const chapter = workspace.activeChapter as ChapterMetadata;
+  const episodeCount =
+    workspace.session?.documents.filter((d) => d.chapterId === chapter.id && d.kind === 'episode')
+      .length ?? 0;
+
+  return (
+    <article className="mx-auto grid min-h-full w-full max-w-[52rem] place-items-center bg-white px-12 py-16">
+      <div className="max-w-[34rem] text-center">
+        <ChapterTitleInput chapter={chapter} onRename={workspace.renameChapterTitle} />
+        {episodeCount === 0 ? (
+          <p className="mt-4 text-[#777771]">Episodes are the writing units inside a chapter.</p>
+        ) : null}
+        <button
+          className="mt-8 rounded-full bg-[#30302d] px-4 py-2 text-white"
+          onClick={() => workspace.createDocument('episode')}
+          type="button"
+        >
+          New episode
+        </button>
+      </div>
+    </article>
+  );
+}
+
+export function EpisodeSurface({
+  editorRef,
+  onWordCountChange,
+  workspace,
+}: {
+  editorRef: RefObject<WritingEditorRef | null>;
+  onWordCountChange: (wordCount: number) => void;
+  workspace: WritingWorkspaceState;
+}) {
+  const activeDocument = workspace.activeDocument as DocumentMetadata;
+  const initialSnapshot = workspace.documentSnapshots[activeDocument.id];
+  const initialUpdates = workspace.documentUpdates[activeDocument.id] ?? EMPTY_DOCUMENT_UPDATES;
+  const hasTitle = activeDocument.title.trim().length > 0;
+
+  return (
+    <article className="mx-auto flex min-h-full w-full max-w-[52rem] flex-col bg-white px-12 pt-12 pb-24">
+      <header className="mb-9 border-[#ecece8] border-b pb-6">
+        <DocumentTitleInput
+          autoFocus={!hasTitle}
+          document={activeDocument}
+          onRename={workspace.renameDocumentTitle}
+          onSubmit={() => editorRef.current?.focus()}
+        />
+      </header>
+
+      <WritingEditor
+        documentId={activeDocument.id}
+        focusOnMount={hasTitle}
+        key={activeDocument.id}
+        initialSnapshot={initialSnapshot}
+        initialUpdates={initialUpdates}
+        onDocumentUpdate={workspace.recordDocumentUpdate}
+        onWordCountChange={onWordCountChange}
+        ref={editorRef}
+      />
+    </article>
+  );
+}
+
+function ChapterTitleInput({
+  chapter,
+  onRename,
+}: {
+  chapter: ChapterMetadata;
+  onRename: (title: string) => void;
+}) {
+  const [title, setTitle] = useState(chapter.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTitle(chapter.title);
+  }, [chapter.title]);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const commitTitle = () => {
+    if (title.trim().length === 0) {
+      setTitle(chapter.title);
+      return;
+    }
+
+    onRename(title);
+  };
+
+  return (
+    <input
+      aria-label="Chapter title"
+      className="w-full bg-transparent text-center font-semibold text-[#242421] text-[2rem] leading-tight tracking-[-0.04em] outline-none placeholder:text-[#b5b5ae]"
+      onBlur={commitTitle}
+      onChange={(event) => setTitle(event.target.value)}
+      onKeyDown={(event) => {
+        if (isComposing(event)) {
+          return;
+        }
+
+        if (event.key === 'Enter') {
+          event.currentTarget.blur();
+        }
+      }}
+      placeholder="Untitled chapter"
+      ref={inputRef}
+      value={title}
+    />
+  );
+}
+
+function DocumentTitleInput({
+  autoFocus = true,
+  document,
+  onRename,
+  onSubmit,
+}: {
+  autoFocus?: boolean;
+  document: DocumentMetadata;
+  onRename: (title: string) => void;
+  onSubmit?: () => void;
+}) {
+  const [title, setTitle] = useState(document.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const documentId = document.id;
+
+  useEffect(() => {
+    setTitle(document.title);
+  }, [document.title]);
+
+  useEffect(() => {
+    if (autoFocus && documentId) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus, documentId]);
+
+  const commitTitle = () => {
+    if (title.trim().length === 0) {
+      setTitle(document.title);
+      return;
+    }
+
+    onRename(title);
+  };
+
+  return (
+    <input
+      aria-label={`${formatDocumentKind(document.kind)} title`}
+      className="w-full bg-transparent font-semibold text-[#242421] text-[2rem] leading-tight tracking-[-0.04em] outline-none placeholder:text-[#b5b5ae]"
+      onBlur={commitTitle}
+      onChange={(event) => setTitle(event.target.value)}
+      onKeyDown={(event) => {
+        if (isComposing(event)) {
+          return;
+        }
+
+        if (event.key === 'Enter') {
+          event.currentTarget.blur();
+          onSubmit?.();
+        }
+      }}
+      placeholder={`Untitled ${document.kind}`}
+      ref={inputRef}
+      value={title}
+    />
+  );
+}
+
+function isComposing(event: ReactKeyboardEvent<HTMLInputElement>): boolean {
+  return event.nativeEvent.isComposing || event.keyCode === 229;
+}
+
+function formatDocumentKind(kind: DocumentMetadata['kind']): string {
+  return kind[0].toUpperCase() + kind.slice(1);
+}
