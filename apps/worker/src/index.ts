@@ -1,5 +1,10 @@
 import { APP_NAME } from '@writer/shared';
 import {
+  getDocumentMetadata,
+  matchDocumentMetadataRoute,
+  upsertDocumentMetadata,
+} from './document-metadata';
+import {
   createDocumentSnapshot,
   getLatestDocumentSnapshot,
   matchDocumentSnapshotsRoute,
@@ -31,6 +36,16 @@ export default {
         service: `${APP_NAME} sync api`,
         storage: 'd1',
       });
+    }
+
+    const metadataRoute = matchDocumentMetadataRoute(url.pathname);
+
+    if (metadataRoute && request.method === 'PUT') {
+      return upsertDocumentMetadata(request, env, metadataRoute.documentId);
+    }
+
+    if (metadataRoute && request.method === 'GET') {
+      return getDocumentMetadata(env, metadataRoute.documentId);
     }
 
     const updateRoute = matchDocumentUpdatesRoute(url.pathname);
