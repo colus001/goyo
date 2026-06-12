@@ -103,7 +103,7 @@
 - [x] Add `document_snapshots` table.
 - [ ] Add `document_revisions` or equivalent revision metadata table if needed.
 - [x] Add `sync_clients` table if needed.
-- [ ] Add document metadata API.
+- [x] Add document metadata API.
 - [x] Add CRDT update upload API.
 - [x] Add CRDT update download API.
 - [x] Add snapshot read/write API.
@@ -181,6 +181,7 @@
 - [x] Added idempotent Worker snapshot upload and latest snapshot read APIs using D1 as the canonical store.
 - [x] Re-evaluated Drizzle for Worker D1 persistence and kept raw SQL migrations/queries for now to prioritize explicit CRDT update and snapshot storage semantics.
 - [x] Verified remote document content can be restored from D1-backed update logs and snapshots without KV.
+- [x] Added Worker document metadata upsert and read APIs backed by D1.
 
 ## Milestone 9: Recovery And Version Safety
 
