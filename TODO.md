@@ -69,8 +69,8 @@
 - [x] Store local book metadata separately from document content updates.
 - [x] Store local chapter metadata separately from document content updates.
 - [x] Store Yjs incremental updates locally.
-- [ ] Add local document snapshots or compacted state.
-- [ ] Add a local unsynced update queue.
+- [x] Add local document snapshots or compacted state.
+- [x] Add a local unsynced update queue.
 - [ ] Add document list indexing.
 - [ ] Add archive or soft-delete state.
 - [x] Add archive or soft-delete state for books, chapters, and documents.
@@ -94,6 +94,8 @@
 
 - [ ] Add Cloudflare Worker health endpoint.
 - [ ] Configure Wrangler for local development.
+- [ ] Re-evaluate Drizzle or another typed SQL layer before building the D1 schema.
+- [ ] If adopting Drizzle, introduce it at the persistence boundary rather than in `packages/core`.
 - [ ] Create initial D1 schema.
 - [ ] Add `documents` table.
 - [ ] Add `document_updates` table.
@@ -164,6 +166,11 @@
 - [x] Manually verify desktop restart restores books, chapters, book-level episodes, chapter episodes, ordering, archived state, and Yjs content.
 - [x] Manually verify context menus open and close consistently via outside click and Escape across sidebar empty space, chapters, and episodes.
 - [x] Manually verify sidebar hover affordances only appear for the row/card being hovered.
+- [x] Decided not to switch the current desktop SQLite store to Drizzle immediately; prioritize local store invariants, snapshots, unsynced queue, and CRDT sync safety first.
+- [x] Revisit Drizzle when adding Worker D1 persistence, where shared schema management and typed queries may provide more value.
+- [x] Keep any future ORM or typed SQL layer out of `packages/core`; core should continue to expose platform-neutral store interfaces.
+- [x] Added local snapshot storage with `lastUpdateId` checkpoints and document loading from latest snapshot plus later Yjs updates.
+- [x] Added local unsynced queue entries for document updates and document snapshots.
 
 ## Milestone 9: Recovery And Version Safety
 
