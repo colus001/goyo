@@ -2,7 +2,7 @@ import type { DocumentMetadata, DocumentSnapshotRecord, DocumentUpdateRecord } f
 import type { DesktopLocalStore } from './document-metadata-store';
 import { isSyncItemReadyForRetry } from './sync-retry';
 
-const WRITER_API_BASE_URL = 'https://writer-api.seokjun.kim';
+const GOYO_API_BASE_URL = 'https://goyo-api.seokjun.kim';
 
 interface PushPendingUpdatesResult {
   pushedUpdateCount: number;
@@ -191,7 +191,7 @@ export async function pullRemoteDocumentSnapshots(
 }
 
 async function pushDocumentMetadata(document: DocumentMetadata) {
-  await fetchJson(`${WRITER_API_BASE_URL}/v1/documents/${encodeURIComponent(document.id)}`, {
+  await fetchJson(`${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(document.id)}`, {
     method: 'PUT',
     body: JSON.stringify({
       archivedAt: document.archivedAt,
@@ -208,7 +208,7 @@ async function pushDocumentMetadata(document: DocumentMetadata) {
 
 async function pushDocumentUpdate(update: DocumentUpdateRecord) {
   await fetchJson(
-    `${WRITER_API_BASE_URL}/v1/documents/${encodeURIComponent(update.documentId)}/updates`,
+    `${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(update.documentId)}/updates`,
     {
       method: 'POST',
       body: JSON.stringify({
@@ -223,7 +223,7 @@ async function pushDocumentUpdate(update: DocumentUpdateRecord) {
 
 async function pushDocumentSnapshot(snapshot: DocumentSnapshotRecord) {
   await fetchJson(
-    `${WRITER_API_BASE_URL}/v1/documents/${encodeURIComponent(snapshot.documentId)}/snapshots`,
+    `${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(snapshot.documentId)}/snapshots`,
     {
       method: 'POST',
       body: JSON.stringify({
@@ -241,7 +241,7 @@ async function fetchRemoteDocumentUpdates(
   afterUpdateId: string | null,
 ): Promise<RemoteDocumentUpdatesResponse> {
   const url = new URL(
-    `${WRITER_API_BASE_URL}/v1/documents/${encodeURIComponent(documentId)}/updates`,
+    `${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(documentId)}/updates`,
   );
 
   if (afterUpdateId) {
@@ -255,7 +255,7 @@ async function fetchLatestRemoteDocumentSnapshot(
   documentId: string,
 ): Promise<RemoteLatestDocumentSnapshotResponse> {
   return fetchJson<RemoteLatestDocumentSnapshotResponse>(
-    `${WRITER_API_BASE_URL}/v1/documents/${encodeURIComponent(documentId)}/snapshots/latest`,
+    `${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(documentId)}/snapshots/latest`,
     { method: 'GET' },
   );
 }

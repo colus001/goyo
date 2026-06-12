@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "writer-sync-api",
+  "name": "goyo-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-11",
   "observability": {
@@ -11,6 +11,12 @@
       "binding": "DB",
       "database_name": "writer-sync",
       "database_id": "a1577590-0b95-4bfb-9103-e224ef86407d"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "goyo-api.seokjun.kim",
+      "custom_domain": true
     }
   ]
 }
