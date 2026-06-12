@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WritingShellProps } from './writing-shell';
 
 type ChapterItem = NonNullable<WritingShellProps['chapters']>[number];
@@ -20,6 +20,7 @@ export function useExpandedChapters(
   const currentExpandedChapterIds = controlledExpandedChapterIds
     ? new Set(controlledExpandedChapterIds)
     : expandedChapterIds;
+  const previousActiveDocumentIdRef = useRef(activeDocumentId);
 
   const setNextExpandedChapterIds = useCallback(
     (nextValues: Set<string>) => {
@@ -33,6 +34,12 @@ export function useExpandedChapters(
   );
 
   useEffect(() => {
+    if (previousActiveDocumentIdRef.current === activeDocumentId) {
+      return;
+    }
+
+    previousActiveDocumentIdRef.current = activeDocumentId;
+
     const chapterId = documents.find((document) => document.id === activeDocumentId)?.chapterId;
 
     if (chapterId && !currentExpandedChapterIds.has(chapterId)) {
