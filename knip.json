@@ -11,6 +11,10 @@
       ],
       "ignoreDependencies": ["tailwindcss"],
       "project": ["src/**/*.{ts,tsx}"]
+    },
+    "apps/web": {
+      "ignoreBinaries": ["wrangler"],
+      "ignoreDependencies": ["wrangler"]
     }
   }
 }
