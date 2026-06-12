@@ -137,12 +137,12 @@
 - [x] Add a startup restore flow that opens the last valid workspace state, falling back safely to the library if the saved book or episode was archived or deleted.
 - [x] Add tests or manual verification for startup restore with normal books, Quick Drafts, archived items, and empty workspaces.
 - [x] Persist focused writing mode once it is exposed as separate UI state.
-- [ ] Add a settings menu or settings surface for app-level preferences.
-- [ ] Add a settings storage foundation for app-level preferences.
-- [ ] Add a setting to enable or disable restoring the last workspace on launch.
-- [ ] Add initial settings sections for writing preferences, appearance placeholders, and future sync/account preferences.
-- [ ] Define a light-first appearance color system with a small fixed UI palette.
-- [ ] Defer dark theme and user theme selection until the settings surface is implemented.
+- [x] Add a settings menu or settings surface for app-level preferences.
+- [x] Add a settings storage foundation for app-level preferences.
+- [x] Add a setting to enable or disable restoring the last workspace on launch.
+- [x] Add initial settings sections for writing preferences, appearance placeholders, and future sync/account preferences.
+- [x] Define a themeable appearance color system with a small fixed UI palette.
+- [x] Defer dark theme and user theme selection until the settings surface is implemented.
 - [x] Add keyboard shortcuts for primary writing actions.
 - [x] Add keyboard shortcuts for sidebar toggle, new document, new chapter, focus editor, and return to library.
 - [x] Add word count.
@@ -153,12 +153,12 @@
 - [x] Add chapter creation modal and chapter delete confirmation.
 - [x] Add book delete confirmation and soft archive flow.
 - [x] Add shared context menu UI for sidebar empty space, chapters, and episodes.
-- [x] Add empty-sidebar context menu actions for new episode, new chapter, expand all, and collapse all.
+- [x] Add empty-sidebar context menu actions for new document, new chapter, expand all, and collapse all.
 - [x] Keep chapter expansion state independent from chapter or episode selection.
 - [x] Focus titled episodes into the editor body and untitled episodes into the title input.
 - [x] Protect Korean/IME title entry from Enter composition bugs.
 - [x] Add search.
-- [ ] Support essay-style document workflows.
+- [x] Support essay-style document workflows.
 - [x] Support basic fiction chapter workflows.
 - [x] Support fiction episode workflows inside and outside chapters.
 
@@ -197,6 +197,10 @@
 - [x] Treat `afterUpdateId` pull checkpoints as the current equivalent sync metadata for avoiding full document transfer; state-vector diff remains available in core for future finer-grained sync.
 - [x] Added desktop-local `app_ui_state` persistence for last screen, active book/chapter/document, sidebar collapse, and expanded chapters.
 - [x] Added startup restore fallback tests for valid documents, missing books, Quick Drafts, and empty workspaces.
+- [x] Treated chapterless book documents as the initial essay workflow without adding project-type schema or rigid book templates.
+- [x] Added desktop app settings storage and a library settings surface with writing, appearance, and sync/account sections.
+- [x] Added a non-destructive launch restore preference that starts in the library without deleting saved workspace state when disabled.
+- [x] Added preset light and dark writing themes, custom color chip sharing, and theme color editing in Settings.
 
 ## Milestone 9: Recovery And Version Safety
 
