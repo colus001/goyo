@@ -56,6 +56,11 @@ const desktopApi = {
         pushedUpdateCount: number;
         skippedUpdateCount: number;
       }>,
+    pullRemoteUpdates: () =>
+      ipcRenderer.invoke('sync:pullRemoteUpdates') as Promise<{
+        pulledUpdateCount: number;
+        skippedDocumentCount: number;
+      }>,
   },
   platform: process.platform,
 } as const;

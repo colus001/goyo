@@ -54,7 +54,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     setSaveStatus,
   );
   useLoadWorkspace(setSession, setSaveStatus, setScreen);
-  usePushPendingUpdates();
+  useSyncOnStartup();
 
   return {
     activeBook,
@@ -97,9 +97,14 @@ export function useWritingWorkspace(): WritingWorkspaceState {
   };
 }
 
-function usePushPendingUpdates() {
+function useSyncOnStartup() {
   useEffect(() => {
-    void window.writerDesktop.sync.pushPendingUpdates().catch(() => {
+    async function syncDocuments() {
+      await window.writerDesktop.sync.pushPendingUpdates();
+      await window.writerDesktop.sync.pullRemoteUpdates();
+    }
+
+    void syncDocuments().catch(() => {
       // Local writes remain safe; failed remote sync stays pending for a later retry.
     });
   }, []);

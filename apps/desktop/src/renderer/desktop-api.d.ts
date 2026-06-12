@@ -37,6 +37,10 @@ declare global {
         markCompleted: (syncItemId: string, completedAt: string) => Promise<void>;
       };
       sync: {
+        pullRemoteUpdates: () => Promise<{
+          pulledUpdateCount: number;
+          skippedDocumentCount: number;
+        }>;
         pushPendingUpdates: () => Promise<{
           pushedUpdateCount: number;
           skippedUpdateCount: number;

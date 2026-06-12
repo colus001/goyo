@@ -8,6 +8,21 @@ interface PushPendingUpdatesResult {
   skippedUpdateCount: number;
 }
 
+interface PullRemoteUpdatesResult {
+  pulledUpdateCount: number;
+  skippedDocumentCount: number;
+}
+
+interface RemoteDocumentUpdatesResponse {
+  documentId: string;
+  updates: Array<{
+    clientId: string;
+    createdAt: string;
+    id: string;
+    updateBase64: string;
+  }>;
+}
+
 export async function pushPendingDocumentUpdates(
   store: DesktopLocalStore,
 ): Promise<PushPendingUpdatesResult> {
@@ -36,6 +51,36 @@ export async function pushPendingDocumentUpdates(
   }
 
   return { pushedUpdateCount, skippedUpdateCount };
+}
+
+export async function pullRemoteDocumentUpdates(
+  store: DesktopLocalStore,
+): Promise<PullRemoteUpdatesResult> {
+  let pulledUpdateCount = 0;
+  let skippedDocumentCount = 0;
+
+  for (const document of store.listDocuments()) {
+    try {
+      const updates = store.listDocumentUpdates(document.id);
+      const latestUpdate = updates.at(-1);
+      const remoteUpdates = await fetchRemoteDocumentUpdates(document.id, latestUpdate?.id ?? null);
+
+      for (const update of remoteUpdates.updates) {
+        store.appendDocumentUpdate({
+          clientId: update.clientId,
+          createdAt: update.createdAt,
+          documentId: remoteUpdates.documentId,
+          id: update.id,
+          update: Buffer.from(update.updateBase64, 'base64'),
+        });
+        pulledUpdateCount += 1;
+      }
+    } catch {
+      skippedDocumentCount += 1;
+    }
+  }
+
+  return { pulledUpdateCount, skippedDocumentCount };
 }
 
 async function pushDocumentMetadata(document: DocumentMetadata) {
@@ -69,7 +114,22 @@ async function pushDocumentUpdate(update: DocumentUpdateRecord) {
   );
 }
 
-async function fetchJson(url: string, init: RequestInit) {
+async function fetchRemoteDocumentUpdates(
+  documentId: string,
+  afterUpdateId: string | null,
+): Promise<RemoteDocumentUpdatesResponse> {
+  const url = new URL(
+    `${WRITER_API_BASE_URL}/v1/documents/${encodeURIComponent(documentId)}/updates`,
+  );
+
+  if (afterUpdateId) {
+    url.searchParams.set('afterUpdateId', afterUpdateId);
+  }
+
+  return fetchJson<RemoteDocumentUpdatesResponse>(url.toString(), { method: 'GET' });
+}
+
+async function fetchJson<T = unknown>(url: string, init: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
     headers: {
@@ -81,4 +141,6 @@ async function fetchJson(url: string, init: RequestInit) {
   if (!response.ok) {
     throw new Error(`Remote sync request failed with ${response.status}.`);
   }
+
+  return (await response.json()) as T;
 }

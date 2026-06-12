@@ -8,7 +8,7 @@ import type {
 } from '@writer/core';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import { createDesktopLocalStore } from './document-metadata-store';
-import { pushPendingDocumentUpdates } from './remote-sync';
+import { pullRemoteDocumentUpdates, pushPendingDocumentUpdates } from './remote-sync';
 
 const isDevelopment = !app.isPackaged;
 
@@ -90,6 +90,14 @@ function registerDocumentIpc() {
       return await pushPendingDocumentUpdates(store);
     } catch (error) {
       console.error('Failed to push pending document updates', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('sync:pullRemoteUpdates', async () => {
+    try {
+      return await pullRemoteDocumentUpdates(store);
+    } catch (error) {
+      console.error('Failed to pull remote document updates', getErrorMessage(error));
       throw error;
     }
   });
