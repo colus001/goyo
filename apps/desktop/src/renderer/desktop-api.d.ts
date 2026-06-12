@@ -20,6 +20,10 @@ declare global {
         get: () => Promise<AppSettings>;
         save: (settings: AppSettings) => Promise<void>;
       };
+      dev: {
+        isDevelopment: () => Promise<boolean>;
+        resetLocalData: () => Promise<void>;
+      };
       books: {
         list: () => Promise<BookMetadata[]>;
         saveMetadata: (book: BookMetadata) => Promise<void>;

@@ -1,4 +1,5 @@
-import { join } from 'node:path';
+import { rmSync } from 'node:fs';
+import { basename, join } from 'node:path';
 import type {
   BookMetadata,
   ChapterMetadata,
@@ -47,6 +48,19 @@ function registerDocumentIpc() {
       store.saveAppSettings(settings);
     } catch (error) {
       console.error('Failed to save app settings', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('dev:isDevelopment', () => isDevelopment);
+  ipcMain.handle('dev:resetLocalData', () => {
+    if (!isDevelopment) {
+      throw new Error('Local data reset is only available in development.');
+    }
+
+    try {
+      resetDevelopmentUserData(store);
+    } catch (error) {
+      console.error('Failed to reset local development data', getErrorMessage(error));
       throw error;
     }
   });
@@ -151,6 +165,19 @@ function registerDocumentIpc() {
       throw error;
     }
   });
+}
+
+function resetDevelopmentUserData(store: ReturnType<typeof createDesktopLocalStore>) {
+  const userDataPath = app.getPath('userData');
+  const expectedDirectoryName = `${APP_NAME} Dev`;
+
+  if (basename(userDataPath) !== expectedDirectoryName) {
+    throw new Error(`Refusing to reset unexpected userData path: ${userDataPath}`);
+  }
+
+  store.close();
+  rmSync(userDataPath, { force: true, recursive: true });
+  app.exit(0);
 }
 
 function getErrorMessage(error: unknown): string {
