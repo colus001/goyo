@@ -15,12 +15,14 @@ interface ChapterTreeProps {
   activeDocumentId?: string;
   chapters: ChapterItem[];
   documents: DocumentItem[];
+  expandedChapterIds?: string[];
   onCreateChapter?: (title?: string) => void;
   onCreateEpisodeAfter?: (chapterId: string | null, previousDocumentId: string | null) => void;
   onDeleteChapter?: (chapterId: string) => void;
   onDeleteDocument?: (documentId: string) => void;
   onMoveChapter?: (chapterId: string, direction: 'down' | 'up') => void;
   onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
+  onExpandedChapterIdsChange?: (chapterIds: string[]) => void;
   onSelectChapter?: (chapterId: string) => void;
   onSelectDocument?: (documentId: string) => void;
 }
@@ -31,6 +33,8 @@ export function ChapterTree(props: ChapterTreeProps): ReactElement {
   const [expandedChapterIds, chapterExpansion] = useExpandedChapters(
     props.activeDocumentId,
     props.documents,
+    props.expandedChapterIds,
+    props.onExpandedChapterIdsChange,
   );
   const [isNewChapterModalOpen, setIsNewChapterModalOpen] = useState(false);
   const bookLevelEpisodes = getBookLevelEpisodes(props.documents);
@@ -116,7 +120,7 @@ function ChapterTreeBody(props: ChapterTreeBodyProps): ReactElement {
   );
 }
 
-interface ChapterTreeBodyProps extends ChapterTreeProps {
+interface ChapterTreeBodyProps extends Omit<ChapterTreeProps, 'expandedChapterIds'> {
   bookLevelEpisodes: DocumentItem[];
   chapterPendingDelete: ChapterItem | null;
   emptyContextMenu: MenuPosition | null;

@@ -38,18 +38,22 @@ export function App() {
       documents={(workspace.session?.documents ?? []).filter(
         (document) => document.bookId === workspace.session?.activeBookId,
       )}
+      expandedChapterIds={workspace.expandedChapterIds}
+      isSidebarCollapsed={workspace.isSidebarCollapsed}
       onCreateChapter={workspace.createChapter}
       onCreateDocument={workspace.createDocument}
       onCreateDocumentInChapter={workspace.createDocumentInChapter}
       onCreateEpisodeAfter={workspace.createEpisodeAfter}
       onDeleteChapter={workspace.deleteChapter}
       onDeleteDocument={workspace.deleteDocument}
+      onExpandedChapterIdsChange={workspace.setExpandedChapterIds}
       onMoveChapter={workspace.moveChapter}
       onMoveDocument={workspace.moveDocument}
       onRenameBook={workspace.renameBook}
       onRenameChapter={workspace.renameChapterTitle}
       onSelectChapter={workspace.selectChapter}
       onSelectDocument={workspace.openDocument}
+      onSidebarCollapsedChange={workspace.setSidebarCollapsed}
       onShowLibrary={workspace.showLibrary}
       status={formatWorkspaceStatus(workspace)}
     >

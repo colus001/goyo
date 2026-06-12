@@ -31,6 +31,8 @@ export interface WritingWorkspaceState {
   deleteDocument: (documentId: string) => void;
   documentSnapshots: DocumentSnapshotMap;
   documentUpdates: DocumentUpdateMap;
+  expandedChapterIds: string[];
+  isSidebarCollapsed: boolean;
   moveChapter: (chapterId: string, direction: 'down' | 'up') => void;
   moveDocument: (documentId: string, direction: 'down' | 'up') => void;
   openDocument: (documentId: string) => void;
@@ -42,6 +44,8 @@ export interface WritingWorkspaceState {
   screen: WorkspaceScreen;
   selectBook: (bookId: string) => void;
   selectChapter: (chapterId: string) => void;
+  setExpandedChapterIds: (chapterIds: string[]) => void;
+  setSidebarCollapsed: (isCollapsed: boolean) => void;
   session: DocumentSession | null;
   showLibrary: () => void;
   startQuickDraft: () => void;

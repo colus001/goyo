@@ -28,8 +28,10 @@ export function WritingSidebar({
   onRenameBook,
   onSelectChapter,
   onSelectDocument,
+  onExpandedChapterIdsChange,
   onShowLibrary,
   onToggle,
+  expandedChapterIds,
   status = 'Local session',
 }: WritingSidebarProps): ReactElement {
   return (
@@ -87,12 +89,14 @@ export function WritingSidebar({
             activeDocumentId={activeDocumentId}
             chapters={chapters}
             documents={documents}
+            expandedChapterIds={expandedChapterIds}
             onCreateChapter={onCreateChapter}
             onCreateEpisodeAfter={onCreateEpisodeAfter}
             onDeleteChapter={onDeleteChapter}
             onDeleteDocument={onDeleteDocument}
             onMoveChapter={onMoveChapter}
             onMoveDocument={onMoveDocument}
+            onExpandedChapterIdsChange={onExpandedChapterIdsChange}
             onSelectChapter={onSelectChapter}
             onSelectDocument={onSelectDocument}
           />

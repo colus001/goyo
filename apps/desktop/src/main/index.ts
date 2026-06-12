@@ -7,6 +7,7 @@ import type {
   SyncQueueItem,
 } from '@writer/core';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import type { AppUiState } from '../shared/app-ui-state';
 import { createDesktopLocalStore } from './document-metadata-store';
 import {
   pullRemoteDocumentSnapshots,
@@ -21,6 +22,15 @@ const isDevelopment = !app.isPackaged;
 function registerDocumentIpc() {
   const store = createDesktopLocalStore(app.getPath('userData'));
 
+  ipcMain.handle('appUiState:get', () => store.getAppUiState());
+  ipcMain.handle('appUiState:save', (_event, state: AppUiState) => {
+    try {
+      store.saveAppUiState(state);
+    } catch (error) {
+      console.error('Failed to save app UI state', getErrorMessage(error));
+      throw error;
+    }
+  });
   ipcMain.handle('books:list', () => store.listBooks());
   ipcMain.handle('books:saveMetadata', (_event, book: BookMetadata) => {
     try {

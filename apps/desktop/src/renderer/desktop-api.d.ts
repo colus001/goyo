@@ -6,10 +6,15 @@ import type {
   DocumentUpdateRecord,
   SyncQueueItem,
 } from '@writer/core';
+import type { AppUiState } from '../shared/app-ui-state';
 
 declare global {
   interface Window {
     writerDesktop: {
+      appUiState: {
+        get: () => Promise<AppUiState | null>;
+        save: (state: AppUiState) => Promise<void>;
+      };
       books: {
         list: () => Promise<BookMetadata[]>;
         saveMetadata: (book: BookMetadata) => Promise<void>;
