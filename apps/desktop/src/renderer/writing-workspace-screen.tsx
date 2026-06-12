@@ -1,4 +1,8 @@
-import { type DocumentMetadata, QUICK_DRAFTS_INBOX_CHAPTER_ID } from '@writer/core';
+import {
+  type DocumentMetadata,
+  QUICK_DRAFTS_BOOK_ID,
+  QUICK_DRAFTS_INBOX_CHAPTER_ID,
+} from '@writer/core';
 import type { WritingEditorRef } from '@writer/editor';
 import { WritingShell } from '@writer/ui';
 import { type RefObject, useRef, useState } from 'react';
@@ -28,40 +32,12 @@ export function WritingWorkspaceScreen({
   const chapters = getVisibleChapters(workspace);
   const documents = getVisibleDocuments(workspace);
   const wordCountLabel = activeDocument ? formatWordCountLabel(wordCount) : undefined;
+  const shellProps = getWritingShellProps(workspace, onOpenSettings, wordCountLabel);
 
   useWorkspaceKeyboardShortcuts(workspace, activeDocument, editorRef);
 
   return (
-    <WritingShell
-      activeChapterId={workspace.session?.activeChapterId ?? undefined}
-      activeDocumentId={workspace.session?.activeDocumentId ?? undefined}
-      breadcrumbSegments={
-        activeDocument ? getEpisodeBreadcrumbSegments(workspace, activeDocument) : undefined
-      }
-      bookAccentColor={workspace.activeBook?.accentColor}
-      bookTitle={workspace.activeBook?.title}
-      chapters={chapters}
-      documents={documents}
-      expandedChapterIds={workspace.expandedChapterIds}
-      isSidebarCollapsed={workspace.isSidebarCollapsed}
-      onCreateChapter={workspace.createChapter}
-      onCreateDocument={workspace.createDocument}
-      onCreateDocumentInChapter={workspace.createDocumentInChapter}
-      onCreateEpisodeAfter={workspace.createEpisodeAfter}
-      onDeleteChapter={workspace.deleteChapter}
-      onDeleteDocument={workspace.deleteDocument}
-      onExpandedChapterIdsChange={workspace.setExpandedChapterIds}
-      onMoveChapter={workspace.moveChapter}
-      onMoveDocument={workspace.moveDocument}
-      onRenameBook={workspace.renameBook}
-      onRenameChapter={workspace.renameChapterTitle}
-      onOpenSettings={onOpenSettings}
-      onSelectDocument={workspace.openDocument}
-      onSidebarCollapsedChange={workspace.setSidebarCollapsed}
-      onShowLibrary={workspace.showLibrary}
-      status={formatWorkspaceStatus(workspace)}
-      wordCountLabel={wordCountLabel}
-    >
+    <WritingShell {...shellProps} chapters={chapters} documents={documents}>
       <WritingWorkspaceContent
         activeDocument={activeDocument}
         editorRef={editorRef}
@@ -70,6 +46,50 @@ export function WritingWorkspaceScreen({
       />
     </WritingShell>
   );
+}
+
+function getWritingShellProps(
+  workspace: WritingWorkspaceState,
+  onOpenSettings: () => void,
+  wordCountLabel: string | undefined,
+) {
+  const activeDocument = workspace.activeDocument as DocumentMetadata | undefined;
+  const hasActiveBook = Boolean(workspace.activeBook);
+
+  return {
+    activeBookId: workspace.session?.activeBookId ?? undefined,
+    activeChapterId: workspace.session?.activeChapterId ?? undefined,
+    activeDocumentId: workspace.session?.activeDocumentId ?? undefined,
+    bookAccentColor: workspace.activeBook?.accentColor,
+    bookTitle: workspace.activeBook?.title,
+    books: getVisibleBooks(workspace),
+    breadcrumbSegments: activeDocument
+      ? getEpisodeBreadcrumbSegments(workspace, activeDocument)
+      : undefined,
+    expandedChapterIds: workspace.expandedChapterIds,
+    isSidebarCollapsed: workspace.isSidebarCollapsed,
+    onCreateBook: workspace.createBook,
+    onCreateChapter: hasActiveBook ? workspace.createChapter : undefined,
+    onCreateDocument: hasActiveBook ? workspace.createDocument : undefined,
+    onCreateDocumentInChapter: hasActiveBook ? workspace.createDocumentInChapter : undefined,
+    onCreateEpisodeAfter: hasActiveBook ? workspace.createEpisodeAfter : undefined,
+    onDeleteBook: workspace.deleteBook,
+    onDeleteChapter: workspace.deleteChapter,
+    onDeleteDocument: workspace.deleteDocument,
+    onExpandedChapterIdsChange: workspace.setExpandedChapterIds,
+    onMoveChapter: workspace.moveChapter,
+    onMoveDocument: workspace.moveDocument,
+    onOpenSettings,
+    onRenameBook: workspace.renameBook,
+    onRenameChapter: workspace.renameChapterTitle,
+    onSelectBook: workspace.selectBook,
+    onSelectDocument: workspace.openDocument,
+    onSidebarCollapsedChange: workspace.setSidebarCollapsed,
+    onStartQuickDraft: workspace.startQuickDraft,
+    onUpdateBookAccentColor: workspace.updateBookAccentColor,
+    status: formatWorkspaceStatus(workspace),
+    wordCountLabel,
+  };
 }
 
 function WritingWorkspaceContent({
@@ -113,6 +133,13 @@ function getVisibleChapters(workspace: WritingWorkspaceState) {
       ...chapter,
       isSystem: chapter.id === QUICK_DRAFTS_INBOX_CHAPTER_ID,
     }));
+}
+
+function getVisibleBooks(workspace: WritingWorkspaceState) {
+  return (workspace.session?.books ?? []).map((book) => ({
+    ...book,
+    isSystem: book.id === QUICK_DRAFTS_BOOK_ID,
+  }));
 }
 
 function getVisibleDocuments(workspace: WritingWorkspaceState) {

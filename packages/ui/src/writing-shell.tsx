@@ -6,8 +6,16 @@ import { type ActiveMoveTarget, WritingTopBar } from './writing-top-bar';
 export interface WritingShellProps {
   activeChapterId?: string;
   activeDocumentId?: string;
+  activeBookId?: string;
   bookAccentColor?: string;
   bookTitle?: string;
+  books?: Array<{
+    accentColor: string;
+    id: string;
+    isSystem?: boolean;
+    title: string;
+    updatedAt: string;
+  }>;
   breadcrumbSegments?: string[];
   chapters?: Array<{
     id: string;
@@ -26,6 +34,7 @@ export interface WritingShellProps {
   expandedChapterIds?: string[];
   isSidebarCollapsed?: boolean;
   onCreateChapter?: (title?: string) => void;
+  onCreateBook?: () => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
   onCreateDocumentInChapter?: (chapterId: string, kind: 'draft' | 'episode' | 'note') => void;
   onCreateEpisodeAfter?: (chapterId: string | null, previousDocumentId: string | null) => void;
@@ -34,12 +43,16 @@ export interface WritingShellProps {
   onMoveChapter?: (chapterId: string, direction: 'down' | 'up') => void;
   onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
   onOpenSettings?: () => void;
+  onDeleteBook?: (bookId: string) => void;
   onRenameBook?: (title: string) => void;
   onRenameChapter?: (chapterId: string, title: string) => void;
   onSelectDocument?: (documentId: string) => void;
+  onSelectBook?: (bookId: string) => void;
   onExpandedChapterIdsChange?: (chapterIds: string[]) => void;
   onShowLibrary?: () => void;
   onSidebarCollapsedChange?: (isCollapsed: boolean) => void;
+  onStartQuickDraft?: () => void;
+  onUpdateBookAccentColor?: (bookId: string, accentColor: string) => void;
   status?: string;
   wordCountLabel?: string;
 }
@@ -69,7 +82,6 @@ export function WritingShell(props: WritingShellProps): ReactElement {
         onCreateChapter={normalizedProps.onCreateChapter}
         onCreateDocument={normalizedProps.onCreateDocument}
         onOpenSettings={normalizedProps.onOpenSettings}
-        onShowLibrary={normalizedProps.onShowLibrary}
         onToggleSidebar={toggleSidebar}
         wordCountLabel={normalizedProps.wordCountLabel}
       />
@@ -93,6 +105,7 @@ function normalizeWritingShellProps(props: WritingShellProps): NormalizedWriting
   return {
     ...props,
     bookTitle: props.bookTitle ?? 'Untitled book',
+    books: props.books ?? [],
     chapters: props.chapters ?? [],
     documents: props.documents ?? [],
     status: props.status ?? 'Local session',
@@ -120,27 +133,34 @@ function getActiveMoveTarget(props: NormalizedWritingShellProps): ActiveMoveTarg
 
 function WritingShellBody({
   activeChapterId,
+  activeBookId,
   activeDocumentId,
   bookAccentColor,
   bookTitle,
+  books,
   chapters,
   children,
   documents,
   expandedChapterIds,
   isSidebarCollapsed,
   onCreateChapter,
+  onCreateBook,
   onCreateDocument,
   onCreateDocumentInChapter,
   onCreateEpisodeAfter,
   onDeleteChapter,
+  onDeleteBook,
   onDeleteDocument,
   onExpandedChapterIdsChange,
   onMoveChapter,
   onMoveDocument,
   onRenameBook,
   onRenameChapter,
+  onSelectBook,
   onSelectDocument,
+  onStartQuickDraft,
   onToggleSidebar,
+  onUpdateBookAccentColor,
 }: WritingShellBodyProps): ReactElement {
   return (
     <div
@@ -149,26 +169,33 @@ function WritingShellBody({
       }`}
     >
       <WritingSidebar
+        activeBookId={activeBookId}
         activeChapterId={activeChapterId}
         activeDocumentId={activeDocumentId}
         bookAccentColor={bookAccentColor}
         bookTitle={bookTitle}
+        books={books}
         chapters={chapters}
         documents={documents}
         isCollapsed={isSidebarCollapsed}
+        onCreateBook={onCreateBook}
         onCreateChapter={onCreateChapter}
         onCreateDocument={onCreateDocument}
         onCreateDocumentInChapter={onCreateDocumentInChapter}
         onCreateEpisodeAfter={onCreateEpisodeAfter}
+        onDeleteBook={onDeleteBook}
         onDeleteChapter={onDeleteChapter}
         onDeleteDocument={onDeleteDocument}
         onMoveChapter={onMoveChapter}
         onMoveDocument={onMoveDocument}
         onRenameBook={onRenameBook}
         onRenameChapter={onRenameChapter}
+        onSelectBook={onSelectBook}
         onExpandedChapterIdsChange={onExpandedChapterIdsChange}
         onSelectDocument={onSelectDocument}
+        onStartQuickDraft={onStartQuickDraft}
         onToggle={onToggleSidebar}
+        onUpdateBookAccentColor={onUpdateBookAccentColor}
         expandedChapterIds={expandedChapterIds}
       />
 

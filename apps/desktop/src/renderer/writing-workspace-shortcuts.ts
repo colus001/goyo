@@ -30,7 +30,6 @@ type WorkspaceShortcutAction =
   | 'create-chapter'
   | 'create-episode'
   | 'focus-editor'
-  | 'show-library'
   | 'toggle-sidebar';
 
 function getWorkspaceShortcutAction(
@@ -53,10 +52,6 @@ function getWorkspaceShortcutAction(
 
   if (event.shiftKey && key === 'c') {
     return 'create-chapter';
-  }
-
-  if (event.shiftKey && key === 'l') {
-    return 'show-library';
   }
 
   if (!event.shiftKey && key === 'l' && activeDocument) {
@@ -83,11 +78,6 @@ function runWorkspaceShortcut(
 
   if (action === 'create-chapter') {
     workspace.createChapter();
-    return;
-  }
-
-  if (action === 'show-library') {
-    workspace.showLibrary();
     return;
   }
 

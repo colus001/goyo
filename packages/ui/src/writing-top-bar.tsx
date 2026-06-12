@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronUp, Menu, Plus, Settings } from 'lucide-react';
+import { ChevronRight, Menu, Plus, Settings } from 'lucide-react';
 import type { ReactElement, ReactNode, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { WritingShellProps } from './writing-shell';
@@ -20,7 +20,6 @@ export function WritingTopBar({
   onCreateChapter,
   onCreateDocument,
   onOpenSettings,
-  onShowLibrary,
   onToggleSidebar,
   wordCountLabel,
 }: {
@@ -32,7 +31,6 @@ export function WritingTopBar({
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
   onOpenSettings?: () => void;
-  onShowLibrary?: () => void;
   onToggleSidebar: () => void;
   wordCountLabel?: string;
 }): ReactElement {
@@ -46,9 +44,6 @@ export function WritingTopBar({
           onClick={onToggleSidebar}
         >
           <Menu aria-hidden="true" size={17} strokeWidth={2.1} />
-        </CommandButton>
-        <CommandButton label="Library" onClick={onShowLibrary}>
-          <ChevronUp aria-hidden="true" size={17} strokeWidth={2.1} />
         </CommandButton>
         <div className="ml-3 min-w-0">
           {breadcrumbSegments && breadcrumbSegments.length > 0 ? (
