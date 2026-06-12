@@ -2,13 +2,19 @@ import type { ReactElement } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 export function NewChapterModal({
+  actionLabel = 'Create chapter',
+  heading = 'New chapter',
+  initialTitle = '',
   onClose,
   onCreate,
 }: {
+  actionLabel?: string;
+  heading?: string;
+  initialTitle?: string;
   onClose: () => void;
   onCreate: (title: string) => void;
 }): ReactElement {
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(initialTitle);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -36,7 +42,7 @@ export function NewChapterModal({
         role="dialog"
       >
         <p className="mb-3 font-medium text-[#8d887e] text-xs uppercase tracking-[0.16em]">
-          New chapter
+          {heading}
         </p>
         <input
           aria-label="Chapter title"
@@ -44,6 +50,10 @@ export function NewChapterModal({
           id="new-chapter-title"
           onChange={(event) => setTitle(event.target.value)}
           onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing || event.keyCode === 229) {
+              return;
+            }
+
             if (event.key === 'Enter') {
               onCreate(title.trim().length > 0 ? title.trim() : 'Untitled chapter');
               onClose();
@@ -69,7 +79,7 @@ export function NewChapterModal({
             }}
             type="button"
           >
-            Create chapter
+            {actionLabel}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import type { ChapterMetadata, DocumentMetadata } from '@writer/core';
+import type { DocumentMetadata } from '@writer/core';
 import { WritingEditor, type WritingEditorRef } from '@writer/editor';
 import {
   type KeyboardEvent as ReactKeyboardEvent,
@@ -25,34 +25,9 @@ export function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState
             onClick={() => workspace.createDocument('episode')}
             type="button"
           >
-            New episode
+            New document
           </button>
         </div>
-      </div>
-    </article>
-  );
-}
-
-export function ChapterSurface({ workspace }: { workspace: WritingWorkspaceState }) {
-  const chapter = workspace.activeChapter as ChapterMetadata;
-  const episodeCount =
-    workspace.session?.documents.filter((d) => d.chapterId === chapter.id && d.kind === 'episode')
-      .length ?? 0;
-
-  return (
-    <article className="mx-auto grid min-h-full w-full max-w-[52rem] place-items-center bg-white px-12 py-16">
-      <div className="max-w-[34rem] text-center">
-        <ChapterTitleInput chapter={chapter} onRename={workspace.renameChapterTitle} />
-        {episodeCount === 0 ? (
-          <p className="mt-4 text-[#777771]">Episodes are the writing units inside a chapter.</p>
-        ) : null}
-        <button
-          className="mt-8 rounded-full bg-[#30302d] px-4 py-2 text-white"
-          onClick={() => workspace.createDocument('episode')}
-          type="button"
-        >
-          New episode
-        </button>
       </div>
     </article>
   );
@@ -94,55 +69,6 @@ export function EpisodeSurface({
         ref={editorRef}
       />
     </article>
-  );
-}
-
-function ChapterTitleInput({
-  chapter,
-  onRename,
-}: {
-  chapter: ChapterMetadata;
-  onRename: (title: string) => void;
-}) {
-  const [title, setTitle] = useState(chapter.title);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setTitle(chapter.title);
-  }, [chapter.title]);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const commitTitle = () => {
-    if (title.trim().length === 0) {
-      setTitle(chapter.title);
-      return;
-    }
-
-    onRename(title);
-  };
-
-  return (
-    <input
-      aria-label="Chapter title"
-      className="w-full bg-transparent text-center font-semibold text-[#242421] text-[2rem] leading-tight tracking-[-0.04em] outline-none placeholder:text-[#b5b5ae]"
-      onBlur={commitTitle}
-      onChange={(event) => setTitle(event.target.value)}
-      onKeyDown={(event) => {
-        if (isComposing(event)) {
-          return;
-        }
-
-        if (event.key === 'Enter') {
-          event.currentTarget.blur();
-        }
-      }}
-      placeholder="Untitled chapter"
-      ref={inputRef}
-      value={title}
-    />
   );
 }
 

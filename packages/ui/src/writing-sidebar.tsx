@@ -21,7 +21,7 @@ export function WritingSidebar({
   onDeleteDocument,
   onMoveChapter,
   onMoveDocument,
-  onSelectChapter,
+  onRenameChapter,
   onSelectDocument,
   onExpandedChapterIdsChange,
   expandedChapterIds,
@@ -53,12 +53,6 @@ export function WritingSidebar({
                 value={searchQuery}
               />
             </label>
-            <div className="mt-3 flex items-center justify-between px-0.5">
-              <p className="font-semibold text-[#8d887e] text-xs uppercase tracking-[0.17em]">
-                Documents
-              </p>
-              <span className="text-[#aaa49b] text-xs">{filteredNavigation.chapters.length}</span>
-            </div>
           </header>
           <ChapterTree
             activeChapterId={activeChapterId}
@@ -72,8 +66,8 @@ export function WritingSidebar({
             onDeleteDocument={onDeleteDocument}
             onMoveChapter={onMoveChapter}
             onMoveDocument={onMoveDocument}
+            onRenameChapter={onRenameChapter}
             onExpandedChapterIdsChange={onExpandedChapterIdsChange}
-            onSelectChapter={onSelectChapter}
             onSelectDocument={onSelectDocument}
           />
         </>

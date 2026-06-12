@@ -105,7 +105,8 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     recordDocumentUpdate: (update, snapshot) =>
       recordDocumentUpdate(activeDocument?.id, clientId, update, setSaveStatus, snapshot),
     renameBook: (title) => renameBook(session, title, setSession, setSaveStatus),
-    renameChapterTitle: (title) => renameChapterTitle(session, title, setSession, setSaveStatus),
+    renameChapterTitle: (chapterId, title) =>
+      renameChapterTitle(session, chapterId, title, setSession, setSaveStatus),
     renameDocumentTitle: (title) =>
       renameDocumentTitle(session, activeDocument, title, setSession, setSaveStatus),
     saveStatus,

@@ -27,7 +27,7 @@ export function ChapterRow({
   onOpenChapterMenu,
   onOpenMenu,
   onRequestDeleteChapter,
-  onSelectChapter,
+  onRequestRenameChapter,
   onSelectDocument,
   onToggleChapter,
   openContextMenu,
@@ -46,7 +46,7 @@ export function ChapterRow({
   onOpenChapterMenu: (chapterId: string, position: { x: number; y: number }) => void;
   onOpenMenu: (documentId: string, position: { x: number; y: number }) => void;
   onRequestDeleteChapter: (chapter: ChapterItem) => void;
-  onSelectChapter?: (chapterId: string) => void;
+  onRequestRenameChapter: (chapter: ChapterItem) => void;
   onSelectDocument?: (documentId: string) => void;
   onToggleChapter: (chapterId: string) => void;
   openContextMenu: WritingSidebarContextMenuState;
@@ -63,7 +63,6 @@ export function ChapterRow({
           }`}
           onClick={() => {
             onCloseMenu();
-            onSelectChapter?.(chapter.id);
             onToggleChapter(chapter.id);
           }}
           onContextMenu={(event) => {
@@ -77,9 +76,6 @@ export function ChapterRow({
         >
           <p className="truncate font-semibold text-[0.98rem] tracking-[-0.018em]">
             {chapter.title}
-          </p>
-          <p className="mt-0.5 text-[#9b958b] text-xs">
-            {documents.length} {documents.length === 1 ? 'episode' : 'episodes'}
           </p>
         </button>
         {isExpanded && documents.length === 0 ? (
@@ -104,6 +100,7 @@ export function ChapterRow({
             }
           }}
           onNewEpisode={() => onCreateEpisodeAfter?.(chapter.id, documents.at(-1)?.id ?? null)}
+          onRename={() => onRequestRenameChapter(chapter)}
           x={openContextMenu.x}
           y={openContextMenu.y}
         />

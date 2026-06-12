@@ -38,7 +38,7 @@ export interface WritingWorkspaceState {
   openDocument: (documentId: string) => void;
   recordDocumentUpdate: (update: Uint8Array, snapshot?: Uint8Array) => void;
   renameBook: (title: string) => void;
-  renameChapterTitle: (title: string) => void;
+  renameChapterTitle: (chapterId: string, title: string) => void;
   renameDocumentTitle: (title: string) => void;
   saveStatus: SaveStatus;
   screen: WorkspaceScreen;

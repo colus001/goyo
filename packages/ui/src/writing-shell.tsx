@@ -34,8 +34,7 @@ export interface WritingShellProps {
   onMoveChapter?: (chapterId: string, direction: 'down' | 'up') => void;
   onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
   onRenameBook?: (title: string) => void;
-  onRenameChapter?: (title: string) => void;
-  onSelectChapter?: (chapterId: string) => void;
+  onRenameChapter?: (chapterId: string, title: string) => void;
   onSelectDocument?: (documentId: string) => void;
   onExpandedChapterIdsChange?: (chapterIds: string[]) => void;
   onShowLibrary?: () => void;
@@ -138,7 +137,6 @@ function WritingShellBody({
   onMoveDocument,
   onRenameBook,
   onRenameChapter,
-  onSelectChapter,
   onSelectDocument,
   onToggleSidebar,
 }: WritingShellBodyProps): ReactElement {
@@ -167,7 +165,6 @@ function WritingShellBody({
         onRenameBook={onRenameBook}
         onRenameChapter={onRenameChapter}
         onExpandedChapterIdsChange={onExpandedChapterIdsChange}
-        onSelectChapter={onSelectChapter}
         onSelectDocument={onSelectDocument}
         onToggle={onToggleSidebar}
         expandedChapterIds={expandedChapterIds}

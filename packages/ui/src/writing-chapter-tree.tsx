@@ -22,13 +22,14 @@ interface ChapterTreeProps {
   onDeleteDocument?: (documentId: string) => void;
   onMoveChapter?: (chapterId: string, direction: 'down' | 'up') => void;
   onMoveDocument?: (documentId: string, direction: 'down' | 'up') => void;
+  onRenameChapter?: (chapterId: string, title: string) => void;
   onExpandedChapterIdsChange?: (chapterIds: string[]) => void;
-  onSelectChapter?: (chapterId: string) => void;
   onSelectDocument?: (documentId: string) => void;
 }
 export function ChapterTree(props: ChapterTreeProps): ReactElement {
   const [openContextMenu, setOpenContextMenu] = useState<WritingSidebarContextMenuState>(null);
   const [chapterPendingDelete, setChapterPendingDelete] = useState<ChapterItem | null>(null);
+  const [chapterPendingRename, setChapterPendingRename] = useState<ChapterItem | null>(null);
   const [emptyContextMenu, setEmptyContextMenu] = useState<MenuPosition | null>(null);
   const [expandedChapterIds, chapterExpansion] = useExpandedChapters(
     props.activeDocumentId,
@@ -44,6 +45,7 @@ export function ChapterTree(props: ChapterTreeProps): ReactElement {
       {...props}
       bookLevelEpisodes={bookLevelEpisodes}
       chapterPendingDelete={chapterPendingDelete}
+      chapterPendingRename={chapterPendingRename}
       emptyContextMenu={emptyContextMenu}
       expandedChapterIds={expandedChapterIds}
       isNewChapterModalOpen={isNewChapterModalOpen}
@@ -61,6 +63,7 @@ export function ChapterTree(props: ChapterTreeProps): ReactElement {
       onOpenAllChapters={() => chapterExpansion.openAll(props.chapters)}
       onOpenNewChapterModal={() => setIsNewChapterModalOpen(true)}
       onSetChapterPendingDelete={setChapterPendingDelete}
+      onSetChapterPendingRename={setChapterPendingRename}
       onToggleChapter={chapterExpansion.toggle}
       openContextMenu={openContextMenu}
     />
@@ -94,7 +97,7 @@ function ChapterTreeBody(props: ChapterTreeBodyProps): ReactElement {
         onOpenChapterMenu={props.onOpenChapterMenu}
         onOpenMenu={props.onOpenDocumentMenu}
         onRequestDeleteChapter={props.onSetChapterPendingDelete}
-        onSelectChapter={props.onSelectChapter}
+        onRequestRenameChapter={props.onSetChapterPendingRename}
         onSelectDocument={props.onSelectDocument}
         onToggleChapter={props.onToggleChapter}
         openContextMenu={props.openContextMenu}
@@ -110,11 +113,14 @@ function ChapterTreeBody(props: ChapterTreeBodyProps): ReactElement {
       />
       <ChapterTreeDialogs
         chapterPendingDelete={props.chapterPendingDelete}
+        chapterPendingRename={props.chapterPendingRename}
         isNewChapterModalOpen={props.isNewChapterModalOpen}
         onCloseNewChapterModal={props.onCloseNewChapterModal}
         onCreateChapter={props.onCreateChapter}
         onDeleteChapter={props.onDeleteChapter}
+        onRenameChapter={props.onRenameChapter}
         onSetChapterPendingDelete={props.onSetChapterPendingDelete}
+        onSetChapterPendingRename={props.onSetChapterPendingRename}
       />
     </nav>
   );
@@ -123,6 +129,7 @@ function ChapterTreeBody(props: ChapterTreeBodyProps): ReactElement {
 interface ChapterTreeBodyProps extends Omit<ChapterTreeProps, 'expandedChapterIds'> {
   bookLevelEpisodes: DocumentItem[];
   chapterPendingDelete: ChapterItem | null;
+  chapterPendingRename: ChapterItem | null;
   emptyContextMenu: MenuPosition | null;
   expandedChapterIds: Set<string>;
   isNewChapterModalOpen: boolean;
@@ -136,6 +143,7 @@ interface ChapterTreeBodyProps extends Omit<ChapterTreeProps, 'expandedChapterId
   onOpenAllChapters: () => void;
   onOpenNewChapterModal: () => void;
   onSetChapterPendingDelete: (chapter: ChapterItem | null) => void;
+  onSetChapterPendingRename: (chapter: ChapterItem | null) => void;
   onToggleChapter: (chapterId: string) => void;
   openContextMenu: WritingSidebarContextMenuState;
 }
@@ -216,7 +224,7 @@ function ChapterTreeItems(props: ChapterTreeItemsProps): ReactElement {
         onOpenChapterMenu={props.onOpenChapterMenu}
         onOpenMenu={props.onOpenMenu}
         onRequestDeleteChapter={props.onRequestDeleteChapter}
-        onSelectChapter={props.onSelectChapter}
+        onRequestRenameChapter={props.onRequestRenameChapter}
         onSelectDocument={props.onSelectDocument}
         onToggleChapter={props.onToggleChapter}
         openContextMenu={props.openContextMenu}
@@ -249,7 +257,7 @@ function ChapterRows(props: ChapterRowsProps): ReactElement {
           onOpenChapterMenu={props.onOpenChapterMenu}
           onOpenMenu={props.onOpenMenu}
           onRequestDeleteChapter={props.onRequestDeleteChapter}
-          onSelectChapter={props.onSelectChapter}
+          onRequestRenameChapter={props.onRequestRenameChapter}
           onSelectDocument={props.onSelectDocument}
           onToggleChapter={props.onToggleChapter}
           openContextMenu={props.openContextMenu}
@@ -274,7 +282,7 @@ interface ChapterRowsProps {
   onOpenChapterMenu: (chapterId: string, position: { x: number; y: number }) => void;
   onOpenMenu: (documentId: string, position: { x: number; y: number }) => void;
   onRequestDeleteChapter: (chapter: ChapterItem) => void;
-  onSelectChapter?: (chapterId: string) => void;
+  onRequestRenameChapter: (chapter: ChapterItem) => void;
   onSelectDocument?: (documentId: string) => void;
   onToggleChapter: (chapterId: string) => void;
   openContextMenu: WritingSidebarContextMenuState;

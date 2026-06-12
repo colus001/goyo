@@ -3,7 +3,7 @@ import type { WritingEditorRef } from '@writer/editor';
 import { WritingShell } from '@writer/ui';
 import { type RefObject, useRef, useState } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
-import { BookEmptyState, ChapterSurface, EpisodeSurface } from './writing-surfaces';
+import { BookEmptyState, EpisodeSurface } from './writing-surfaces';
 import { useWorkspaceKeyboardShortcuts } from './writing-workspace-shortcuts';
 
 interface WordCountState {
@@ -49,7 +49,6 @@ export function WritingWorkspaceScreen({ workspace }: { workspace: WritingWorksp
       onMoveDocument={workspace.moveDocument}
       onRenameBook={workspace.renameBook}
       onRenameChapter={workspace.renameChapterTitle}
-      onSelectChapter={workspace.selectChapter}
       onSelectDocument={workspace.openDocument}
       onSidebarCollapsedChange={workspace.setSidebarCollapsed}
       onShowLibrary={workspace.showLibrary}
@@ -87,10 +86,6 @@ function WritingWorkspaceContent({
         workspace={workspace}
       />
     );
-  }
-
-  if (workspace.activeChapter) {
-    return <ChapterSurface workspace={workspace} />;
   }
 
   return <BookEmptyState workspace={workspace} />;

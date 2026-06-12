@@ -1,12 +1,11 @@
 import {
   type DocumentMetadata,
   type DocumentSession,
-  getActiveChapterOrNull,
   getActiveDocumentOrNull,
   QUICK_DRAFTS_BOOK_ID,
-  renameActiveChapter,
   renameActiveDocument,
   renameBook as renameBookMetadata,
+  renameChapter as renameChapterMetadata,
 } from '@writer/core';
 import type { Dispatch, SetStateAction } from 'react';
 import {
@@ -81,6 +80,7 @@ export function renameBook(
 
 export function renameChapterTitle(
   session: DocumentSession | null,
+  chapterId: string,
   title: string,
   setSession: (session: DocumentSession) => void,
   setSaveStatus: (saveStatus: SaveStatus) => void,
@@ -89,18 +89,22 @@ export function renameChapterTitle(
     return;
   }
 
-  const activeChapter = getActiveChapterOrNull(session);
+  const chapter = session.chapters.find((item) => item.id === chapterId);
 
-  if (!activeChapter) {
+  if (!chapter) {
     return;
   }
 
-  const updatedSession = renameActiveChapter(session, { now: new Date().toISOString(), title });
-  const updatedChapter = getActiveChapterOrNull(updatedSession);
+  const updatedChapter = renameChapterMetadata(chapter, { now: new Date().toISOString(), title });
 
-  setSession(updatedSession);
+  setSession({
+    ...session,
+    chapters: session.chapters.map((item) =>
+      item.id === updatedChapter.id ? updatedChapter : item,
+    ),
+  });
 
-  if (updatedChapter && updatedChapter !== activeChapter) {
+  if (updatedChapter !== chapter) {
     void persistChapterMetadata(updatedChapter, setSaveStatus);
   }
 }

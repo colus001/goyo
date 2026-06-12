@@ -7,18 +7,24 @@ type ChapterItem = NonNullable<WritingShellProps['chapters']>[number];
 
 export function ChapterTreeDialogs({
   chapterPendingDelete,
+  chapterPendingRename,
   isNewChapterModalOpen,
   onCloseNewChapterModal,
   onCreateChapter,
   onDeleteChapter,
+  onRenameChapter,
   onSetChapterPendingDelete,
+  onSetChapterPendingRename,
 }: {
   chapterPendingDelete: ChapterItem | null;
+  chapterPendingRename: ChapterItem | null;
   isNewChapterModalOpen: boolean;
   onCloseNewChapterModal: () => void;
   onCreateChapter?: (title?: string) => void;
   onDeleteChapter?: (chapterId: string) => void;
+  onRenameChapter?: (chapterId: string, title: string) => void;
   onSetChapterPendingDelete: (chapter: ChapterItem | null) => void;
+  onSetChapterPendingRename: (chapter: ChapterItem | null) => void;
 }): ReactElement {
   return (
     <>
@@ -29,6 +35,18 @@ export function ChapterTreeDialogs({
           onConfirm={() => {
             onDeleteChapter?.(chapterPendingDelete.id);
             onSetChapterPendingDelete(null);
+          }}
+        />
+      ) : null}
+      {chapterPendingRename ? (
+        <NewChapterModal
+          actionLabel="Rename chapter"
+          heading="Rename chapter"
+          initialTitle={chapterPendingRename.title}
+          onClose={() => onSetChapterPendingRename(null)}
+          onCreate={(title) => {
+            onRenameChapter?.(chapterPendingRename.id, title);
+            onSetChapterPendingRename(null);
           }}
         />
       ) : null}
