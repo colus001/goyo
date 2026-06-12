@@ -33,13 +33,16 @@ export function WritingTopBar({
   onToggleSidebar: () => void;
   wordCountLabel?: string;
 }): ReactElement {
-  const currentTitle = activeDocument?.title || activeMoveTarget?.title || bookTitle;
+  const currentTitle =
+    activeDocument?.title || activeMoveTarget?.title || bookTitle;
 
   return (
-    <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[#deded9] border-b bg-[#fbfbfa] py-0 pr-3 pl-[7.25rem] [-webkit-app-region:drag]">
+    <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[#deded9] border-b bg-[#fbfbfa] py-0 pr-3 pl-22 [-webkit-app-region:drag]">
       <div className="flex min-w-0 items-center gap-1.5">
         <CommandButton
-          label={isSidebarCollapsed ? 'Show manuscript list' : 'Hide manuscript list'}
+          label={
+            isSidebarCollapsed ? 'Show manuscript list' : 'Hide manuscript list'
+          }
           onClick={onToggleSidebar}
         >
           <Menu aria-hidden="true" size={17} strokeWidth={2.1} />
@@ -52,7 +55,9 @@ export function WritingTopBar({
             {currentTitle}
           </p>
           {breadcrumb ? (
-            <p className="truncate text-[#9a958d] text-[0.7rem] tracking-[0.01em]">{breadcrumb}</p>
+            <p className="truncate text-[#9a958d] text-[0.7rem] tracking-[0.01em]">
+              {breadcrumb}
+            </p>
           ) : null}
         </div>
       </div>
