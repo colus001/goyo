@@ -1,8 +1,6 @@
-import { APP_NAME } from '@writer/shared';
-import { ChevronUp, Menu } from 'lucide-react';
-import type { KeyboardEvent, ReactElement } from 'react';
-import { useEffect, useState } from 'react';
-import { SyncStatusIcon } from './sync-status-icon';
+import { Search } from 'lucide-react';
+import type { ReactElement } from 'react';
+import { useMemo, useState } from 'react';
 import { ChapterTree } from './writing-chapter-tree';
 import type { WritingShellProps } from './writing-shell';
 
@@ -14,8 +12,6 @@ interface WritingSidebarProps extends Omit<WritingShellProps, 'children'> {
 export function WritingSidebar({
   activeChapterId,
   activeDocumentId,
-  bookAccentColor,
-  bookTitle = 'Untitled book',
   chapters = [],
   documents = [],
   isCollapsed,
@@ -25,70 +21,50 @@ export function WritingSidebar({
   onDeleteDocument,
   onMoveChapter,
   onMoveDocument,
-  onRenameBook,
   onSelectChapter,
   onSelectDocument,
   onExpandedChapterIdsChange,
-  onShowLibrary,
-  onToggle,
   expandedChapterIds,
-  status = 'Local session',
 }: WritingSidebarProps): ReactElement {
+  const [searchQuery, setSearchQuery] = useState('');
+  const filteredNavigation = useMemo(
+    () => filterNavigationItems(chapters, documents, searchQuery),
+    [chapters, documents, searchQuery],
+  );
+
   return (
     <aside
-      className="flex h-screen min-h-0 flex-col overflow-hidden border-[#deded9] border-r bg-[#fbfbfa]"
+      className={`flex h-full min-h-0 flex-col overflow-hidden border-[#deded9] border-r bg-[#fbfbfa] ${
+        isCollapsed ? 'pointer-events-none border-r-0' : ''
+      }`}
       aria-label="Manuscript navigation"
+      aria-hidden={isCollapsed}
     >
-      <header
-        className={`border-[#e4e0d8] border-b bg-[#fbfaf7] ${isCollapsed ? 'px-2 py-3' : 'px-3 pt-3 pb-4'}`}
-      >
-        {!isCollapsed ? (
-          <>
-            <div className="flex items-center justify-between gap-2.5">
-              <button
-                aria-label="Hide manuscript list"
-                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg text-[#78756d] transition hover:bg-white/80 hover:text-[#2f2d29] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
-                onClick={onToggle}
-                type="button"
-              >
-                <Menu aria-hidden="true" size={18} strokeWidth={2.1} />
-              </button>
-              <button
-                className="inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 font-medium text-[#77736a] text-sm transition hover:bg-[#f0eee8] hover:text-[#302e29] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
-                onClick={onShowLibrary}
-                type="button"
-              >
-                <ChevronUp aria-hidden="true" size={16} strokeWidth={2.1} />
-                Library
-              </button>
-            </div>
-            <BookTitleBlock
-              className="ml-2"
-              bookAccentColor={bookAccentColor}
-              bookTitle={bookTitle}
-              chapterCount={chapters.length}
-              onRenameBook={onRenameBook}
-            />
-          </>
-        ) : (
-          <button
-            aria-label="Show manuscript list"
-            className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg text-[#78756d] transition hover:bg-white/80 hover:text-[#2f2d29] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
-            onClick={onToggle}
-            type="button"
-          >
-            <Menu aria-hidden="true" size={18} strokeWidth={2.1} />
-          </button>
-        )}
-      </header>
-
       {!isCollapsed ? (
         <>
+          <header className="border-[#e4e0d8] border-b bg-[#fbfaf7] px-3 py-3">
+            <label className="flex h-9 items-center gap-2 rounded-lg border border-[#e1ddd5] bg-white/70 px-2.5 text-[#9b958b] text-xs uppercase tracking-[0.14em]">
+              <Search aria-hidden="true" size={15} strokeWidth={2.1} />
+              <input
+                className="min-w-0 flex-1 bg-transparent text-[#5f5b53] outline-none placeholder:text-[#a9a39a]"
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search"
+                type="search"
+                value={searchQuery}
+              />
+            </label>
+            <div className="mt-3 flex items-center justify-between px-0.5">
+              <p className="font-semibold text-[#8d887e] text-xs uppercase tracking-[0.17em]">
+                Documents
+              </p>
+              <span className="text-[#aaa49b] text-xs">{filteredNavigation.chapters.length}</span>
+            </div>
+          </header>
           <ChapterTree
             activeChapterId={activeChapterId}
             activeDocumentId={activeDocumentId}
-            chapters={chapters}
-            documents={documents}
+            chapters={filteredNavigation.chapters}
+            documents={filteredNavigation.documents}
             expandedChapterIds={expandedChapterIds}
             onCreateChapter={onCreateChapter}
             onCreateEpisodeAfter={onCreateEpisodeAfter}
@@ -100,75 +76,44 @@ export function WritingSidebar({
             onSelectChapter={onSelectChapter}
             onSelectDocument={onSelectDocument}
           />
-          <footer className="flex items-center justify-between border-[#ededeb] border-t px-5 py-3">
-            <span className="text-[#9b9b94] text-xs">Local</span>
-            <SyncStatusIcon status={status} />
-          </footer>
         </>
       ) : null}
     </aside>
   );
 }
 
-function BookTitleBlock({
-  className,
-  bookAccentColor,
-  bookTitle,
-  chapterCount,
-  onRenameBook,
-}: {
-  className?: string;
-  bookAccentColor?: string;
-  bookTitle: string;
-  chapterCount: number;
-  onRenameBook?: (title: string) => void;
-}): ReactElement {
-  const [draftTitle, setDraftTitle] = useState(bookTitle);
+function filterNavigationItems(
+  chapters: NonNullable<WritingShellProps['chapters']>,
+  documents: NonNullable<WritingShellProps['documents']>,
+  searchQuery: string,
+): {
+  chapters: NonNullable<WritingShellProps['chapters']>;
+  documents: NonNullable<WritingShellProps['documents']>;
+} {
+  const query = searchQuery.trim().toLowerCase();
 
-  useEffect(() => {
-    setDraftTitle(bookTitle);
-  }, [bookTitle]);
+  if (query.length === 0) {
+    return { chapters, documents };
+  }
 
-  const commitTitle = () => {
-    if (draftTitle.trim().length === 0) {
-      setDraftTitle(bookTitle);
-      return;
-    }
-
-    onRenameBook?.(draftTitle);
-  };
-
-  return (
-    <div className={`mt-2.5 ${className ?? ''}`}>
-      <div
-        className="border-l-[2.5px] py-1 pl-2.5"
-        style={{ borderColor: bookAccentColor ?? '#a6534b' }}
-      >
-        <input
-          aria-label="Book title"
-          className="block w-full rounded-md bg-transparent px-0 font-semibold text-[#25231f] text-[1.16rem] leading-tight tracking-[-0.04em] outline-none transition placeholder:text-[#b8b1a5] focus:bg-white/80 focus:px-2 focus:py-1 focus:ring-2 focus:ring-[#d65a53]/18"
-          onBlur={commitTitle}
-          onChange={(event) => setDraftTitle(event.target.value)}
-          onKeyDown={(event) => {
-            if (isComposing(event)) {
-              return;
-            }
-
-            if (event.key === 'Enter') {
-              event.currentTarget.blur();
-            }
-          }}
-          placeholder={APP_NAME}
-          value={draftTitle}
-        />
-        <p className="mt-2 font-medium text-[#8d887e] text-xs">
-          {chapterCount} {chapterCount === 1 ? 'chapter' : 'chapters'}
-        </p>
-      </div>
-    </div>
+  const matchingDocuments = documents.filter((document) =>
+    document.title.toLowerCase().includes(query),
   );
-}
+  const matchingDocumentChapterIds = new Set(
+    matchingDocuments.map((document) => document.chapterId).filter(Boolean),
+  );
+  const matchingChapters = chapters.filter(
+    (chapter) =>
+      chapter.title.toLowerCase().includes(query) || matchingDocumentChapterIds.has(chapter.id),
+  );
+  const matchingChapterIds = new Set(matchingChapters.map((chapter) => chapter.id));
 
-function isComposing(event: KeyboardEvent<HTMLInputElement>): boolean {
-  return event.nativeEvent.isComposing || event.keyCode === 229;
+  return {
+    chapters: matchingChapters,
+    documents: documents.filter(
+      (document) =>
+        document.title.toLowerCase().includes(query) ||
+        (document.chapterId !== null && matchingChapterIds.has(document.chapterId)),
+    ),
+  };
 }

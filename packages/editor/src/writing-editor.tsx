@@ -155,7 +155,7 @@ function useWordCountEmitter(
     }
 
     const updateWordCount = () => {
-      const words = editor.getText().trim().split(/\s+/).filter(Boolean);
+      const words = editor.state.doc.textContent.trim().split(/\s+/).filter(Boolean);
 
       onWordCountChange?.(words.length);
     };

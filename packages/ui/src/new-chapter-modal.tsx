@@ -40,7 +40,7 @@ export function NewChapterModal({
         </p>
         <input
           aria-label="Chapter title"
-          className="block w-full rounded-md bg-transparent px-1 font-semibold text-[#25231f] text-[1.35rem] leading-tight tracking-[-0.045em] outline-none placeholder:text-[#b8b1a5] focus:bg-white/80 focus:ring-2 focus:ring-[#d65a53]/18"
+          className="block w-full rounded-md bg-transparent px-1 font-semibold text-[#25231f] text-[1.35rem] leading-tight tracking-[-0.045em] outline-none placeholder:text-[#b8b1a5]"
           id="new-chapter-title"
           onChange={(event) => setTitle(event.target.value)}
           onKeyDown={(event) => {
@@ -55,14 +55,14 @@ export function NewChapterModal({
         />
         <div className="mt-6 flex justify-end gap-2">
           <button
-            className="cursor-pointer rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] transition hover:bg-[#e3dfd6] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
+            className="cursor-pointer rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] outline-none transition hover:bg-[#e3dfd6]"
             onClick={onClose}
             type="button"
           >
             Cancel
           </button>
           <button
-            className="cursor-pointer rounded-full bg-[#30302d] px-4 py-2 font-medium text-white transition hover:bg-[#1f1f1d] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
+            className="cursor-pointer rounded-full bg-[#30302d] px-4 py-2 font-medium text-white outline-none transition hover:bg-[#1f1f1d]"
             onClick={() => {
               onCreate(title.trim().length > 0 ? title.trim() : 'Untitled chapter');
               onClose();

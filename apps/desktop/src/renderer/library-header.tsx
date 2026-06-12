@@ -41,7 +41,7 @@ export function LibraryHeader({
         <div className="flex shrink-0 gap-2">
           <div className="relative" ref={sortControlRef}>
             <button
-              className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#f1eee8] px-4 py-2 font-medium text-[#575149] transition hover:bg-[#e9e4dc] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#f1eee8] px-4 py-2 font-medium text-[#575149] outline-none transition hover:bg-[#e9e4dc]"
               onClick={() => setIsSortMenuOpen((current) => !current)}
               type="button"
             >
@@ -61,7 +61,7 @@ export function LibraryHeader({
             ) : null}
           </div>
           <button
-            className="inline-flex items-center gap-2 rounded-full bg-[#30302d] px-4 py-2 font-medium text-white shadow-sm transition hover:bg-[#1f1f1d] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25 cursor-pointer"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#30302d] px-4 py-2 font-medium text-white shadow-sm outline-none transition hover:bg-[#1f1f1d]"
             onClick={onOpenNewBookModal}
             type="button"
           >
@@ -69,7 +69,7 @@ export function LibraryHeader({
             New book
           </button>
           <button
-            className="inline-flex items-center gap-2 rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] transition hover:bg-[#e3dfd6] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20 cursor-pointer"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] outline-none transition hover:bg-[#e3dfd6]"
             onClick={onStartQuickDraft}
             type="button"
           >

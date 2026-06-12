@@ -142,7 +142,7 @@ function BookCard({
   return (
     <div className="relative">
       <button
-        className={`group relative aspect-[3/4] w-full max-w-[13.5rem] cursor-pointer overflow-hidden rounded-r-xl rounded-l-md border text-left shadow-[7px_10px_18px_rgba(72,61,48,0.08)] transition hover:-translate-y-0.5 hover:shadow-[10px_14px_24px_rgba(72,61,48,0.11)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d65a53]/25 ${
+        className={`group relative aspect-[3/4] w-full max-w-[13.5rem] cursor-pointer overflow-hidden rounded-r-xl rounded-l-md border text-left shadow-[7px_10px_18px_rgba(72,61,48,0.08)] outline-none transition hover:-translate-y-0.5 hover:shadow-[10px_14px_24px_rgba(72,61,48,0.11)] ${
           isQuickDrafts ? 'border-[#d4d7d0] bg-[#f5f5f0]' : 'border-[#d8d0c3] bg-[#fbf7ee]'
         }`}
         onClick={() => {
@@ -266,14 +266,14 @@ function DeleteBookDialog({
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button
-            className="cursor-pointer rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] transition hover:bg-[#e3dfd6] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
+            className="cursor-pointer rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] outline-none transition hover:bg-[#e3dfd6]"
             onClick={onCancel}
             type="button"
           >
             Cancel
           </button>
           <button
-            className="cursor-pointer rounded-full bg-[#9b514a] px-4 py-2 font-medium text-white transition hover:bg-[#82423c] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
+            className="cursor-pointer rounded-full bg-[#9b514a] px-4 py-2 font-medium text-white outline-none transition hover:bg-[#82423c]"
             onClick={onConfirm}
             type="button"
           >
@@ -312,7 +312,7 @@ function BookContextMenu({
           {BOOK_ACCENT_COLORS.map((accentColor) => (
             <button
               aria-label={`Set cover color ${accentColor}`}
-              className="size-5 cursor-pointer rounded-full border border-black/10 transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
+              className="size-5 cursor-pointer rounded-full border border-black/10 outline-none transition hover:scale-110"
               key={accentColor}
               onClick={(event) => {
                 event.stopPropagation();

@@ -187,9 +187,6 @@ importers:
 
   packages/ui:
     dependencies:
-      '@writer/shared':
-        specifier: workspace:*
-        version: link:../shared
       lucide-react:
         specifier: ^1.17.0
         version: 1.17.0(react@19.2.7)

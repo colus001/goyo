@@ -1,12 +1,14 @@
 import type { ReactElement, ReactNode } from 'react';
 import { useState } from 'react';
 import { WritingSidebar } from './writing-sidebar';
+import { type ActiveMoveTarget, WritingTopBar } from './writing-top-bar';
 
 export interface WritingShellProps {
   activeChapterId?: string;
   activeDocumentId?: string;
   bookAccentColor?: string;
   bookTitle?: string;
+  breadcrumb?: string;
   chapters?: Array<{
     id: string;
     isSystem?: boolean;
@@ -39,51 +41,111 @@ export interface WritingShellProps {
   onShowLibrary?: () => void;
   onSidebarCollapsedChange?: (isCollapsed: boolean) => void;
   status?: string;
+  wordCountLabel?: string;
 }
 
-export function WritingShell({
+export function WritingShell(props: WritingShellProps): ReactElement {
+  const normalizedProps = normalizeWritingShellProps(props);
+  const [localSidebarCollapsed, setLocalSidebarCollapsed] = useState(false);
+  const isSidebarCollapsed = normalizedProps.isSidebarCollapsed ?? localSidebarCollapsed;
+  const toggleSidebar = () => {
+    const nextValue = !isSidebarCollapsed;
+
+    if (normalizedProps.isSidebarCollapsed === undefined) {
+      setLocalSidebarCollapsed(nextValue);
+    }
+
+    normalizedProps.onSidebarCollapsedChange?.(nextValue);
+  };
+
+  return (
+    <main className="grid h-screen grid-rows-[3.35rem_minmax(0,1fr)] overflow-hidden bg-[#f7f7f5] font-sans text-[#252525]">
+      <WritingTopBar
+        activeDocument={getActiveDocument(normalizedProps)}
+        activeMoveTarget={getActiveMoveTarget(normalizedProps)}
+        bookTitle={normalizedProps.bookTitle}
+        breadcrumb={normalizedProps.breadcrumb}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onCreateChapter={normalizedProps.onCreateChapter}
+        onCreateDocument={normalizedProps.onCreateDocument}
+        onShowLibrary={normalizedProps.onShowLibrary}
+        onToggleSidebar={toggleSidebar}
+        wordCountLabel={normalizedProps.wordCountLabel}
+      />
+      <WritingShellBody
+        {...normalizedProps}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={toggleSidebar}
+      />
+    </main>
+  );
+}
+
+interface NormalizedWritingShellProps extends WritingShellProps {
+  bookTitle: string;
+  chapters: NonNullable<WritingShellProps['chapters']>;
+  documents: NonNullable<WritingShellProps['documents']>;
+  status: string;
+}
+
+function normalizeWritingShellProps(props: WritingShellProps): NormalizedWritingShellProps {
+  return {
+    ...props,
+    bookTitle: props.bookTitle ?? 'Untitled book',
+    chapters: props.chapters ?? [],
+    documents: props.documents ?? [],
+    status: props.status ?? 'Local session',
+  };
+}
+
+function getActiveDocument(props: NormalizedWritingShellProps) {
+  return props.documents.find((document) => document.id === props.activeDocumentId);
+}
+
+function getActiveMoveTarget(props: NormalizedWritingShellProps): ActiveMoveTarget | null {
+  const activeDocument = getActiveDocument(props);
+  const activeChapter = props.chapters.find((chapter) => chapter.id === props.activeChapterId);
+
+  if (props.activeDocumentId) {
+    return { id: props.activeDocumentId, kind: 'document', title: activeDocument?.title };
+  }
+
+  if (props.activeChapterId) {
+    return { id: props.activeChapterId, kind: 'chapter', title: activeChapter?.title };
+  }
+
+  return null;
+}
+
+function WritingShellBody({
   activeChapterId,
   activeDocumentId,
   bookAccentColor,
-  bookTitle = 'Untitled book',
-  chapters = [],
+  bookTitle,
+  chapters,
   children,
-  documents = [],
+  documents,
   expandedChapterIds,
-  isSidebarCollapsed: controlledSidebarCollapsed,
+  isSidebarCollapsed,
   onCreateChapter,
   onCreateDocument,
   onCreateDocumentInChapter,
   onCreateEpisodeAfter,
   onDeleteChapter,
   onDeleteDocument,
+  onExpandedChapterIdsChange,
   onMoveChapter,
   onMoveDocument,
   onRenameBook,
   onRenameChapter,
   onSelectChapter,
   onSelectDocument,
-  onExpandedChapterIdsChange,
-  onShowLibrary,
-  onSidebarCollapsedChange,
-  status = 'Local session',
-}: WritingShellProps): ReactElement {
-  const [localSidebarCollapsed, setLocalSidebarCollapsed] = useState(false);
-  const isSidebarCollapsed = controlledSidebarCollapsed ?? localSidebarCollapsed;
-  const toggleSidebar = () => {
-    const nextValue = !isSidebarCollapsed;
-
-    if (controlledSidebarCollapsed === undefined) {
-      setLocalSidebarCollapsed(nextValue);
-    }
-
-    onSidebarCollapsedChange?.(nextValue);
-  };
-
+  onToggleSidebar,
+}: WritingShellBodyProps): ReactElement {
   return (
-    <main
-      className={`grid h-screen overflow-hidden bg-[#f7f7f5] font-sans text-[#252525] transition-[grid-template-columns] duration-[280ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-        isSidebarCollapsed ? 'grid-cols-[3rem_minmax(0,1fr)]' : 'grid-cols-[17rem_minmax(0,1fr)]'
+    <div
+      className={`grid min-h-0 transition-[grid-template-columns] duration-[280ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isSidebarCollapsed ? 'grid-cols-[0_minmax(0,1fr)]' : 'grid-cols-[17rem_minmax(0,1fr)]'
       }`}
     >
       <WritingSidebar
@@ -107,30 +169,32 @@ export function WritingShell({
         onExpandedChapterIdsChange={onExpandedChapterIdsChange}
         onSelectChapter={onSelectChapter}
         onSelectDocument={onSelectDocument}
-        onShowLibrary={onShowLibrary}
-        onToggle={toggleSidebar}
+        onToggle={onToggleSidebar}
         expandedChapterIds={expandedChapterIds}
-        status={status}
       />
 
-      <section
-        className="h-screen min-h-0 overflow-y-auto bg-[#f7f7f5]"
-        aria-label="Writing surface"
-      >
-        {children ?? (
-          <article className="mx-auto min-h-screen w-full max-w-[60rem] cursor-text bg-[#ffffff] px-18 py-16">
-            <p className="mb-4 font-medium text-[#999991] text-xs uppercase tracking-[0.13em]">
-              No draft selected
-            </p>
-            <h2 className="mt-0 mb-6 font-semibold text-[2.75rem] tracking-[-0.045em]">
-              Untitled draft
-            </h2>
-            <p className="max-w-[42rem] text-[#4d4d49] text-xl leading-[1.75]">
-              Choose a draft from the manuscript list or create a new section to begin writing.
-            </p>
-          </article>
-        )}
+      <section className="min-h-0 overflow-y-auto bg-white" aria-label="Writing surface">
+        {children ?? <EmptyWritingSurface />}
       </section>
-    </main>
+    </div>
+  );
+}
+
+interface WritingShellBodyProps extends Omit<WritingShellProps, 'isSidebarCollapsed' | 'status'> {
+  isSidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
+}
+
+function EmptyWritingSurface(): ReactElement {
+  return (
+    <article className="mx-auto min-h-screen w-full max-w-[60rem] cursor-text bg-[#ffffff] px-18 py-16">
+      <p className="mb-4 font-medium text-[#999991] text-xs uppercase tracking-[0.13em]">
+        No draft selected
+      </p>
+      <h2 className="mt-0 mb-6 font-semibold text-[2.75rem] tracking-[-0.045em]">Untitled draft</h2>
+      <p className="max-w-[42rem] text-[#4d4d49] text-xl leading-[1.75]">
+        Choose a draft from the manuscript list or create a new section to begin writing.
+      </p>
+    </article>
   );
 }

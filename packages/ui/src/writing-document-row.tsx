@@ -39,7 +39,7 @@ export function DocumentRow({
       ) : null}
       <button
         aria-current={isActive ? 'page' : undefined}
-        className="w-full cursor-pointer px-2.5 py-2 pr-14 text-left focus:outline-none focus-visible:bg-[#ecece8]"
+        className="w-full cursor-pointer px-2.5 py-2 pr-14 text-left outline-none"
         onClick={() => {
           onCloseMenu();
           onSelectDocument?.(document.id);
@@ -85,7 +85,7 @@ function MoveButton({
   return (
     <button
       aria-label={`Move ${document.title || 'Untitled episode'} ${direction}`}
-      className="grid size-6 cursor-pointer place-items-center rounded text-[#9b9b94] hover:bg-[#e9e9e4] hover:text-[#55554f] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
+      className="grid size-6 cursor-pointer place-items-center rounded text-[#9b9b94] outline-none hover:bg-[#e9e9e4] hover:text-[#55554f]"
       onClick={(event) => {
         event.stopPropagation();
         onMoveDocument?.(document.id, direction);
@@ -120,7 +120,7 @@ export function FloatingInsertButton({
     >
       <button
         aria-label="Insert episode here"
-        className="absolute top-1/2 left-1/2 grid size-6 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-[#d8d8d2] bg-[#fbfbfa] text-[#777771] opacity-0 shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition hover:border-[#c7c7bf] hover:bg-white hover:text-[#30302d] hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20 group-hover/insert:opacity-100 group-focus-within/insert:opacity-100"
+        className="absolute top-1/2 left-1/2 grid size-6 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-[#d8d8d2] bg-[#fbfbfa] text-[#777771] opacity-0 outline-none shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition hover:border-[#c7c7bf] hover:bg-white hover:text-[#30302d] hover:opacity-100 group-hover/insert:opacity-100"
         onClick={(event) => {
           event.stopPropagation();
           onInsert();

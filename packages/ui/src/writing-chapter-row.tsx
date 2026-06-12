@@ -56,7 +56,7 @@ export function ChapterRow({
       <div className="group/chapter-row relative">
         <button
           aria-current={isActive && !activeDocumentId ? 'page' : undefined}
-          className={`w-full cursor-pointer rounded-lg border-l-3 px-3 py-2.5 pr-14 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d65a53]/25 ${
+          className={`w-full cursor-pointer rounded-lg border-l-3 px-3 py-2.5 pr-14 text-left outline-none transition ${
             isActive
               ? 'border-transparent bg-[#f0eee9] text-[#252522]'
               : 'border-transparent text-[#6f6f68] hover:bg-[#f5f3ee]'
@@ -138,7 +138,7 @@ function MoveChapterButton({
   return (
     <button
       aria-label={`Move ${chapter.title} ${direction}`}
-      className="grid size-6 cursor-pointer place-items-center rounded text-[#9b9b94] hover:bg-[#e9e9e4] hover:text-[#55554f] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
+      className="grid size-6 cursor-pointer place-items-center rounded text-[#9b9b94] outline-none hover:bg-[#e9e9e4] hover:text-[#55554f]"
       onClick={(event) => {
         event.stopPropagation();
         onMoveChapter?.(chapter.id, direction);

@@ -141,6 +141,8 @@
 - [ ] Add a settings storage foundation for app-level preferences.
 - [ ] Add a setting to enable or disable restoring the last workspace on launch.
 - [ ] Add initial settings sections for writing preferences, appearance placeholders, and future sync/account preferences.
+- [ ] Define a light-first appearance color system with a small fixed UI palette.
+- [ ] Defer dark theme and user theme selection until the settings surface is implemented.
 - [ ] Add keyboard shortcuts for primary writing actions.
 - [ ] Add keyboard shortcuts for sidebar toggle, new episode, new chapter, focus editor, and return to library.
 - [x] Add word count.

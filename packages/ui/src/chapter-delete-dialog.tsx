@@ -48,14 +48,14 @@ export function ChapterDeleteDialog({
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button
-            className="cursor-pointer rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] transition hover:bg-[#e3dfd6] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/20"
+            className="cursor-pointer rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] outline-none transition hover:bg-[#e3dfd6]"
             onClick={onCancel}
             type="button"
           >
             Cancel
           </button>
           <button
-            className="cursor-pointer rounded-full bg-[#9b514a] px-4 py-2 font-medium text-white transition hover:bg-[#82423c] focus:outline-none focus:ring-2 focus:ring-[#d65a53]/25"
+            className="cursor-pointer rounded-full bg-[#9b514a] px-4 py-2 font-medium text-white outline-none transition hover:bg-[#82423c]"
             onClick={onConfirm}
             type="button"
           >
