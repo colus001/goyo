@@ -36,6 +36,12 @@ declare global {
         listPending: () => Promise<SyncQueueItem[]>;
         markCompleted: (syncItemId: string, completedAt: string) => Promise<void>;
       };
+      sync: {
+        pushPendingUpdates: () => Promise<{
+          pushedUpdateCount: number;
+          skippedUpdateCount: number;
+        }>;
+      };
       platform: string;
     };
   }

@@ -50,6 +50,13 @@ const desktopApi = {
     markCompleted: (syncItemId: string, completedAt: string) =>
       ipcRenderer.invoke('syncQueue:markCompleted', syncItemId, completedAt) as Promise<void>,
   },
+  sync: {
+    pushPendingUpdates: () =>
+      ipcRenderer.invoke('sync:pushPendingUpdates') as Promise<{
+        pushedUpdateCount: number;
+        skippedUpdateCount: number;
+      }>,
+  },
   platform: process.platform,
 } as const;
 

@@ -54,6 +54,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     setSaveStatus,
   );
   useLoadWorkspace(setSession, setSaveStatus, setScreen);
+  usePushPendingUpdates();
 
   return {
     activeBook,
@@ -94,6 +95,14 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     updateBookAccentColor: (bookId, accentColor) =>
       updateBookAccentColor(bookId, accentColor, setSession, setSaveStatus),
   };
+}
+
+function usePushPendingUpdates() {
+  useEffect(() => {
+    void window.writerDesktop.sync.pushPendingUpdates().catch(() => {
+      // Local writes remain safe; failed remote sync stays pending for a later retry.
+    });
+  }, []);
 }
 
 function useLoadWorkspace(

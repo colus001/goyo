@@ -8,9 +8,11 @@ import type {
 } from '@writer/core';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import { createDesktopLocalStore } from './document-metadata-store';
+import { pushPendingDocumentUpdates } from './remote-sync';
 
 const isDevelopment = !app.isPackaged;
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: IPC registration is kept centralized around one local store instance.
 function registerDocumentIpc() {
   const store = createDesktopLocalStore(app.getPath('userData'));
 
@@ -80,6 +82,14 @@ function registerDocumentIpc() {
       store.markSyncItemCompleted(syncItemId, completedAt);
     } catch (error) {
       console.error('Failed to mark sync item completed', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('sync:pushPendingUpdates', async () => {
+    try {
+      return await pushPendingDocumentUpdates(store);
+    } catch (error) {
+      console.error('Failed to push pending document updates', getErrorMessage(error));
       throw error;
     }
   });

@@ -81,6 +81,9 @@ export async function persistDocumentUpdate(
       await persistDocumentSnapshot(snapshot);
     }
     setSaveStatus('Saved locally');
+    void window.writerDesktop.sync.pushPendingUpdates().catch(() => {
+      // Remote sync is retried from the pending queue; local persistence already succeeded.
+    });
   } catch {
     setSaveStatus('Save failed');
   }
