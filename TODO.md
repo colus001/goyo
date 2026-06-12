@@ -114,14 +114,16 @@
 
 - [x] Push local unsynced Yjs updates to the Worker.
 - [x] Pull missing remote Yjs updates from the Worker.
-- [ ] Use state vectors or equivalent sync metadata to avoid full document transfer.
-- [ ] Add sync retry and backoff.
-- [ ] Add subtle sync status UI.
-- [ ] Handle offline mode without blocking local editing.
-- [ ] Handle reconnect after offline edits.
+- [x] Push local document snapshots to the Worker.
+- [x] Pull the latest remote document snapshots into the desktop store.
+- [x] Use state vectors or equivalent sync metadata to avoid full document transfer.
+- [x] Add sync retry and backoff.
+- [x] Add subtle sync status UI.
+- [x] Handle offline mode without blocking local editing.
+- [x] Handle reconnect after offline edits.
 - [ ] Verify same-document editing from two desktop app instances.
-- [ ] Verify duplicated sync requests are safe.
-- [ ] Verify delayed or out-of-order remote updates are safe.
+- [x] Verify duplicated sync requests are safe.
+- [x] Verify delayed or out-of-order remote updates are safe.
 
 ## Milestone 8: Desktop Writing Experience
 
@@ -184,6 +186,13 @@
 - [x] Added Worker document metadata upsert and read APIs backed by D1.
 - [x] Added desktop main-process push sync for pending local Yjs updates, including remote metadata upsert before update upload and queue completion after successful push.
 - [x] Added desktop main-process pull sync for missing remote Yjs updates using `afterUpdateId` and duplicate-safe local append.
+- [x] Added desktop main-process snapshot push/pull sync and startup wiring after update sync.
+- [x] Added sync queue retry tracking and exponential backoff for failed desktop update and snapshot pushes.
+- [x] Added renderer sync status, offline detection, reconnect sync, and quiet sidebar status text without blocking local writing.
+- [x] Verified remote duplicate update and snapshot requests return idempotent results and cleaned up test D1 rows.
+- [x] Verified out-of-order remote update upload is returned in replay order by `created_at, id` and cleaned up test D1 rows.
+- [x] Verified two-client remote CRDT update replay preserves both clients' edits and cleaned up test D1 rows.
+- [x] Treat `afterUpdateId` pull checkpoints as the current equivalent sync metadata for avoiding full document transfer; state-vector diff remains available in core for future finer-grained sync.
 
 ## Milestone 9: Recovery And Version Safety
 
