@@ -51,13 +51,20 @@ export function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState
         <p className="mb-3 font-semibold text-[var(--goyo-text-faint)] text-xs uppercase tracking-[0.14em]">
           Empty book
         </p>
-        <h2 className="font-semibold text-[2rem] tracking-[-0.04em]">Start with a document</h2>
+        <h2 className="font-semibold text-[2rem] tracking-[-0.04em]">Start this book</h2>
         <p className="mt-4 text-[var(--goyo-text-muted)] leading-relaxed">
-          Draft an essay as a standalone document, or add chapters later for a longer manuscript.
+          Create a chapter for a longer manuscript, or start with a standalone document.
         </p>
         <div className="mt-8 flex justify-center gap-2">
           <button
             className="rounded-full bg-[var(--goyo-accent)] px-4 py-2 text-white hover:bg-[var(--goyo-accent-hover)]"
+            onClick={() => workspace.createChapter()}
+            type="button"
+          >
+            New chapter
+          </button>
+          <button
+            className="rounded-full px-4 py-2 text-[var(--goyo-text-muted)] hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
             onClick={() => workspace.createDocument('episode')}
             type="button"
           >
