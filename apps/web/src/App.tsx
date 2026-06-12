@@ -50,7 +50,7 @@ function App() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(126,93,54,0.14),transparent_28%),radial-gradient(circle_at_85%_18%,rgba(98,120,88,0.14),transparent_24%),radial-gradient(circle_at_60%_78%,rgba(181,76,47,0.12),transparent_28%),linear-gradient(115deg,rgba(255,255,255,0.45),transparent_38%)] opacity-35" />
         <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between rounded-full border border-[#241b13]/10 bg-[#fff8ec]/75 px-4 py-3 shadow-[0_18px_80px_rgba(45,32,20,0.08)] backdrop-blur">
           <a className="font-semibold text-sm tracking-[0.22em] uppercase" href="#top">
-            QuietDraft
+            Goyo
           </a>
           <div className="hidden items-center gap-7 text-[#695b4d] text-sm md:flex">
             <a className="transition hover:text-[#1e1a15]" href="#features">
@@ -282,7 +282,7 @@ function App() {
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
               <a
                 className="rounded-2xl bg-[#b84c2f] px-5 py-4 text-center font-semibold text-[#fff8ec] transition hover:-translate-y-0.5 hover:bg-[#a33f25]"
-                href="/downloads/quietdraft-macos.dmg"
+                href="/downloads/goyo-macos.dmg"
               >
                 Download for macOS
               </a>
@@ -329,7 +329,7 @@ function App() {
 
       <footer className="border-[#241b13]/10 border-t px-5 py-8 sm:px-8 lg:px-12">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 text-[#66594d] text-sm md:flex-row md:items-center">
-          <p className="font-semibold text-[#1e1a15]">QuietDraft</p>
+          <p className="font-semibold text-[#1e1a15]">Goyo</p>
           <p>Built for writers who care about keeping their words safe.</p>
         </div>
       </footer>
