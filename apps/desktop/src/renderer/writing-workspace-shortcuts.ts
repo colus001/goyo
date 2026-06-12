@@ -7,6 +7,7 @@ export function useWorkspaceKeyboardShortcuts(
   workspace: WritingWorkspaceState,
   activeDocument: DocumentMetadata | undefined,
   editorRef: RefObject<WritingEditorRef | null>,
+  onCreateChapter?: () => void,
 ) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -17,13 +18,13 @@ export function useWorkspaceKeyboardShortcuts(
       }
 
       event.preventDefault();
-      runWorkspaceShortcut(action, workspace, editorRef);
+      runWorkspaceShortcut(action, workspace, editorRef, onCreateChapter);
     };
 
     window.addEventListener('keydown', handleKeyDown);
 
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeDocument, editorRef, workspace]);
+  }, [activeDocument, editorRef, onCreateChapter, workspace]);
 }
 
 type WorkspaceShortcutAction =
@@ -65,6 +66,7 @@ function runWorkspaceShortcut(
   action: WorkspaceShortcutAction,
   workspace: WritingWorkspaceState,
   editorRef: RefObject<WritingEditorRef | null>,
+  onCreateChapter?: () => void,
 ) {
   if (action === 'toggle-sidebar') {
     workspace.setSidebarCollapsed(!workspace.isSidebarCollapsed);
@@ -83,7 +85,7 @@ function runWorkspaceShortcut(
       return;
     }
 
-    workspace.createChapter();
+    onCreateChapter?.();
     return;
   }
 

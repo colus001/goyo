@@ -11,7 +11,13 @@ import type { WritingWorkspaceState } from './document-workspace-types';
 
 const EMPTY_DOCUMENT_UPDATES: Uint8Array[] = [];
 
-export function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState }) {
+export function BookEmptyState({
+  onCreateChapter,
+  workspace,
+}: {
+  onCreateChapter?: () => void;
+  workspace: WritingWorkspaceState;
+}) {
   if (!workspace.activeBook) {
     return (
       <article className="mx-auto grid min-h-full w-full max-w-[52rem] place-items-center bg-[var(--goyo-paper)] px-12 py-16">
@@ -56,13 +62,15 @@ export function BookEmptyState({ workspace }: { workspace: WritingWorkspaceState
           Create a chapter for a longer manuscript, or start with a standalone document.
         </p>
         <div className="mt-8 flex justify-center gap-2">
-          <button
-            className="rounded-full bg-[var(--goyo-accent)] px-4 py-2 text-white hover:bg-[var(--goyo-accent-hover)]"
-            onClick={() => workspace.createChapter()}
-            type="button"
-          >
-            New chapter
-          </button>
+          {onCreateChapter ? (
+            <button
+              className="rounded-full bg-[var(--goyo-accent)] px-4 py-2 text-white hover:bg-[var(--goyo-accent-hover)]"
+              onClick={onCreateChapter}
+              type="button"
+            >
+              New chapter
+            </button>
+          ) : null}
           <button
             className="rounded-full px-4 py-2 text-[var(--goyo-text-muted)] hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
             onClick={() => workspace.createDocument('episode')}

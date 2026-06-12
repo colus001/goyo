@@ -4,7 +4,7 @@ import {
   QUICK_DRAFTS_INBOX_CHAPTER_ID,
 } from '@writer/core';
 import type { WritingEditorRef } from '@writer/editor';
-import { WritingShell } from '@writer/ui';
+import { NewChapterModal, WritingShell } from '@writer/ui';
 import { type RefObject, useRef, useState } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { BookEmptyState, EpisodeSurface } from './writing-surfaces';
@@ -25,6 +25,7 @@ export function WritingWorkspaceScreen({
   const activeDocument = workspace.activeDocument as DocumentMetadata | undefined;
   const editorRef = useRef<WritingEditorRef>(null);
   const [wordCountState, setWordCountState] = useState<WordCountState>({ wordCount: 0 });
+  const [isNewChapterModalOpen, setIsNewChapterModalOpen] = useState(false);
   const wordCount =
     activeDocument && wordCountState.documentId === activeDocument.id
       ? wordCountState.wordCount
@@ -32,19 +33,42 @@ export function WritingWorkspaceScreen({
   const chapters = getVisibleChapters(workspace);
   const documents = getVisibleDocuments(workspace);
   const wordCountLabel = activeDocument ? formatWordCountLabel(wordCount) : undefined;
-  const shellProps = getWritingShellProps(workspace, onOpenSettings, wordCountLabel);
+  const canCreateChapter = Boolean(
+    workspace.activeBook && workspace.activeBook.id !== QUICK_DRAFTS_BOOK_ID,
+  );
+  const openNewChapterModal = () => setIsNewChapterModalOpen(true);
+  const requestNewChapter = canCreateChapter ? openNewChapterModal : undefined;
+  const closeNewChapterModal = () => setIsNewChapterModalOpen(false);
+  const shellProps = getWritingShellProps(
+    workspace,
+    onOpenSettings,
+    wordCountLabel,
+    requestNewChapter,
+  );
 
-  useWorkspaceKeyboardShortcuts(workspace, activeDocument, editorRef);
+  useWorkspaceKeyboardShortcuts(workspace, activeDocument, editorRef, requestNewChapter);
 
   return (
-    <WritingShell {...shellProps} chapters={chapters} documents={documents}>
-      <WritingWorkspaceContent
-        activeDocument={activeDocument}
-        editorRef={editorRef}
-        onWordCountStateChange={setWordCountState}
-        workspace={workspace}
-      />
-    </WritingShell>
+    <>
+      <WritingShell {...shellProps} chapters={chapters} documents={documents}>
+        <WritingWorkspaceContent
+          activeDocument={activeDocument}
+          editorRef={editorRef}
+          onCreateChapter={requestNewChapter}
+          onWordCountStateChange={setWordCountState}
+          workspace={workspace}
+        />
+      </WritingShell>
+      {isNewChapterModalOpen ? (
+        <NewChapterModal
+          onClose={closeNewChapterModal}
+          onCreate={(title) => {
+            workspace.createChapter(title);
+            closeNewChapterModal();
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -52,6 +76,7 @@ function getWritingShellProps(
   workspace: WritingWorkspaceState,
   onOpenSettings: () => void,
   wordCountLabel: string | undefined,
+  onCreateChapter?: () => void,
 ) {
   const activeDocument = workspace.activeDocument as DocumentMetadata | undefined;
   const hasActiveBook = Boolean(workspace.activeBook);
@@ -74,7 +99,7 @@ function getWritingShellProps(
     expandedChapterIds: workspace.expandedChapterIds,
     isSidebarCollapsed: workspace.isSidebarCollapsed,
     onCreateBook: workspace.createBook,
-    onCreateChapter: canCreateChapter ? workspace.createChapter : undefined,
+    onCreateChapter: canCreateChapter ? onCreateChapter : undefined,
     onCreateDocument: hasActiveBook ? createDocument : undefined,
     onCreateDocumentInChapter: hasActiveBook ? workspace.createDocumentInChapter : undefined,
     onCreateEpisodeAfter: hasActiveBook ? workspace.createEpisodeAfter : undefined,
@@ -100,11 +125,13 @@ function getWritingShellProps(
 function WritingWorkspaceContent({
   activeDocument,
   editorRef,
+  onCreateChapter,
   onWordCountStateChange,
   workspace,
 }: {
   activeDocument?: DocumentMetadata;
   editorRef: RefObject<WritingEditorRef | null>;
+  onCreateChapter?: () => void;
   onWordCountStateChange: (state: WordCountState) => void;
   workspace: WritingWorkspaceState;
 }) {
@@ -120,7 +147,7 @@ function WritingWorkspaceContent({
     );
   }
 
-  return <BookEmptyState workspace={workspace} />;
+  return <BookEmptyState onCreateChapter={onCreateChapter} workspace={workspace} />;
 }
 
 function formatWorkspaceStatus(workspace: WritingWorkspaceState) {

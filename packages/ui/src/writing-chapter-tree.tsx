@@ -37,7 +37,6 @@ export function ChapterTree(props: ChapterTreeProps): ReactElement {
     props.expandedChapterIds,
     props.onExpandedChapterIdsChange,
   );
-  const [isNewChapterModalOpen, setIsNewChapterModalOpen] = useState(false);
   const bookLevelEpisodes = getBookLevelEpisodes(props.documents);
 
   return (
@@ -48,10 +47,8 @@ export function ChapterTree(props: ChapterTreeProps): ReactElement {
       chapterPendingRename={chapterPendingRename}
       emptyContextMenu={emptyContextMenu}
       expandedChapterIds={expandedChapterIds}
-      isNewChapterModalOpen={isNewChapterModalOpen}
       onCloseDocumentMenu={() => setOpenContextMenu(null)}
       onCloseEmptyContextMenu={() => setEmptyContextMenu(null)}
-      onCloseNewChapterModal={() => setIsNewChapterModalOpen(false)}
       onCollapseAllChapters={chapterExpansion.collapseAll}
       onOpenChapterMenu={(chapterId, position) =>
         setOpenContextMenu({ chapterId, kind: 'chapter', ...position })
@@ -61,7 +58,7 @@ export function ChapterTree(props: ChapterTreeProps): ReactElement {
       }
       onOpenEmptyContextMenu={setEmptyContextMenu}
       onOpenAllChapters={() => chapterExpansion.openAll(props.chapters)}
-      onOpenNewChapterModal={() => setIsNewChapterModalOpen(true)}
+      onOpenNewChapterModal={() => props.onCreateChapter?.()}
       onSetChapterPendingDelete={setChapterPendingDelete}
       onSetChapterPendingRename={setChapterPendingRename}
       onToggleChapter={chapterExpansion.toggle}
@@ -114,9 +111,6 @@ function ChapterTreeBody(props: ChapterTreeBodyProps): ReactElement {
       <ChapterTreeDialogs
         chapterPendingDelete={props.chapterPendingDelete}
         chapterPendingRename={props.chapterPendingRename}
-        isNewChapterModalOpen={props.isNewChapterModalOpen}
-        onCloseNewChapterModal={props.onCloseNewChapterModal}
-        onCreateChapter={props.onCreateChapter}
         onDeleteChapter={props.onDeleteChapter}
         onRenameChapter={props.onRenameChapter}
         onSetChapterPendingDelete={props.onSetChapterPendingDelete}
@@ -132,10 +126,8 @@ interface ChapterTreeBodyProps extends Omit<ChapterTreeProps, 'expandedChapterId
   chapterPendingRename: ChapterItem | null;
   emptyContextMenu: MenuPosition | null;
   expandedChapterIds: Set<string>;
-  isNewChapterModalOpen: boolean;
   onCloseDocumentMenu: () => void;
   onCloseEmptyContextMenu: () => void;
-  onCloseNewChapterModal: () => void;
   onCollapseAllChapters: () => void;
   onOpenChapterMenu: (chapterId: string, position: MenuPosition) => void;
   onOpenDocumentMenu: (documentId: string, position: MenuPosition) => void;

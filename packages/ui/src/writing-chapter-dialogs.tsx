@@ -8,9 +8,6 @@ type ChapterItem = NonNullable<WritingShellProps['chapters']>[number];
 export function ChapterTreeDialogs({
   chapterPendingDelete,
   chapterPendingRename,
-  isNewChapterModalOpen,
-  onCloseNewChapterModal,
-  onCreateChapter,
   onDeleteChapter,
   onRenameChapter,
   onSetChapterPendingDelete,
@@ -18,9 +15,6 @@ export function ChapterTreeDialogs({
 }: {
   chapterPendingDelete: ChapterItem | null;
   chapterPendingRename: ChapterItem | null;
-  isNewChapterModalOpen: boolean;
-  onCloseNewChapterModal: () => void;
-  onCreateChapter?: (title?: string) => void;
   onDeleteChapter?: (chapterId: string) => void;
   onRenameChapter?: (chapterId: string, title: string) => void;
   onSetChapterPendingDelete: (chapter: ChapterItem | null) => void;
@@ -47,15 +41,6 @@ export function ChapterTreeDialogs({
           onCreate={(title) => {
             onRenameChapter?.(chapterPendingRename.id, title);
             onSetChapterPendingRename(null);
-          }}
-        />
-      ) : null}
-      {isNewChapterModalOpen ? (
-        <NewChapterModal
-          onClose={onCloseNewChapterModal}
-          onCreate={(title) => {
-            onCreateChapter?.(title);
-            onCloseNewChapterModal();
           }}
         />
       ) : null}
