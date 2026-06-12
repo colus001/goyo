@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createDocumentStateVector,
   createMissingDocumentUpdate,
+  createMissingSyncQueueItems,
   replayDocumentUpdates,
   restoreDocumentFromSnapshot,
   selectPendingDocumentUpdates,
@@ -122,6 +123,72 @@ describe('document sync pending queue selection', () => {
     ];
 
     expect(selectPendingDocumentUpdates(queue, [updateB, updateA])).toEqual([updateA, updateB]);
+  });
+});
+
+describe('document sync queue recovery', () => {
+  it('creates recovery queue items for local updates and snapshots missing from the queue', () => {
+    const updateA = createUpdateRecord('update_a', '2026-06-12T10:00:00.000Z', new Uint8Array([1]));
+    const updateB = createUpdateRecord('update_b', '2026-06-12T10:01:00.000Z', new Uint8Array([2]));
+    const snapshot = createDocumentSnapshotRecord({
+      createdAt: '2026-06-12T10:02:00.000Z',
+      documentId: 'doc_1',
+      id: 'snapshot_1',
+      lastUpdateId: 'update_b',
+      snapshot: new Uint8Array([3]),
+    });
+    const existingQueue = [
+      createQueueItem('sync_existing_update_a', 'update_a', updateA.createdAt),
+    ];
+
+    expect(
+      createMissingSyncQueueItems({
+        createQueueItemId: ({ recordId }) => `sync_recovered_${recordId}`,
+        existingQueueItems: existingQueue,
+        snapshots: [snapshot],
+        updates: [updateB, updateA],
+      }),
+    ).toEqual([
+      createQueueItem('sync_recovered_update_b', 'update_b', updateB.createdAt),
+      createSyncQueueItem({
+        createdAt: snapshot.createdAt,
+        documentId: 'doc_1',
+        id: 'sync_recovered_snapshot_1',
+        kind: 'document-snapshot',
+        recordId: 'snapshot_1',
+      }),
+    ]);
+  });
+});
+
+describe('document sync queue recovery deduplication', () => {
+  it('does not create duplicate recovery items for records already queued by kind and id', () => {
+    const update = createUpdateRecord('update_a', '2026-06-12T10:00:00.000Z', new Uint8Array([1]));
+    const snapshot = createDocumentSnapshotRecord({
+      createdAt: '2026-06-12T10:01:00.000Z',
+      documentId: 'doc_1',
+      id: 'snapshot_1',
+      lastUpdateId: 'update_a',
+      snapshot: new Uint8Array([2]),
+    });
+
+    expect(
+      createMissingSyncQueueItems({
+        createQueueItemId: ({ recordId }) => `sync_recovered_${recordId}`,
+        existingQueueItems: [
+          createQueueItem('sync_update_a', 'update_a', update.createdAt),
+          createSyncQueueItem({
+            createdAt: snapshot.createdAt,
+            documentId: 'doc_1',
+            id: 'sync_snapshot_1',
+            kind: 'document-snapshot',
+            recordId: 'snapshot_1',
+          }),
+        ],
+        snapshots: [snapshot],
+        updates: [update],
+      }),
+    ).toEqual([]);
   });
 });
 

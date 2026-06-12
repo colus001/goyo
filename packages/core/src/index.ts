@@ -50,6 +50,7 @@ export {
 export {
   createDocumentStateVector,
   createMissingDocumentUpdate,
+  createMissingSyncQueueItems,
   replayDocumentUpdates,
   restoreDocumentFromSnapshot,
   selectPendingDocumentUpdates,

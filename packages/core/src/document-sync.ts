@@ -1,8 +1,15 @@
 import type { CrdtAdapter, CrdtDocument, CrdtStateVector, CrdtUpdate } from './crdt';
 import { sortDocumentUpdatesForReplay } from './document-updates';
 import type { DocumentSnapshotRecord } from './local-store';
-import type { DocumentUpdateRecord, SyncQueueItem } from './sync';
-import { sortSyncQueueItemsForProcessing } from './sync';
+import type { DocumentUpdateRecord, SyncQueueItem, SyncQueueItemKind } from './sync';
+import { createSyncQueueItem, sortSyncQueueItemsForProcessing } from './sync';
+
+interface CreateMissingSyncQueueItemsInput {
+  createQueueItemId: (input: { kind: SyncQueueItemKind; recordId: string }) => string;
+  existingQueueItems: SyncQueueItem[];
+  snapshots: DocumentSnapshotRecord[];
+  updates: DocumentUpdateRecord[];
+}
 
 export function replayDocumentUpdates<TDocument extends CrdtDocument>(
   adapter: CrdtAdapter<TDocument>,
@@ -75,6 +82,58 @@ export function selectPendingDocumentUpdates(
   return selectedUpdates;
 }
 
+export function createMissingSyncQueueItems({
+  createQueueItemId,
+  existingQueueItems,
+  snapshots,
+  updates,
+}: CreateMissingSyncQueueItemsInput): SyncQueueItem[] {
+  const queuedRecords = new Set(
+    existingQueueItems.map((item) => createQueuedRecordKey(item.kind, item.recordId)),
+  );
+  const recoveredItems: SyncQueueItem[] = [];
+
+  for (const update of sortDocumentUpdatesForReplay(updates)) {
+    const key = createQueuedRecordKey('document-update', update.id);
+
+    if (queuedRecords.has(key)) {
+      continue;
+    }
+
+    queuedRecords.add(key);
+    recoveredItems.push(
+      createSyncQueueItem({
+        createdAt: update.createdAt,
+        documentId: update.documentId,
+        id: createQueueItemId({ kind: 'document-update', recordId: update.id }),
+        kind: 'document-update',
+        recordId: update.id,
+      }),
+    );
+  }
+
+  for (const snapshot of sortDocumentSnapshotsForRecovery(snapshots)) {
+    const key = createQueuedRecordKey('document-snapshot', snapshot.id);
+
+    if (queuedRecords.has(key)) {
+      continue;
+    }
+
+    queuedRecords.add(key);
+    recoveredItems.push(
+      createSyncQueueItem({
+        createdAt: snapshot.createdAt,
+        documentId: snapshot.documentId,
+        id: createQueueItemId({ kind: 'document-snapshot', recordId: snapshot.id }),
+        kind: 'document-snapshot',
+        recordId: snapshot.id,
+      }),
+    );
+  }
+
+  return recoveredItems;
+}
+
 function applyDocumentUpdates<TDocument extends CrdtDocument>(
   adapter: CrdtAdapter<TDocument>,
   document: TDocument,
@@ -83,4 +142,22 @@ function applyDocumentUpdates<TDocument extends CrdtDocument>(
   for (const update of sortDocumentUpdatesForReplay(updates)) {
     adapter.applyUpdate(document, update.update);
   }
+}
+
+function sortDocumentSnapshotsForRecovery(
+  snapshots: DocumentSnapshotRecord[],
+): DocumentSnapshotRecord[] {
+  return [...snapshots].sort((first, second) => {
+    const createdAtOrder = first.createdAt.localeCompare(second.createdAt);
+
+    if (createdAtOrder !== 0) {
+      return createdAtOrder;
+    }
+
+    return first.id.localeCompare(second.id);
+  });
+}
+
+function createQueuedRecordKey(kind: SyncQueueItemKind, recordId: string): string {
+  return `${kind}:${recordId}`;
 }
