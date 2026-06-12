@@ -1,5 +1,6 @@
-import { ChevronRight, ChevronUp, Menu } from 'lucide-react';
-import type { ReactElement, ReactNode } from 'react';
+import { ChevronRight, ChevronUp, Menu, Plus } from 'lucide-react';
+import type { ReactElement, ReactNode, RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { WritingShellProps } from './writing-shell';
 
 type DocumentItem = NonNullable<WritingShellProps['documents']>[number];
@@ -63,20 +64,7 @@ export function WritingTopBar({
             {wordCountLabel}
           </p>
         ) : null}
-        <TextCommandButton
-          disabled={!onCreateChapter}
-          label="New chapter"
-          onClick={() => onCreateChapter?.()}
-        >
-          New chapter
-        </TextCommandButton>
-        <TextCommandButton
-          disabled={!onCreateDocument}
-          label="New episode"
-          onClick={() => onCreateDocument?.('episode')}
-        >
-          New episode
-        </TextCommandButton>
+        <CreateMenuButton onCreateChapter={onCreateChapter} onCreateDocument={onCreateDocument} />
       </div>
     </header>
   );
@@ -127,26 +115,129 @@ function CommandButton({
   );
 }
 
-function TextCommandButton({
-  children,
-  disabled = false,
+function CreateMenuButton({
+  onCreateChapter,
+  onCreateDocument,
+}: {
+  onCreateChapter?: (title?: string) => void;
+  onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
+}): ReactElement {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDisabled = !onCreateChapter && !onCreateDocument;
+
+  useCloseCreateMenu(isOpen, containerRef, () => setIsOpen(false));
+
+  return (
+    <div className="relative [-webkit-app-region:no-drag]" ref={containerRef}>
+      <button
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-label="Create"
+        className="grid size-8 cursor-pointer place-items-center rounded-lg text-[#6b665f] outline-none transition hover:bg-[#f1eee8] hover:text-[#302e29] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#6b665f]"
+        disabled={isDisabled}
+        onClick={() => setIsOpen((current) => !current)}
+        title="Create"
+        type="button"
+      >
+        <Plus aria-hidden="true" size={18} strokeWidth={2.1} />
+      </button>
+      {isOpen ? (
+        <CreateMenu
+          onClose={() => setIsOpen(false)}
+          onCreateChapter={onCreateChapter}
+          onCreateDocument={onCreateDocument}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function useCloseCreateMenu(
+  isOpen: boolean,
+  containerRef: RefObject<HTMLDivElement | null>,
+  onClose: () => void,
+) {
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (containerRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      onClose();
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('pointerdown', closeOnOutsidePointer);
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      window.removeEventListener('pointerdown', closeOnOutsidePointer);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [containerRef, isOpen, onClose]);
+}
+
+function CreateMenu({
+  onClose,
+  onCreateChapter,
+  onCreateDocument,
+}: {
+  onClose: () => void;
+  onCreateChapter?: (title?: string) => void;
+  onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
+}): ReactElement {
+  return (
+    <div
+      className="absolute top-9 right-0 z-30 min-w-40 rounded-lg border border-[#deded8] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+      role="menu"
+    >
+      <CreateMenuItem
+        disabled={!onCreateChapter}
+        label="New chapter"
+        onClick={() => {
+          onCreateChapter?.();
+          onClose();
+        }}
+      />
+      <CreateMenuItem
+        disabled={!onCreateDocument}
+        label="New episode"
+        onClick={() => {
+          onCreateDocument?.('episode');
+          onClose();
+        }}
+      />
+    </div>
+  );
+}
+
+function CreateMenuItem({
+  disabled,
   label,
   onClick,
 }: {
-  children: ReactNode;
-  disabled?: boolean;
+  disabled: boolean;
   label: string;
-  onClick?: () => void;
+  onClick: () => void;
 }): ReactElement {
   return (
     <button
-      aria-label={label}
-      className="h-8 cursor-pointer rounded-lg px-3 font-medium text-[#6b665f] text-sm outline-none transition hover:bg-[#f1eee8] hover:text-[#302e29] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#6b665f] [-webkit-app-region:no-drag]"
+      className="flex w-full cursor-pointer px-3 py-1.5 text-left text-[#30302d] text-sm outline-none hover:bg-[#f4f4f1] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent"
       disabled={disabled}
       onClick={onClick}
+      role="menuitem"
       type="button"
     >
-      {children}
+      {label}
     </button>
   );
 }
