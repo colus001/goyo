@@ -1,5 +1,5 @@
-import type { ReactElement } from 'react';
-import { useEffect, useRef } from 'react';
+import type { ReactElement, RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 interface ContextMenuItemConfig {
   destructive?: boolean;
@@ -22,6 +22,8 @@ export function ContextMenu({
   y: number;
 }): ReactElement {
   const menuRef = useRef<HTMLDivElement>(null);
+  const visibleGroups = groups.filter((group) => group.length > 0);
+  const position = useClampedMenuPosition(menuRef, x, y);
 
   useEffect(() => {
     const closeOnOutsidePointer = (event: PointerEvent) => {
@@ -52,9 +54,9 @@ export function ContextMenu({
       onContextMenu={(event) => event.preventDefault()}
       ref={menuRef}
       role="menu"
-      style={{ left: x, top: y }}
+      style={{ left: position.x, top: position.y }}
     >
-      {groups.map((group, index) => (
+      {visibleGroups.map((group, index) => (
         <ContextMenuGroupView
           group={group}
           isFirst={index === 0}
@@ -64,6 +66,32 @@ export function ContextMenu({
       ))}
     </div>
   );
+}
+
+function useClampedMenuPosition(
+  menuRef: RefObject<HTMLDivElement | null>,
+  x: number,
+  y: number,
+): { x: number; y: number } {
+  const [position, setPosition] = useState({ x, y });
+
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+
+    if (!menu) {
+      return;
+    }
+
+    const margin = 8;
+    const rect = menu.getBoundingClientRect();
+
+    setPosition({
+      x: Math.max(margin, Math.min(x, window.innerWidth - rect.width - margin)),
+      y: Math.max(margin, Math.min(y, window.innerHeight - rect.height - margin)),
+    });
+  }, [menuRef, x, y]);
+
+  return position;
 }
 
 function ContextMenuGroupView({

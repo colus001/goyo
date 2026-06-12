@@ -32,6 +32,7 @@ export function DocumentRow({
   return (
     <div
       className={`group/document-row relative rounded-md transition ${isActive ? 'bg-[var(--goyo-paper)]' : 'hover:bg-[var(--goyo-accent-soft)]'}`}
+      data-sidebar-item
     >
       <FloatingInsertButton onInsert={onInsertBefore} placement="top" />
       {isActive ? (
@@ -114,6 +115,7 @@ export function FloatingInsertButton({
 
   return (
     <span
+      data-sidebar-item
       className={`group/insert absolute left-1/2 z-10 size-8 -translate-x-1/2 ${
         placement === 'top' ? '-top-4' : '-bottom-4'
       }`}

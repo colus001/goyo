@@ -134,6 +134,10 @@ export function createChapter(
       return session;
     }
 
+    if (session.activeBookId === QUICK_DRAFTS_BOOK_ID) {
+      return session;
+    }
+
     chapter = createChapterMetadata({
       bookId: session.activeBookId,
       id: `chapter_${globalThis.crypto.randomUUID()}`,

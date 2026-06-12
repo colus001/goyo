@@ -1,4 +1,4 @@
-import type { DocumentMetadata } from '@writer/core';
+import { type DocumentMetadata, QUICK_DRAFTS_BOOK_ID } from '@writer/core';
 import type { WritingEditorRef } from '@writer/editor';
 import { type RefObject, useEffect } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
@@ -72,11 +72,17 @@ function runWorkspaceShortcut(
   }
 
   if (action === 'create-episode') {
-    workspace.createDocument('episode');
+    workspace.createDocument(
+      workspace.activeBook?.id === QUICK_DRAFTS_BOOK_ID ? 'draft' : 'episode',
+    );
     return;
   }
 
   if (action === 'create-chapter') {
+    if (workspace.activeBook?.id === QUICK_DRAFTS_BOOK_ID) {
+      return;
+    }
+
     workspace.createChapter();
     return;
   }

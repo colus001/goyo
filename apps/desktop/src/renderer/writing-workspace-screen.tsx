@@ -55,6 +55,11 @@ function getWritingShellProps(
 ) {
   const activeDocument = workspace.activeDocument as DocumentMetadata | undefined;
   const hasActiveBook = Boolean(workspace.activeBook);
+  const isQuickDraftsBook = workspace.activeBook?.id === QUICK_DRAFTS_BOOK_ID;
+  const canCreateChapter = hasActiveBook && !isQuickDraftsBook;
+  const createDocument = isQuickDraftsBook
+    ? () => workspace.createDocument('draft')
+    : workspace.createDocument;
 
   return {
     activeBookId: workspace.session?.activeBookId ?? undefined,
@@ -69,8 +74,8 @@ function getWritingShellProps(
     expandedChapterIds: workspace.expandedChapterIds,
     isSidebarCollapsed: workspace.isSidebarCollapsed,
     onCreateBook: workspace.createBook,
-    onCreateChapter: hasActiveBook ? workspace.createChapter : undefined,
-    onCreateDocument: hasActiveBook ? workspace.createDocument : undefined,
+    onCreateChapter: canCreateChapter ? workspace.createChapter : undefined,
+    onCreateDocument: hasActiveBook ? createDocument : undefined,
     onCreateDocumentInChapter: hasActiveBook ? workspace.createDocumentInChapter : undefined,
     onCreateEpisodeAfter: hasActiveBook ? workspace.createEpisodeAfter : undefined,
     onDeleteBook: workspace.deleteBook,

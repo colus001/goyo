@@ -88,7 +88,7 @@ function SidebarContent({
       >
         <div
           aria-hidden={sidebarView !== 'books'}
-          className={`min-h-0 min-w-0 ${sidebarView === 'books' ? '' : 'pointer-events-none'}`}
+          className={`flex min-h-0 min-w-0 flex-col ${sidebarView === 'books' ? '' : 'pointer-events-none'}`}
         >
           <BooksPane
             bookMenu={bookMenu}
@@ -100,7 +100,7 @@ function SidebarContent({
         </div>
         <div
           aria-hidden={sidebarView !== 'book'}
-          className={`min-h-0 min-w-0 ${sidebarView === 'book' ? '' : 'pointer-events-none'}`}
+          className={`flex min-h-0 min-w-0 flex-col ${sidebarView === 'book' ? '' : 'pointer-events-none'}`}
         >
           <BookPane
             activeBook={activeBook}
@@ -178,6 +178,7 @@ function BookPane({
       filteredNavigation={filteredNavigation}
       onBack={onShowBooksView}
       onCreateChapter={props.onCreateChapter}
+      onCreateDocument={props.onCreateDocument}
       onCreateEpisodeAfter={props.onCreateEpisodeAfter}
       onDeleteChapter={props.onDeleteChapter}
       onDeleteDocument={props.onDeleteDocument}

@@ -109,7 +109,7 @@ function ChapterTreeBody(props: ChapterTreeBodyProps): ReactElement {
         onCollapseAllChapters={props.onCollapseAllChapters}
         onCreateEpisodeAfter={props.onCreateEpisodeAfter}
         onOpenAllChapters={props.onOpenAllChapters}
-        onOpenNewChapterModal={props.onOpenNewChapterModal}
+        onOpenNewChapterModal={props.onCreateChapter ? props.onOpenNewChapterModal : undefined}
       />
       <ChapterTreeDialogs
         chapterPendingDelete={props.chapterPendingDelete}
@@ -176,7 +176,7 @@ function EmptyContextMenuLayer({
   onCollapseAllChapters: () => void;
   onCreateEpisodeAfter?: (chapterId: string | null, previousDocumentId: string | null) => void;
   onOpenAllChapters: () => void;
-  onOpenNewChapterModal: () => void;
+  onOpenNewChapterModal?: () => void;
 }): ReactElement | null {
   if (!menu) {
     return null;

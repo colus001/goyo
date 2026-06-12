@@ -52,8 +52,8 @@ export function ChapterRow({
   openContextMenu: WritingSidebarContextMenuState;
 }): ReactElement {
   return (
-    <section className="relative py-1.5" data-sidebar-item>
-      <div className="group/chapter-row relative">
+    <section className="relative py-1.5">
+      <div className="group/chapter-row relative" data-sidebar-item>
         <button
           aria-current={isActive && !activeDocumentId ? 'page' : undefined}
           className={`w-full cursor-pointer rounded-lg border-l-3 px-3 py-2.5 pr-14 text-left outline-none transition ${

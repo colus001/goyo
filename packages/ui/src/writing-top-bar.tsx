@@ -200,39 +200,32 @@ function CreateMenu({
       className="absolute top-9 right-0 z-30 min-w-40 rounded-lg border border-[#deded8] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
       role="menu"
     >
-      <CreateMenuItem
-        disabled={!onCreateDocument}
-        label="New document"
-        onClick={() => {
-          onCreateDocument?.('episode');
-          onClose();
-        }}
-      />
-      <CreateMenuItem
-        disabled={!onCreateChapter}
-        label="New chapter"
-        onClick={() => {
-          onCreateChapter?.();
-          onClose();
-        }}
-      />
+      {onCreateDocument ? (
+        <CreateMenuItem
+          label="New document"
+          onClick={() => {
+            onCreateDocument('episode');
+            onClose();
+          }}
+        />
+      ) : null}
+      {onCreateChapter ? (
+        <CreateMenuItem
+          label="New chapter"
+          onClick={() => {
+            onCreateChapter();
+            onClose();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
-function CreateMenuItem({
-  disabled,
-  label,
-  onClick,
-}: {
-  disabled: boolean;
-  label: string;
-  onClick: () => void;
-}): ReactElement {
+function CreateMenuItem({ label, onClick }: { label: string; onClick: () => void }): ReactElement {
   return (
     <button
       className="flex w-full cursor-pointer px-3 py-1.5 text-left text-[#30302d] text-sm outline-none hover:bg-[#f4f4f1] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent"
-      disabled={disabled}
       onClick={onClick}
       role="menuitem"
       type="button"
