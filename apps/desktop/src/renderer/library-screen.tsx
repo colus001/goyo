@@ -42,7 +42,7 @@ export function LibraryScreen({
   }, [openContextMenu]);
 
   return (
-    <main className="h-screen overflow-y-auto bg-[var(--goyo-app)] px-10 py-10 text-[var(--goyo-text)]">
+    <main className="h-screen overflow-y-auto bg-[var(--goyo-app)] px-6 py-8 text-[var(--goyo-text)] sm:px-10 sm:py-10">
       <WindowDragRegion />
       <section className="mx-auto max-w-[64rem]">
         <LibraryHeader
@@ -94,7 +94,7 @@ function LibraryBookList({
   openContextMenu: ContextMenuState;
 }): ReactElement {
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] items-start gap-3">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] items-start gap-3">
       {books.map((book) => (
         <BookCard
           book={book}
@@ -143,7 +143,7 @@ function BookCard({
   return (
     <div className="relative">
       <button
-        className={`group relative min-h-32 w-full cursor-pointer overflow-hidden rounded-2xl border px-4 py-4 text-left outline-none transition hover:border-[var(--goyo-border-strong)] hover:bg-[var(--goyo-raised)] ${
+        className={`group relative min-h-28 w-full cursor-pointer overflow-hidden rounded-2xl border px-4 py-4 text-left outline-none transition hover:border-[var(--goyo-border-strong)] hover:bg-[var(--goyo-raised)] ${
           isQuickDrafts
             ? 'border-[var(--goyo-border)] bg-[var(--goyo-panel)]'
             : 'border-[var(--goyo-border)] bg-[var(--goyo-paper)]/62'
@@ -161,8 +161,8 @@ function BookCard({
         }}
         type="button"
       >
-        <span className="relative flex min-h-24 flex-col">
-          <span className="mb-4 flex items-center gap-2">
+        <span className="relative flex min-h-20 flex-col">
+          <span className="mb-3 flex items-center gap-2">
             <span
               className="size-2.5 rounded-full"
               style={{
@@ -178,7 +178,7 @@ function BookCard({
           <span className="block font-semibold text-[var(--goyo-text)] text-[1.05rem] leading-tight tracking-[-0.035em]">
             {book.title}
           </span>
-          <span className="mt-auto block pt-5 text-[var(--goyo-text-muted)] text-sm leading-snug">
+          <span className="mt-auto block pt-4 text-[var(--goyo-text-muted)] text-sm leading-snug">
             {isQuickDrafts ? 'Draft inbox' : `Updated ${formatDocumentDate(book.updatedAt)}`}
           </span>
         </span>

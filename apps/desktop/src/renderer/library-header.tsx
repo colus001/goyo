@@ -22,26 +22,42 @@ export function LibraryHeader({
   const sortControlRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="mb-7 flex items-start justify-between gap-10 border-[var(--goyo-border)] border-b pb-6">
-      <div className="min-w-0">
-        <div className="mb-6 flex items-center gap-3">
-          <img alt="" className="size-7 rounded-md" src={logoMark} />
-          <div>
-            <p className="font-semibold text-[var(--goyo-text)] text-sm tracking-[-0.02em]">Goyo</p>
-            <p className="text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.18em]">
-              Quiet writing
-            </p>
-          </div>
+    <div className="mb-7 border-[var(--goyo-border)] border-b pb-6">
+      <div className="mb-6 flex items-center gap-3">
+        <img alt="" className="size-7 rounded-md" src={logoMark} />
+        <div>
+          <p className="font-semibold text-[var(--goyo-text)] text-sm tracking-[-0.02em]">Goyo</p>
+          <p className="text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.18em]">
+            Quiet writing
+          </p>
         </div>
-        <h1 className="font-semibold text-[2.05rem] leading-none tracking-[-0.06em]">
-          Start writing
-        </h1>
-        <p className="mt-3 max-w-[32rem] text-[var(--goyo-text-muted)] leading-relaxed">
+      </div>
+      <div className="max-w-[34rem]">
+        <h1 className="font-semibold text-[2rem] leading-none tracking-[-0.06em]">Start writing</h1>
+        <p className="mt-3 text-[var(--goyo-text-muted)] leading-relaxed">
           Open a book, collect a quick draft, or begin something new.
         </p>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-3 pt-1">
-        <div className="flex items-center gap-1.5">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--goyo-accent)] px-3.5 py-2 font-medium text-sm text-white outline-none transition hover:bg-[var(--goyo-accent-hover)]"
+            onClick={onOpenNewBookModal}
+            type="button"
+          >
+            <FilePlus2 aria-hidden="true" size={15} />
+            New book
+          </button>
+          <button
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
+            onClick={onStartQuickDraft}
+            type="button"
+          >
+            <PenLine aria-hidden="true" size={15} />
+            Quick draft
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
           <div className="relative" ref={sortControlRef}>
             <button
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
@@ -71,24 +87,6 @@ export function LibraryHeader({
           >
             <Settings aria-hidden="true" size={15} />
             Settings
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--goyo-accent)] px-4 py-2 font-medium text-sm text-white outline-none transition hover:bg-[var(--goyo-accent-hover)]"
-            onClick={onOpenNewBookModal}
-            type="button"
-          >
-            <FilePlus2 aria-hidden="true" size={15} />
-            New book
-          </button>
-          <button
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
-            onClick={onStartQuickDraft}
-            type="button"
-          >
-            <PenLine aria-hidden="true" size={15} />
-            Quick draft
           </button>
         </div>
       </div>
