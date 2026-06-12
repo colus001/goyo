@@ -14,9 +14,42 @@ export interface SyncQueueItem {
   id: string;
   documentId: DocumentId;
   kind: SyncQueueItemKind;
+  recordId: string;
   createdAt: string;
   attempts: number;
   lastAttemptAt: string | null;
+}
+
+export interface CreateSyncQueueItemInput {
+  createdAt: string;
+  documentId: DocumentId;
+  id: string;
+  kind: SyncQueueItemKind;
+  recordId: string;
+}
+
+export function createSyncQueueItem(input: CreateSyncQueueItemInput): SyncQueueItem {
+  return {
+    attempts: 0,
+    createdAt: input.createdAt,
+    documentId: input.documentId,
+    id: input.id,
+    kind: input.kind,
+    lastAttemptAt: null,
+    recordId: input.recordId,
+  };
+}
+
+export function sortSyncQueueItemsForProcessing(items: SyncQueueItem[]): SyncQueueItem[] {
+  return [...items].sort((first, second) => {
+    const createdAtOrder = first.createdAt.localeCompare(second.createdAt);
+
+    if (createdAtOrder !== 0) {
+      return createdAtOrder;
+    }
+
+    return first.id.localeCompare(second.id);
+  });
 }
 
 export interface SyncState {

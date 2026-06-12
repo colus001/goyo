@@ -49,6 +49,18 @@ export type {
   RenameDocumentInput,
 } from './documents';
 export { createDocumentMetadata, renameDocument } from './documents';
-export type { DocumentSnapshotRecord, LocalDocumentStore } from './local-store';
+export type {
+  CreateDocumentSnapshotRecordInput,
+  DocumentSnapshotRecord,
+  LocalDocumentStore,
+} from './local-store';
+export { createDocumentSnapshotRecord } from './local-store';
 export type { RecoveryPoint, RecoveryPolicy } from './recovery';
-export type { DocumentUpdateRecord, SyncQueueItem, SyncQueueItemKind, SyncState } from './sync';
+export type {
+  CreateSyncQueueItemInput,
+  DocumentUpdateRecord,
+  SyncQueueItem,
+  SyncQueueItemKind,
+  SyncState,
+} from './sync';
+export { createSyncQueueItem, sortSyncQueueItemsForProcessing } from './sync';
