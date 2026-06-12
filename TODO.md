@@ -112,7 +112,7 @@
 
 ## Milestone 7: Incremental Remote Sync
 
-- [ ] Push local unsynced Yjs updates to the Worker.
+- [x] Push local unsynced Yjs updates to the Worker.
 - [ ] Pull missing remote Yjs updates from the Worker.
 - [ ] Use state vectors or equivalent sync metadata to avoid full document transfer.
 - [ ] Add sync retry and backoff.
@@ -182,6 +182,7 @@
 - [x] Re-evaluated Drizzle for Worker D1 persistence and kept raw SQL migrations/queries for now to prioritize explicit CRDT update and snapshot storage semantics.
 - [x] Verified remote document content can be restored from D1-backed update logs and snapshots without KV.
 - [x] Added Worker document metadata upsert and read APIs backed by D1.
+- [x] Added desktop main-process push sync for pending local Yjs updates, including remote metadata upsert before update upload and queue completion after successful push.
 
 ## Milestone 9: Recovery And Version Safety
 
