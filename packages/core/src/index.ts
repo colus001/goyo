@@ -47,6 +47,13 @@ export {
   getActiveDocument,
   getActiveDocumentOrNull,
 } from './document-session-selectors';
+export {
+  createDocumentStateVector,
+  createMissingDocumentUpdate,
+  replayDocumentUpdates,
+  restoreDocumentFromSnapshot,
+  selectPendingDocumentUpdates,
+} from './document-sync';
 export type { CreateDocumentUpdateRecordInput } from './document-updates';
 export { createDocumentUpdateRecord, sortDocumentUpdatesForReplay } from './document-updates';
 export type {
