@@ -104,8 +104,8 @@
 - [ ] Add `document_revisions` or equivalent revision metadata table if needed.
 - [x] Add `sync_clients` table if needed.
 - [ ] Add document metadata API.
-- [ ] Add CRDT update upload API.
-- [ ] Add CRDT update download API.
+- [x] Add CRDT update upload API.
+- [x] Add CRDT update download API.
 - [ ] Add snapshot read/write API.
 - [ ] Ensure D1 remains the canonical remote store.
 - [ ] Ensure KV is not required to restore document content.
@@ -177,6 +177,7 @@
 - [x] Verified local writes remain safe while offline.
 - [x] Created Cloudflare D1 database `writer-sync` and initial Worker migration for documents, CRDT updates, snapshots, and sync clients.
 - [x] Applied initial D1 migration locally and remotely with Wrangler CLI.
+- [x] Added idempotent Worker CRDT update upload and ordered update download APIs using D1 as the canonical store.
 
 ## Milestone 9: Recovery And Version Safety
 
