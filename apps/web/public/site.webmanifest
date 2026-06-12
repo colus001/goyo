@@ -1,0 +1,16 @@
+{
+  "name": "Goyo",
+  "short_name": "Goyo",
+  "description": "A calm local-first writing app for essays and fiction.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3eadc",
+  "theme_color": "#f3eadc",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
