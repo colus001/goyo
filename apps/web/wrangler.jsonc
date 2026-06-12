@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "goyo-web",
+  "compatibility_date": "2026-06-11",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    {
+      "pattern": "goyo.seokjun.kim",
+      "custom_domain": true
+    }
+  ]
+}
