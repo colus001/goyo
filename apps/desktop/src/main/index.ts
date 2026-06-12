@@ -20,6 +20,14 @@ import {
 
 const isDevelopment = !app.isPackaged;
 
+function configureUserDataPath() {
+  if (!isDevelopment) {
+    return;
+  }
+
+  app.setPath('userData', join(app.getPath('appData'), `${APP_NAME} Dev`));
+}
+
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: IPC registration is kept centralized around one local store instance.
 function registerDocumentIpc() {
   const store = createDesktopLocalStore(app.getPath('userData'));
@@ -228,6 +236,8 @@ function createWindow() {
 
   void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
 }
+
+configureUserDataPath();
 
 void app.whenReady().then(() => {
   app.setName(APP_NAME);

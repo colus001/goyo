@@ -121,7 +121,7 @@ export interface DesktopLocalStore {
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: Schema setup and prepared statements need to stay in one SQLite initialization scope.
 export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore {
-  const databasePath = join(userDataPath, 'writer.sqlite');
+  const databasePath = join(userDataPath, 'goyo.sqlite');
 
   mkdirSync(dirname(databasePath), { recursive: true });
 
