@@ -87,6 +87,7 @@ interface SerializedDocumentSnapshotRecord extends Omit<DocumentSnapshotRecord, 
 export interface DesktopLocalStore {
   appendDocumentUpdate(update: SerializedDocumentUpdateRecord): void;
   enqueueSyncItem(item: SyncQueueItem): void;
+  getDocumentSnapshot(snapshotId: string): DocumentSnapshotRecord | null;
   getLatestDocumentSnapshot(documentId: string): DocumentSnapshotRecord | null;
   listBooks(): BookMetadata[];
   listChapters(): ChapterMetadata[];
@@ -94,6 +95,7 @@ export interface DesktopLocalStore {
   listDocumentUpdates(documentId: string): DocumentUpdateRecord[];
   listDocumentUpdatesAfter(documentId: string, updateId: string): DocumentUpdateRecord[];
   listPendingSyncItems(): SyncQueueItem[];
+  markSyncItemAttempted(syncItemId: string, attemptedAt: string): void;
   markSyncItemCompleted(syncItemId: string, completedAt: string): void;
   saveBook(book: BookMetadata): void;
   saveChapter(chapter: ChapterMetadata): void;
@@ -281,6 +283,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     ORDER BY created_at DESC, id DESC
     LIMIT 1;
   `);
+  const getDocumentSnapshotStatement = database.prepare(`
+    SELECT id, document_id, last_update_id, snapshot_blob, created_at
+    FROM document_snapshots
+    WHERE id = ?;
+  `);
   const enqueueSyncItemStatement = database.prepare(`
     INSERT OR IGNORE INTO sync_queue (
       id, document_id, kind, record_id, created_at, attempts, last_attempt_at, completed_at
@@ -298,6 +305,12 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     SET completed_at = @completedAt
     WHERE id = @syncItemId;
   `);
+  const markSyncItemAttemptedStatement = database.prepare(`
+    UPDATE sync_queue
+    SET attempts = attempts + 1,
+      last_attempt_at = @attemptedAt
+    WHERE id = @syncItemId;
+  `);
 
   return {
     appendDocumentUpdate(update) {
@@ -308,6 +321,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     enqueueSyncItem(item) {
       enqueueSyncItemStatement.run(item);
+    },
+    getDocumentSnapshot(snapshotId) {
+      const row = getDocumentSnapshotStatement.get(snapshotId);
+
+      return row ? rowToDocumentSnapshotRecord(row) : null;
     },
     getLatestDocumentSnapshot(documentId) {
       const row = getLatestDocumentSnapshotStatement.get(documentId);
@@ -333,6 +351,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     listPendingSyncItems() {
       return listPendingSyncItemsStatement.all().map(rowToSyncQueueItem);
+    },
+    markSyncItemAttempted(syncItemId, attemptedAt) {
+      markSyncItemAttemptedStatement.run({ attemptedAt, syncItemId });
     },
     markSyncItemCompleted(syncItemId, completedAt) {
       markSyncItemCompletedStatement.run({ completedAt, syncItemId });

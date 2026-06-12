@@ -11,6 +11,7 @@ export type SaveStatus =
   | 'Saved locally'
   | 'Saving locally'
   | 'Save failed';
+export type SyncStatus = 'Offline' | 'Sync idle' | 'Sync pending' | 'Synced' | 'Syncing';
 export type WorkspaceScreen = 'book' | 'library' | 'loading';
 export type DocumentSnapshotMap = Record<string, Uint8Array | undefined>;
 export type DocumentUpdateMap = Record<string, Uint8Array[]>;
@@ -44,5 +45,6 @@ export interface WritingWorkspaceState {
   session: DocumentSession | null;
   showLibrary: () => void;
   startQuickDraft: () => void;
+  syncStatus: SyncStatus;
   updateBookAccentColor: (bookId: string, accentColor: string) => void;
 }

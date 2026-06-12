@@ -51,7 +51,7 @@ export function App() {
       onSelectChapter={workspace.selectChapter}
       onSelectDocument={workspace.openDocument}
       onShowLibrary={workspace.showLibrary}
-      status={workspace.saveStatus}
+      status={formatWorkspaceStatus(workspace)}
     >
       {workspace.activeDocument ? (
         <EpisodeSurface workspace={workspace} />
@@ -62,6 +62,14 @@ export function App() {
       )}
     </WritingShell>
   );
+}
+
+function formatWorkspaceStatus(workspace: WritingWorkspaceState) {
+  if (workspace.syncStatus === 'Sync idle') {
+    return workspace.saveStatus;
+  }
+
+  return `${workspace.saveStatus} · ${workspace.syncStatus}`;
 }
 
 function LoadingScreen({ status }: { status: string }) {

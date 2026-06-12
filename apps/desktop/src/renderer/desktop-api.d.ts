@@ -41,6 +41,14 @@ declare global {
           pulledUpdateCount: number;
           skippedDocumentCount: number;
         }>;
+        pullRemoteSnapshots: () => Promise<{
+          pulledSnapshotCount: number;
+          skippedDocumentCount: number;
+        }>;
+        pushPendingSnapshots: () => Promise<{
+          pushedSnapshotCount: number;
+          skippedSnapshotCount: number;
+        }>;
         pushPendingUpdates: () => Promise<{
           pushedUpdateCount: number;
           skippedUpdateCount: number;

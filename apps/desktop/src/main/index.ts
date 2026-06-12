@@ -8,7 +8,12 @@ import type {
 } from '@writer/core';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import { createDesktopLocalStore } from './document-metadata-store';
-import { pullRemoteDocumentUpdates, pushPendingDocumentUpdates } from './remote-sync';
+import {
+  pullRemoteDocumentSnapshots,
+  pullRemoteDocumentUpdates,
+  pushPendingDocumentSnapshots,
+  pushPendingDocumentUpdates,
+} from './remote-sync';
 
 const isDevelopment = !app.isPackaged;
 
@@ -93,11 +98,27 @@ function registerDocumentIpc() {
       throw error;
     }
   });
+  ipcMain.handle('sync:pushPendingSnapshots', async () => {
+    try {
+      return await pushPendingDocumentSnapshots(store);
+    } catch (error) {
+      console.error('Failed to push pending document snapshots', getErrorMessage(error));
+      throw error;
+    }
+  });
   ipcMain.handle('sync:pullRemoteUpdates', async () => {
     try {
       return await pullRemoteDocumentUpdates(store);
     } catch (error) {
       console.error('Failed to pull remote document updates', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('sync:pullRemoteSnapshots', async () => {
+    try {
+      return await pullRemoteDocumentSnapshots(store);
+    } catch (error) {
+      console.error('Failed to pull remote document snapshots', getErrorMessage(error));
       throw error;
     }
   });

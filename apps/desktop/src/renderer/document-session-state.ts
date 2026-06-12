@@ -31,6 +31,7 @@ import type {
   DocumentSnapshotMap,
   DocumentUpdateMap,
   SaveStatus,
+  SyncStatus,
   WorkspaceScreen,
   WritingWorkspaceState,
 } from './document-workspace-types';
@@ -43,6 +44,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
   const [screen, setScreen] = useState<WorkspaceScreen>('loading');
   const [session, setSession] = useState<DocumentSession | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('Loading local documents');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('Sync idle');
   const activeDocument = session ? getActiveDocumentOrNull(session) : null;
   const activeChapter = session ? getActiveChapterOrNull(session) : null;
   const activeBook = session ? getActiveBook(session) : null;
@@ -54,7 +56,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     setSaveStatus,
   );
   useLoadWorkspace(setSession, setSaveStatus, setScreen);
-  useSyncOnStartup();
+  useRemoteSync(setSyncStatus);
 
   return {
     activeBook,
@@ -92,22 +94,82 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     session,
     showLibrary: () => setScreen('library'),
     startQuickDraft: () => startQuickDraft(setSession, setScreen, setSaveStatus),
+    syncStatus,
     updateBookAccentColor: (bookId, accentColor) =>
       updateBookAccentColor(bookId, accentColor, setSession, setSaveStatus),
   };
 }
 
-function useSyncOnStartup() {
+function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
   useEffect(() => {
+    let isSyncing = false;
+
     async function syncDocuments() {
-      await window.writerDesktop.sync.pushPendingUpdates();
-      await window.writerDesktop.sync.pullRemoteUpdates();
+      if (isSyncing) {
+        return;
+      }
+
+      if (!globalThis.navigator.onLine) {
+        setSyncStatus('Offline');
+        return;
+      }
+
+      isSyncing = true;
+      setSyncStatus('Syncing');
+
+      try {
+        const updatePush = await window.writerDesktop.sync.pushPendingUpdates();
+        const snapshotPush = await window.writerDesktop.sync.pushPendingSnapshots();
+        const updatePull = await window.writerDesktop.sync.pullRemoteUpdates();
+        const snapshotPull = await window.writerDesktop.sync.pullRemoteSnapshots();
+
+        setSyncStatus(
+          getCompletedSyncStatus({ snapshotPull, snapshotPush, updatePull, updatePush }),
+        );
+      } catch {
+        setSyncStatus(globalThis.navigator.onLine ? 'Sync pending' : 'Offline');
+      } finally {
+        isSyncing = false;
+      }
     }
 
-    void syncDocuments().catch(() => {
-      // Local writes remain safe; failed remote sync stays pending for a later retry.
-    });
-  }, []);
+    function handleOnline() {
+      void syncDocuments();
+    }
+
+    function handleOffline() {
+      setSyncStatus('Offline');
+    }
+
+    void syncDocuments();
+    globalThis.addEventListener('online', handleOnline);
+    globalThis.addEventListener('offline', handleOffline);
+
+    return () => {
+      globalThis.removeEventListener('online', handleOnline);
+      globalThis.removeEventListener('offline', handleOffline);
+    };
+  }, [setSyncStatus]);
+}
+
+function getCompletedSyncStatus({
+  snapshotPull,
+  snapshotPush,
+  updatePull,
+  updatePush,
+}: {
+  snapshotPull: { skippedDocumentCount: number };
+  snapshotPush: { skippedSnapshotCount: number };
+  updatePull: { skippedDocumentCount: number };
+  updatePush: { skippedUpdateCount: number };
+}): SyncStatus {
+  const hasPendingSyncWork =
+    updatePush.skippedUpdateCount > 0 ||
+    snapshotPush.skippedSnapshotCount > 0 ||
+    updatePull.skippedDocumentCount > 0 ||
+    snapshotPull.skippedDocumentCount > 0;
+
+  return hasPendingSyncWork ? 'Sync pending' : 'Synced';
 }
 
 function useLoadWorkspace(
