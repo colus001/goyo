@@ -35,7 +35,7 @@ export function LibraryOnboarding({
         </p>
         <div className="goyo-onboarding-rise goyo-onboarding-delay-4 mt-7 flex flex-col justify-center gap-3 sm:flex-row">
           <button
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--goyo-accent)] px-5 py-2.5 font-semibold text-white outline-none transition hover:-translate-y-0.5 hover:bg-[var(--goyo-accent-hover)] hover:shadow-[0_12px_28px_rgba(31,29,25,0.16)]"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--goyo-accent)] px-5 py-2.5 font-semibold text-white outline-none transition hover:-translate-y-0.5 hover:bg-[var(--goyo-accent-hover)] hover:shadow-[0_12px_28px_rgba(31,29,25,0.16)]"
             onClick={onOpenNewBookModal}
             type="button"
           >
@@ -43,7 +43,7 @@ export function LibraryOnboarding({
             Create a book
           </button>
           <button
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] px-5 py-2.5 font-semibold text-[var(--goyo-text)] outline-none transition hover:-translate-y-0.5 hover:bg-[var(--goyo-accent-soft)]"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] px-5 py-2.5 font-semibold text-[var(--goyo-text)] outline-none transition hover:-translate-y-0.5 hover:bg-[var(--goyo-accent-soft)]"
             onClick={onStartQuickDraft}
             type="button"
           >

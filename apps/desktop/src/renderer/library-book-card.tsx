@@ -33,7 +33,7 @@ export function BookCard({
   return (
     <div className="relative">
       <button
-        className={`group relative min-h-28 w-full cursor-pointer overflow-hidden rounded-2xl border px-4 py-4 text-left outline-none transition hover:border-[var(--goyo-border-strong)] hover:bg-[var(--goyo-raised)] ${
+        className={`group relative min-h-28 w-full overflow-hidden rounded-2xl border px-4 py-4 text-left outline-none transition hover:border-[var(--goyo-border-strong)] hover:bg-[var(--goyo-raised)] ${
           isQuickDrafts
             ? 'border-[var(--goyo-border)] bg-[var(--goyo-panel)]'
             : 'border-[var(--goyo-border)] bg-[var(--goyo-paper)]/62'
@@ -116,7 +116,7 @@ function BookContextMenu({
           {LIBRARY_BOOK_ACCENT_COLORS.map((nextAccentColor) => (
             <button
               aria-label={`Set cover color ${nextAccentColor}`}
-              className="size-5 cursor-pointer rounded-full border border-black/10 outline-none transition hover:scale-110"
+              className="size-5 rounded-full border border-black/10 outline-none transition hover:scale-110"
               key={nextAccentColor}
               onClick={(event) => {
                 event.stopPropagation();
@@ -148,7 +148,7 @@ function BookContextMenu({
       </div>
       <div className="my-1 h-px bg-[var(--goyo-border)]" />
       <button
-        className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[var(--goyo-danger)] text-sm hover:bg-[var(--goyo-accent-soft)]"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--goyo-danger)] text-sm hover:bg-[var(--goyo-accent-soft)]"
         onClick={(event) => {
           event.stopPropagation();
           onDelete();

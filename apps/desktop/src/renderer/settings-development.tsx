@@ -18,7 +18,7 @@ export function DevelopmentSettings({
           </p>
         </div>
         <button
-          className="shrink-0 cursor-pointer rounded-full bg-[var(--goyo-danger)] px-4 py-2 font-medium text-sm text-white outline-none transition hover:brightness-95 disabled:cursor-default disabled:opacity-60"
+          className="shrink-0 rounded-full bg-[var(--goyo-danger)] px-4 py-2 font-medium text-sm text-white outline-none transition hover:brightness-95 disabled:opacity-60"
           disabled={isResettingLocalData}
           onClick={onRequestResetLocalData}
           type="button"
@@ -62,7 +62,7 @@ export function ResetLocalDataDialog({
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button
-            className="cursor-pointer rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95 disabled:cursor-default disabled:opacity-60"
+            className="rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95 disabled:opacity-60"
             disabled={isResetting}
             onClick={onCancel}
             type="button"
@@ -70,7 +70,7 @@ export function ResetLocalDataDialog({
             Cancel
           </button>
           <button
-            className="cursor-pointer rounded-full bg-[var(--goyo-danger)] px-4 py-2 font-medium text-white outline-none transition hover:brightness-95 disabled:cursor-default disabled:opacity-60"
+            className="rounded-full bg-[var(--goyo-danger)] px-4 py-2 font-medium text-white outline-none transition hover:brightness-95 disabled:opacity-60"
             disabled={isResetting}
             onClick={onReset}
             type="button"

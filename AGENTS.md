@@ -129,6 +129,7 @@ D1 should store durable document data and update history. Snapshots may be used 
 - The editor should feel like a writing surface, not an admin dashboard.
 - Empty space in the writing surface should behave like editable paper: show a text cursor and focus the editor instead of becoming dead space.
 - Keep primary writing actions close and secondary actions quiet.
+- Buttons should use the global button cursor style. Do not add Tailwind `cursor-pointer` to individual `<button>` elements unless a special state needs an override; keep `cursor-pointer` only for non-button interactive elements that need it.
 - Keep sidebar insertion affordances quiet. Prefer contextual floating insert buttons and context menus over large persistent add buttons in the chapter tree.
 - Book-level episode creation belongs in the empty-sidebar context menu or book empty state, not as a floating `+` above the first chapter. That UI was noisy and should not be reintroduced.
 - Empty chapter episode insertion should reuse the existing floating insert `+` affordance anchored to the chapter card, not a large `+ New episode` row.

@@ -41,7 +41,7 @@ export function LibraryHeader({
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <button
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--goyo-accent)] px-3.5 py-2 font-medium text-sm text-white outline-none transition hover:bg-[var(--goyo-accent-hover)]"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--goyo-accent)] px-3.5 py-2 font-medium text-sm text-white outline-none transition hover:bg-[var(--goyo-accent-hover)]"
             onClick={onOpenNewBookModal}
             type="button"
           >
@@ -49,7 +49,7 @@ export function LibraryHeader({
             New book
           </button>
           <button
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
+            className="inline-flex items-center gap-2 rounded-full px-3 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
             onClick={onStartQuickDraft}
             type="button"
           >
@@ -60,7 +60,7 @@ export function LibraryHeader({
         <div className="flex flex-wrap items-center gap-1.5">
           <div className="relative" ref={sortControlRef}>
             <button
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
               onClick={() => setIsSortMenuOpen((current) => !current)}
               type="button"
             >
@@ -81,7 +81,7 @@ export function LibraryHeader({
           </div>
           <button
             aria-label="Settings"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
             onClick={onOpenSettings}
             type="button"
           >
@@ -129,7 +129,7 @@ function SortMenu({
   }, [containerRef, onClose]);
 
   return (
-    <div className="absolute top-10 right-0 z-30 min-w-42 cursor-pointer rounded-lg border border-[var(--goyo-border)] bg-[var(--goyo-raised)] py-1 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+    <div className="absolute top-10 right-0 z-30 min-w-42 rounded-lg border border-[var(--goyo-border)] bg-[var(--goyo-raised)] py-1 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
       <SortMenuItem
         isSelected={selectedSortMode === 'updated'}
         label="Updated first"
@@ -155,7 +155,7 @@ function SortMenuItem({
 }): ReactElement {
   return (
     <button
-      className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[var(--goyo-text)] text-sm hover:bg-[var(--goyo-accent-soft)]"
+      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--goyo-text)] text-sm hover:bg-[var(--goyo-accent-soft)]"
       onClick={onClick}
       type="button"
     >

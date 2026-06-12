@@ -31,6 +31,14 @@ input {
   font: inherit;
 }
 
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
 .ProseMirror {
   cursor: text;
   font-family: ui-serif, Georgia, "Apple SD Gothic Neo", "Noto Serif KR", "Times New Roman", serif;

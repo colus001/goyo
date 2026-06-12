@@ -124,7 +124,7 @@ function FontPickerCard({
       <div className="mt-3 grid gap-2">
         {APP_FONTS.map((font) => (
           <button
-            className={`cursor-pointer rounded-xl border p-3 text-left outline-none transition hover:opacity-95 ${
+            className={`rounded-xl border p-3 text-left outline-none transition hover:opacity-95 ${
               selectedFontId === font.id
                 ? 'border-[var(--goyo-accent)] bg-[var(--goyo-accent-soft)]'
                 : 'border-[var(--goyo-border)] bg-[var(--goyo-raised)]'
@@ -205,7 +205,7 @@ function AppearanceTabButton({
 }): ReactElement {
   return (
     <button
-      className={`cursor-pointer border-b-2 px-1 pb-2 font-semibold text-sm outline-none transition ${
+      className={`border-b-2 px-1 pb-2 font-semibold text-sm outline-none transition ${
         isSelected
           ? 'border-[var(--goyo-accent)] text-[var(--goyo-text)]'
           : 'border-transparent text-[var(--goyo-text-muted)] hover:text-[var(--goyo-text)]'
@@ -250,7 +250,7 @@ function ThemeOption({
 }): ReactElement {
   return (
     <button
-      className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left outline-none transition hover:opacity-95 ${
+      className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-left outline-none transition hover:opacity-95 ${
         isSelected
           ? 'border-[var(--goyo-accent)] bg-[var(--goyo-accent-soft)]'
           : 'border-[var(--goyo-border)] bg-[var(--goyo-paper)]/55'

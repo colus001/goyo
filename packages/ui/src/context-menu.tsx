@@ -122,7 +122,7 @@ function ContextMenuItem({
 }): ReactElement {
   return (
     <button
-      className={`flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-[#f4f4f1] ${
+      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-[#f4f4f1] ${
         item.destructive ? 'text-[#b44b43]' : 'text-[#30302d]'
       }`}
       onClick={(event) => {

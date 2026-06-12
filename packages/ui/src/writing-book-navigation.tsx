@@ -117,7 +117,7 @@ function BookNavigationHeader({
       }}
     >
       <button
-        className="mb-3 inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
+        className="mb-3 inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-medium text-[var(--goyo-text-muted)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
         onClick={onBack}
         type="button"
       >

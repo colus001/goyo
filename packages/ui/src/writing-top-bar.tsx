@@ -104,7 +104,7 @@ function CommandButton({
   return (
     <button
       aria-label={label}
-      className="grid size-8 cursor-pointer place-items-center rounded-lg text-[var(--goyo-text-faint)] outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[var(--goyo-text-faint)] [-webkit-app-region:no-drag]"
+      className="grid size-8 place-items-center rounded-lg text-[var(--goyo-text-faint)] outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[var(--goyo-text-faint)] [-webkit-app-region:no-drag]"
       disabled={disabled}
       onClick={onClick}
       title={label}
@@ -134,7 +134,7 @@ function CreateMenuButton({
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label="Create"
-        className="grid size-8 cursor-pointer place-items-center rounded-lg text-[var(--goyo-text-muted)] outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[var(--goyo-text-muted)]"
+        className="grid size-8 place-items-center rounded-lg text-[var(--goyo-text-muted)] outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[var(--goyo-text-muted)]"
         disabled={isDisabled}
         onClick={() => setIsOpen((current) => !current)}
         title="Create"
@@ -225,7 +225,7 @@ function CreateMenu({
 function CreateMenuItem({ label, onClick }: { label: string; onClick: () => void }): ReactElement {
   return (
     <button
-      className="flex w-full cursor-pointer px-3 py-1.5 text-left text-[#30302d] text-sm outline-none hover:bg-[#f4f4f1] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent"
+      className="flex w-full px-3 py-1.5 text-left text-[#30302d] text-sm outline-none hover:bg-[#f4f4f1] disabled:opacity-35 disabled:hover:bg-transparent"
       onClick={onClick}
       role="menuitem"
       type="button"

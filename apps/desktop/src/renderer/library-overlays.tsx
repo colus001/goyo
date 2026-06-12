@@ -88,14 +88,14 @@ function DeleteBookDialog({
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button
-            className="cursor-pointer rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] outline-none transition hover:bg-[#e3dfd6]"
+            className="rounded-full bg-[#ece9e2] px-4 py-2 font-medium text-[#34312c] outline-none transition hover:bg-[#e3dfd6]"
             onClick={onCancel}
             type="button"
           >
             Cancel
           </button>
           <button
-            className="cursor-pointer rounded-full bg-[#9b514a] px-4 py-2 font-medium text-white outline-none transition hover:bg-[#82423c]"
+            className="rounded-full bg-[#9b514a] px-4 py-2 font-medium text-white outline-none transition hover:bg-[#82423c]"
             onClick={onConfirm}
             type="button"
           >

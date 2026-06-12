@@ -68,14 +68,14 @@ export function CustomThemeEditor({
           />
           <div className="flex gap-2">
             <button
-              className="cursor-pointer rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] px-3 py-1.5 font-medium text-[var(--goyo-text)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)]"
+              className="rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] px-3 py-1.5 font-medium text-[var(--goyo-text)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)]"
               onClick={() => void copyThemeChip(baseSeed)}
               type="button"
             >
               Copy
             </button>
             <button
-              className="cursor-pointer rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] px-3 py-1.5 font-medium text-[var(--goyo-text)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)]"
+              className="rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] px-3 py-1.5 font-medium text-[var(--goyo-text)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)]"
               onClick={() => {
                 const parsedTheme = parseCustomThemeChip(themeChip);
                 if (!parsedTheme) {
@@ -97,7 +97,7 @@ export function CustomThemeEditor({
 
       <div className="flex flex-wrap gap-2">
         <button
-          className="cursor-pointer rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] px-3 py-1.5 font-medium text-[var(--goyo-text)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)]"
+          className="rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-raised)] px-3 py-1.5 font-medium text-[var(--goyo-text)] text-sm outline-none transition hover:bg-[var(--goyo-accent-soft)]"
           onClick={() => void copyThemeChip(baseSeed)}
           type="button"
         >

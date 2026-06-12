@@ -24,14 +24,14 @@ export function SettingsHeader({
       </div>
       <div className="flex gap-2">
         <button
-          className="cursor-pointer rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95"
+          className="rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95"
           onClick={onCancel}
           type="button"
         >
           Cancel
         </button>
         <button
-          className="cursor-pointer rounded-full bg-[var(--goyo-accent)] px-4 py-2 font-medium text-white outline-none transition hover:bg-[var(--goyo-accent-hover)] disabled:cursor-default disabled:opacity-45"
+          className="rounded-full bg-[var(--goyo-accent)] px-4 py-2 font-medium text-white outline-none transition hover:bg-[var(--goyo-accent-hover)] disabled:opacity-45"
           disabled={!hasChanges}
           onClick={onSave}
           type="button"
@@ -72,14 +72,14 @@ export function DiscardSettingsDialog({
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button
-            className="cursor-pointer rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95"
+            className="rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95"
             onClick={onCancel}
             type="button"
           >
             Keep editing
           </button>
           <button
-            className="cursor-pointer rounded-full bg-[var(--goyo-danger)] px-4 py-2 font-medium text-white outline-none transition hover:brightness-95"
+            className="rounded-full bg-[var(--goyo-danger)] px-4 py-2 font-medium text-white outline-none transition hover:brightness-95"
             onClick={onDiscard}
             type="button"
           >

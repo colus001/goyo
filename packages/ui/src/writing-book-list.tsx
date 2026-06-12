@@ -91,7 +91,7 @@ function BookRow({
   return (
     <div className="relative">
       <button
-        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left outline-none transition hover:bg-[var(--goyo-accent-soft)] ${
+        className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left outline-none transition hover:bg-[var(--goyo-accent-soft)] ${
           isActive
             ? 'bg-[var(--goyo-accent-soft)] text-[var(--goyo-text)]'
             : 'text-[var(--goyo-text-muted)]'
@@ -163,7 +163,7 @@ function BookContextMenu({
           {BOOK_ACCENT_COLORS.map((color) => (
             <button
               aria-label={`Set cover color ${color}`}
-              className="size-5 cursor-pointer rounded-full border border-black/10 outline-none transition hover:scale-110"
+              className="size-5 rounded-full border border-black/10 outline-none transition hover:scale-110"
               key={color}
               onClick={() => {
                 onUpdateAccentColor(color);
@@ -175,7 +175,7 @@ function BookContextMenu({
           ))}
           <input
             aria-label="Choose custom accent color"
-            className="size-5 cursor-pointer rounded-full border border-[var(--goyo-border-strong)] bg-transparent p-0"
+            className="size-5 rounded-full border border-[var(--goyo-border-strong)] bg-transparent p-0"
             onChange={(event) => {
               onUpdateAccentColor(event.target.value.toUpperCase());
               onClose();
@@ -187,7 +187,7 @@ function BookContextMenu({
       </div>
       <div className="my-1 h-px bg-[var(--goyo-border)]" />
       <button
-        className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[var(--goyo-danger)] text-sm hover:bg-[var(--goyo-accent-soft)]"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--goyo-danger)] text-sm hover:bg-[var(--goyo-accent-soft)]"
         onClick={() => {
           onDelete();
           onClose();
@@ -214,7 +214,7 @@ function SidebarIconButton({
   return (
     <button
       aria-label={label}
-      className="grid size-7 cursor-pointer place-items-center rounded-md text-[var(--goyo-text-faint)] outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:cursor-default disabled:opacity-35"
+      className="grid size-7 place-items-center rounded-md text-[var(--goyo-text-faint)] outline-none transition hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:opacity-35"
       disabled={!onClick}
       onClick={onClick}
       title={label}
