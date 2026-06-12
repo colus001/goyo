@@ -36,7 +36,7 @@ export function WritingTopBar({
   const currentTitle = activeDocument?.title || activeMoveTarget?.title || bookTitle;
 
   return (
-    <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[#deded9] border-b bg-[#fbfbfa] px-3">
+    <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-[#deded9] border-b bg-[#fbfbfa] py-0 pr-3 pl-[7.25rem] [-webkit-app-region:drag]">
       <div className="flex min-w-0 items-center gap-1.5">
         <CommandButton
           label={isSidebarCollapsed ? 'Show manuscript list' : 'Hide manuscript list'}
@@ -95,7 +95,7 @@ function CommandButton({
   return (
     <button
       aria-label={label}
-      className="grid size-8 cursor-pointer place-items-center rounded-lg text-[#817d75] outline-none transition hover:bg-[#f1eee8] hover:text-[#302e29] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#817d75]"
+      className="grid size-8 cursor-pointer place-items-center rounded-lg text-[#817d75] outline-none transition hover:bg-[#f1eee8] hover:text-[#302e29] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#817d75] [-webkit-app-region:no-drag]"
       disabled={disabled}
       onClick={onClick}
       title={label}
@@ -120,7 +120,7 @@ function TextCommandButton({
   return (
     <button
       aria-label={label}
-      className="h-8 cursor-pointer rounded-lg px-3 font-medium text-[#6b665f] text-sm outline-none transition hover:bg-[#f1eee8] hover:text-[#302e29] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#6b665f]"
+      className="h-8 cursor-pointer rounded-lg px-3 font-medium text-[#6b665f] text-sm outline-none transition hover:bg-[#f1eee8] hover:text-[#302e29] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#6b665f] [-webkit-app-region:no-drag]"
       disabled={disabled}
       onClick={onClick}
       type="button"

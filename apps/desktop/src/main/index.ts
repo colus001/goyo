@@ -191,6 +191,12 @@ function createWindow() {
     minHeight: 640,
     icon: join(__dirname, '../../../../assets/logo.png'),
     title: APP_NAME,
+    ...(process.platform === 'darwin'
+      ? {
+          titleBarStyle: 'hiddenInset' as const,
+          trafficLightPosition: { x: 16, y: 16 },
+        }
+      : {}),
     backgroundColor: '#f4efe6',
     show: false,
     webPreferences: {
