@@ -75,33 +75,34 @@
 - [ ] Add archive or soft-delete state.
 - [x] Add archive or soft-delete state for books, chapters, and documents.
 - [x] Verify that a document can be restored from local metadata plus local Yjs data.
-- [ ] Verify that local writes remain safe while offline.
+- [x] Verify that local writes remain safe while offline.
 
 ## Milestone 5: CRDT Sync Core
 
-- [ ] Implement Yjs update generation for local edits.
-- [ ] Implement Yjs update replay.
-- [ ] Implement state vector based comparison.
-- [ ] Implement duplicate update handling.
-- [ ] Implement out-of-order update handling.
-- [ ] Implement snapshot restore plus later update replay.
-- [ ] Add tests for two local clients editing the same document.
-- [ ] Add tests for offline edit then reconnect simulation.
-- [ ] Add tests for duplicated update delivery.
-- [ ] Add tests for out-of-order update delivery.
+- [x] Implement Yjs update generation for local edits.
+- [x] Implement Yjs update replay.
+- [x] Implement state vector based comparison.
+- [x] Implement duplicate update handling.
+- [x] Implement out-of-order update handling.
+- [x] Implement snapshot restore plus later update replay.
+- [x] Add tests for two local clients editing the same document.
+- [x] Add tests for offline edit then reconnect simulation.
+- [x] Add tests for duplicated update delivery.
+- [x] Add tests for out-of-order update delivery.
+- [x] Add sync queue recovery for local updates and snapshots missing pending queue entries.
 
 ## Milestone 6: Worker And D1 Persistence
 
-- [ ] Add Cloudflare Worker health endpoint.
-- [ ] Configure Wrangler for local development.
+- [x] Add Cloudflare Worker health endpoint.
+- [x] Configure Wrangler for local development.
 - [ ] Re-evaluate Drizzle or another typed SQL layer before building the D1 schema.
 - [ ] If adopting Drizzle, introduce it at the persistence boundary rather than in `packages/core`.
-- [ ] Create initial D1 schema.
-- [ ] Add `documents` table.
-- [ ] Add `document_updates` table.
-- [ ] Add `document_snapshots` table.
+- [x] Create initial D1 schema.
+- [x] Add `documents` table.
+- [x] Add `document_updates` table.
+- [x] Add `document_snapshots` table.
 - [ ] Add `document_revisions` or equivalent revision metadata table if needed.
-- [ ] Add `sync_clients` table if needed.
+- [x] Add `sync_clients` table if needed.
 - [ ] Add document metadata API.
 - [ ] Add CRDT update upload API.
 - [ ] Add CRDT update download API.
@@ -171,6 +172,11 @@
 - [x] Keep any future ORM or typed SQL layer out of `packages/core`; core should continue to expose platform-neutral store interfaces.
 - [x] Added local snapshot storage with `lastUpdateId` checkpoints and document loading from latest snapshot plus later Yjs updates.
 - [x] Added local unsynced queue entries for document updates and document snapshots.
+- [x] Added `packages/core` CRDT adapter abstraction around Yjs with replay, duplicate, out-of-order, state vector, two-client, and offline reconnect tests.
+- [x] Added document sync utilities that connect CRDT replay/state vectors with document update records, snapshots, pending queue selection, and sync queue recovery.
+- [x] Verified local writes remain safe while offline.
+- [x] Created Cloudflare D1 database `writer-sync` and initial Worker migration for documents, CRDT updates, snapshots, and sync clients.
+- [x] Applied initial D1 migration locally and remotely with Wrangler CLI.
 
 ## Milestone 9: Recovery And Version Safety
 
