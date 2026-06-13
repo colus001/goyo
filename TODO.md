@@ -217,6 +217,11 @@
 - [x] Added remote snapshot policy: pulled remote snapshots are saved as local snapshots and recorded as `remote-snapshot` recovery points without adding a D1 revisions table.
 - [x] Verified recovery from local data after remote sync failure via local checkpoints, restore-as-copy, deleted-document recovery, sync attention status, retry-now, and export-only backup paths.
 - [x] Verified snapshot plus later update recovery through existing snapshot replay/load tests and the latest-snapshot-plus-`listAfter(lastUpdateId)` desktop loading path.
+- [x] Added single-document export from the active editor to plain text, Markdown, and HTML without depending on remote sync state.
+- [x] Added active chapter export for fiction workflows by combining ordered chapter episodes into plain text, Markdown, or HTML.
+- [x] Evaluated PDF export: prefer reusing HTML export with an Electron print-to-PDF path once export styling is stabilized.
+- [x] Evaluated DOCX export: defer implementation until a `docx` package integration can map document/chapter structure explicitly.
+- [x] Evaluated EPUB export: defer until book-level export is stable because EPUB needs XHTML packaging, metadata, and spine generation.
 
 ## Milestone 9: Recovery And Version Safety
 
@@ -244,15 +249,15 @@
 
 ## Milestone 11: Export
 
-- [ ] Add plain text export.
-- [ ] Add Markdown export.
-- [ ] Add HTML export.
-- [ ] Evaluate PDF export.
-- [ ] Evaluate DOCX export.
-- [ ] Evaluate EPUB export.
-- [ ] Support essay export.
-- [ ] Support fiction chapter export.
-- [ ] Verify export works independently from remote sync state.
+- [x] Add plain text export.
+- [x] Add Markdown export.
+- [x] Add HTML export.
+- [x] Evaluate PDF export.
+- [x] Evaluate DOCX export.
+- [x] Evaluate EPUB export.
+- [x] Support essay export.
+- [x] Support fiction chapter export.
+- [x] Verify export works independently from remote sync state.
 
 ## Milestone 12: Auth And Multi-Device Accounts
 
