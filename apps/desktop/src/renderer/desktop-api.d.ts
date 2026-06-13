@@ -56,6 +56,16 @@ declare global {
         list: (documentId: string) => Promise<DocumentSnapshotRecord[]>;
         save: (snapshot: DocumentSnapshotRecord) => Promise<void>;
       };
+      documentExport: {
+        save: (input: {
+          content: string;
+          format: 'html' | 'markdown' | 'text';
+          title: string;
+        }) => Promise<{
+          exported: boolean;
+          filePath: string | null;
+        }>;
+      };
       recoveryPoints: {
         get: (recoveryPointId: string) => Promise<RecoveryPoint | null>;
         list: (documentId: string) => Promise<RecoveryPoint[]>;

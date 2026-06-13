@@ -76,6 +76,13 @@ const desktopApi = {
     list: (documentId: string) =>
       ipcRenderer.invoke('documentSnapshots:list', documentId) as Promise<DocumentSnapshotRecord[]>,
   },
+  documentExport: {
+    save: (input: { content: string; format: 'html' | 'markdown' | 'text'; title: string }) =>
+      ipcRenderer.invoke('documentExport:save', input) as Promise<{
+        exported: boolean;
+        filePath: string | null;
+      }>,
+  },
   recoveryPoints: {
     get: (recoveryPointId: string) =>
       ipcRenderer.invoke('recoveryPoints:get', recoveryPointId) as Promise<RecoveryPoint | null>,

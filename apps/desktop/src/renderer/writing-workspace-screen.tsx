@@ -8,6 +8,7 @@ import { NewChapterModal, WritingShell } from '@writer/ui';
 import { type RefObject, useRef, useState } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { BookEmptyState, EpisodeSurface } from './writing-surfaces';
+import { exportActiveChapter, exportActiveDocument } from './writing-workspace-export-actions';
 import { useWorkspaceKeyboardShortcuts } from './writing-workspace-shortcuts';
 
 interface WordCountState {
@@ -41,6 +42,13 @@ export function WritingWorkspaceScreen({
   const closeNewChapterModal = () => setIsNewChapterModalOpen(false);
   const shellProps = {
     ...getWritingShellProps(workspace, onOpenSettings, wordCountLabel, requestNewChapter),
+    onExportDocument: activeDocument
+      ? (format: 'html' | 'markdown' | 'text') =>
+          exportActiveDocument(activeDocument, editorRef.current, format)
+      : undefined,
+    onExportChapter: workspace.activeChapter
+      ? (format: 'html' | 'markdown' | 'text') => exportActiveChapter(workspace, format)
+      : undefined,
     onCreateRestorePoint: activeDocument
       ? () => workspace.createManualRestorePoint(editorRef.current?.getSnapshot() ?? null)
       : undefined,

@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import type { MouseEvent, ReactElement } from 'react';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import * as Y from 'yjs';
+import { tiptapJsonToMarkdown } from './document-export';
 
 const SNAPSHOT_UPDATE_INTERVAL = 50;
 
@@ -18,6 +19,9 @@ export interface WritingEditorProps {
 
 export interface WritingEditorRef {
   focus: () => void;
+  getHtml: () => string;
+  getMarkdown: () => string;
+  getPlainText: () => string;
   getSnapshot: () => Uint8Array | null;
 }
 
@@ -41,6 +45,9 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
       ref,
       () => ({
         focus: () => editor?.chain().focus('end').run(),
+        getHtml: () => editor?.getHTML() ?? '',
+        getMarkdown: () => (editor ? tiptapJsonToMarkdown(editor.getJSON()) : ''),
+        getPlainText: () => editor?.state.doc.textContent ?? '',
         getSnapshot: () => (editor ? Y.encodeStateAsUpdate(yDocument) : null),
       }),
       [editor, yDocument],

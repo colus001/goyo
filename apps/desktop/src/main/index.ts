@@ -13,6 +13,7 @@ import { APP_NAME } from '@writer/shared';
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
+import { exportDocument } from './document-export';
 import { createDesktopLocalStore } from './document-metadata-store';
 import { exportLocalBackup } from './local-backup';
 import {
@@ -61,6 +62,14 @@ function registerDocumentIpc() {
       return await exportLocalBackup(store);
     } catch (error) {
       console.error('Failed to export local backup', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('documentExport:save', async (_event, input) => {
+    try {
+      return await exportDocument(input);
+    } catch (error) {
+      console.error('Failed to export document', getErrorMessage(error));
       throw error;
     }
   });

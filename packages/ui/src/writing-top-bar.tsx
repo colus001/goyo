@@ -1,6 +1,7 @@
 import { ChevronRight, History, Menu, Plus, Settings } from 'lucide-react';
 import type { ReactElement, ReactNode, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { WritingExportMenu } from './writing-export-menu';
 import type { WritingShellProps } from './writing-shell';
 
 type DocumentItem = NonNullable<WritingShellProps['documents']>[number];
@@ -20,6 +21,8 @@ export function WritingTopBar({
   onCreateChapter,
   onCreateDocument,
   onCreateRestorePoint,
+  onExportChapter,
+  onExportDocument,
   onOpenSettings,
   onToggleSidebar,
   wordCountLabel,
@@ -32,6 +35,8 @@ export function WritingTopBar({
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
   onCreateRestorePoint?: () => void;
+  onExportChapter?: (format: 'html' | 'markdown' | 'text') => void;
+  onExportDocument?: (format: 'html' | 'markdown' | 'text') => void;
   onOpenSettings?: () => void;
   onToggleSidebar: () => void;
   wordCountLabel?: string;
@@ -70,6 +75,11 @@ export function WritingTopBar({
         >
           <History aria-hidden="true" size={16} strokeWidth={2.1} />
         </CommandButton>
+        <WritingExportMenu
+          canExportDocument={Boolean(activeDocument)}
+          onExportChapter={onExportChapter}
+          onExportDocument={onExportDocument}
+        />
         <CommandButton label="Settings" onClick={onOpenSettings}>
           <Settings aria-hidden="true" size={16} strokeWidth={2.1} />
         </CommandButton>
