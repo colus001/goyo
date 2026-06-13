@@ -1,5 +1,6 @@
 import type { DocumentId } from '@writer/shared';
 import type { DocumentMetadata } from './documents';
+import type { RecoveryPoint } from './recovery';
 import type { DocumentUpdateRecord, SyncQueueItem } from './sync';
 
 export interface DocumentSnapshotRecord {
@@ -33,7 +34,9 @@ export function createDocumentSnapshotRecord(
 export interface LocalDocumentStore {
   getDocumentMetadata(documentId: DocumentId): Promise<DocumentMetadata | null>;
   listDocumentMetadata(): Promise<DocumentMetadata[]>;
+  listRecoveryPoints(documentId: DocumentId): Promise<RecoveryPoint[]>;
   saveDocumentMetadata(document: DocumentMetadata): Promise<void>;
+  saveRecoveryPoint(point: RecoveryPoint): Promise<void>;
   appendDocumentUpdate(update: DocumentUpdateRecord): Promise<void>;
   listDocumentUpdates(documentId: DocumentId): Promise<DocumentUpdateRecord[]>;
   saveDocumentSnapshot(snapshot: DocumentSnapshotRecord): Promise<void>;

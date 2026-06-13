@@ -49,6 +49,32 @@ export function transactYjsTextUpdate(
   return Y.encodeStateAsUpdate(document.document, before);
 }
 
+export function copyYjsSnapshotFragment(
+  snapshot: Uint8Array,
+  sourceFragmentName: string,
+  targetFragmentName: string,
+): Uint8Array {
+  const sourceDocument = new Y.Doc();
+  Y.applyUpdate(sourceDocument, snapshot);
+
+  const targetDocument = new Y.Doc();
+  const sourceFragment = sourceDocument.getXmlFragment(sourceFragmentName);
+  const targetFragment = targetDocument.getXmlFragment(targetFragmentName);
+  const clonedChildren = sourceFragment
+    .toArray()
+    .filter(
+      (child): child is Y.XmlElement | Y.XmlText =>
+        child instanceof Y.XmlElement || child instanceof Y.XmlText,
+    )
+    .map((child) => child.clone());
+
+  if (clonedChildren.length > 0) {
+    targetFragment.insert(0, clonedChildren);
+  }
+
+  return Y.encodeStateAsUpdate(targetDocument);
+}
+
 function createYjsCrdtDocument(id: string): YjsCrdtDocument {
   return {
     document: new Y.Doc(),

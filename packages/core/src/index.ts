@@ -70,7 +70,23 @@ export type {
   LocalDocumentStore,
 } from './local-store';
 export { createDocumentSnapshotRecord } from './local-store';
-export type { RecoveryPoint, RecoveryPolicy } from './recovery';
+export type {
+  AutomaticCheckpointInput,
+  CompactionPolicyInput,
+  CreateRecoveryPointInput,
+  LegacyRecoveryPolicy,
+  RecoveryPoint,
+  RecoveryPointKind,
+  RecoveryPolicy,
+} from './recovery';
+export {
+  createRecoveryPoint,
+  DEFAULT_RECOVERY_POLICY,
+  selectCompactableDocumentUpdates,
+  selectRecoveryPointsForRetention,
+  shouldCreateAutomaticCheckpoint,
+  sortRecoveryPoints,
+} from './recovery';
 export type {
   CreateSyncQueueItemInput,
   DocumentUpdateRecord,
@@ -80,4 +96,4 @@ export type {
 } from './sync';
 export { createSyncQueueItem, sortSyncQueueItemsForProcessing } from './sync';
 export type { YjsCrdtDocument } from './yjs-crdt';
-export { createYjsCrdtAdapter } from './yjs-crdt';
+export { copyYjsSnapshotFragment, createYjsCrdtAdapter } from './yjs-crdt';
