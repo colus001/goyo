@@ -1,10 +1,15 @@
 import type { ReactElement, ReactNode } from 'react';
-import { APP_FONTS } from '../shared/app-fonts';
+import {
+  type AppLocalePreference,
+  DEFAULT_APP_LOCALE_PREFERENCE,
+  resolveAppLocale,
+} from '../shared/app-fonts';
 import type { AppSettings } from '../shared/app-settings';
 import { APP_THEMES, type AppTheme } from '../shared/app-themes';
 import { CustomThemeEditor } from './custom-theme-editor';
 import { DeletedDocumentRecovery } from './deleted-document-recovery';
 import type { WritingWorkspaceState } from './document-workspace-types';
+import { FontDropdown, SettingsDropdown } from './font-dropdown';
 import { DevelopmentSettings } from './settings-development';
 import { SyncRecoverySettings } from './sync-recovery-settings';
 
@@ -55,7 +60,7 @@ export function SettingsSections({
               type="checkbox"
             />
           </label>
-          <FontPicker onChangeSettings={onChangeSettings} settings={settings} />
+          <LanguageAndFontPicker onChangeSettings={onChangeSettings} settings={settings} />
         </div>
       </SettingsSection>
 
@@ -88,67 +93,55 @@ export function SettingsSections({
   );
 }
 
-function FontPicker({
+function LanguageAndFontPicker({
   onChangeSettings,
   settings,
 }: {
   onChangeSettings: (settings: AppSettings) => void;
   settings: AppSettings;
 }): ReactElement {
-  return (
-    <div className="grid gap-3 lg:grid-cols-2">
-      <FontPickerCard
-        description="Used for the sidebar, menus, settings, and app controls."
-        onSelect={(fontId) => onChangeSettings({ ...settings, uiFontId: fontId })}
-        selectedFontId={settings.uiFontId}
-        title="Interface font"
-      />
-      <FontPickerCard
-        description="Used for document titles and the writing surface."
-        onSelect={(fontId) => onChangeSettings({ ...settings, writingFontId: fontId })}
-        selectedFontId={settings.writingFontId}
-        title="Writing font"
-      />
-    </div>
-  );
-}
+  const previewLocale = resolveAppLocale({
+    language: typeof navigator === 'undefined' ? undefined : navigator.language,
+    localePreference: settings.localePreference,
+  });
 
-function FontPickerCard({
-  description,
-  onSelect,
-  selectedFontId,
-  title,
-}: {
-  description: string;
-  onSelect: (fontId: (typeof APP_FONTS)[number]['id']) => void;
-  selectedFontId: (typeof APP_FONTS)[number]['id'];
-  title: string;
-}): ReactElement {
   return (
     <div className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-4">
-      <p className="font-medium text-[var(--goyo-text)]">{title}</p>
-      <p className="mt-1 text-[var(--goyo-text-muted)] text-sm leading-relaxed">{description}</p>
-      <div className="mt-3 grid gap-2">
-        {APP_FONTS.map((font) => (
-          <button
-            className={`rounded-xl border p-3 text-left outline-none transition hover:opacity-95 ${
-              selectedFontId === font.id
-                ? 'border-[var(--goyo-accent)] bg-[var(--goyo-accent-soft)]'
-                : 'border-[var(--goyo-border)] bg-[var(--goyo-raised)]'
-            }`}
-            key={font.id}
-            onClick={() => onSelect(font.id)}
-            style={{ fontFamily: font.cssFamily }}
-            type="button"
-          >
-            <span className="block font-semibold text-[var(--goyo-text)] text-sm">{font.name}</span>
-            <span className="mt-2 block text-[var(--goyo-text-muted)] text-xs">Aa 한글</span>
-          </button>
-        ))}
+      <p className="font-medium text-[var(--goyo-text)]">Language & Fonts</p>
+      <p className="mt-1 text-[var(--goyo-text-muted)] text-sm">
+        Choose language preference and bundled writing fonts.
+      </p>
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+        <SettingsDropdown
+          label="Language"
+          onSelect={(localePreference) => onChangeSettings({ ...settings, localePreference })}
+          options={LANGUAGE_OPTIONS}
+          selectedValue={settings.localePreference}
+        />
+        <FontDropdown
+          fontRole="interface"
+          label="Interface font"
+          locale={previewLocale}
+          onSelect={(fontId) => onChangeSettings({ ...settings, uiFontId: fontId })}
+          selectedFontId={settings.uiFontId}
+        />
+        <FontDropdown
+          fontRole="writing"
+          label="Writing font"
+          locale={previewLocale}
+          onSelect={(fontId) => onChangeSettings({ ...settings, writingFontId: fontId })}
+          selectedFontId={settings.writingFontId}
+        />
       </div>
     </div>
   );
 }
+
+const LANGUAGE_OPTIONS: Array<{ label: string; value: AppLocalePreference }> = [
+  { label: 'System language', value: DEFAULT_APP_LOCALE_PREFERENCE },
+  { label: 'English', value: 'en' },
+  { label: '한국어', value: 'ko' },
+];
 
 function SettingsSection({
   children,

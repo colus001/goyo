@@ -1,8 +1,11 @@
 import {
   type AppFontId,
+  type AppLocalePreference,
+  DEFAULT_APP_LOCALE_PREFERENCE,
   DEFAULT_UI_FONT_ID,
   DEFAULT_WRITING_FONT_ID,
   isAppFontId,
+  isAppLocalePreference,
 } from './app-fonts';
 import {
   type AppTheme,
@@ -15,6 +18,7 @@ import {
 
 export interface AppSettings {
   customTheme: AppTheme | null;
+  localePreference: AppLocalePreference;
   restoreLastWorkspaceOnLaunch: boolean;
   themeId: AppThemeId;
   uiFontId: AppFontId;
@@ -23,6 +27,7 @@ export interface AppSettings {
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   customTheme: null,
+  localePreference: DEFAULT_APP_LOCALE_PREFERENCE,
   restoreLastWorkspaceOnLaunch: true,
   themeId: DEFAULT_APP_THEME_ID,
   uiFontId: DEFAULT_UI_FONT_ID,
@@ -43,6 +48,9 @@ export function normalizeAppSettings(settings: unknown): AppSettings {
 
   return {
     customTheme,
+    localePreference: isAppLocalePreference(partialSettings.localePreference)
+      ? partialSettings.localePreference
+      : DEFAULT_APP_SETTINGS.localePreference,
     restoreLastWorkspaceOnLaunch:
       typeof partialSettings.restoreLastWorkspaceOnLaunch === 'boolean'
         ? partialSettings.restoreLastWorkspaceOnLaunch

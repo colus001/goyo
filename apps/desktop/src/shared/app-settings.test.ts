@@ -5,6 +5,7 @@ describe('normalizeAppSettings defaults', () => {
   it('keeps valid app settings', () => {
     expect(normalizeAppSettings({ restoreLastWorkspaceOnLaunch: false, themeId: 'sage' })).toEqual({
       customTheme: null,
+      localePreference: DEFAULT_APP_SETTINGS.localePreference,
       restoreLastWorkspaceOnLaunch: false,
       themeId: 'sage',
       uiFontId: DEFAULT_APP_SETTINGS.uiFontId,
@@ -15,6 +16,7 @@ describe('normalizeAppSettings defaults', () => {
   it('falls back when a persisted theme is missing or invalid', () => {
     expect(normalizeAppSettings({ restoreLastWorkspaceOnLaunch: false })).toEqual({
       customTheme: null,
+      localePreference: DEFAULT_APP_SETTINGS.localePreference,
       restoreLastWorkspaceOnLaunch: false,
       themeId: DEFAULT_APP_SETTINGS.themeId,
       uiFontId: DEFAULT_APP_SETTINGS.uiFontId,
@@ -50,6 +52,7 @@ describe('normalizeAppSettings custom themes', () => {
 
     expect(normalizeAppSettings({ customTheme, themeId: 'custom' })).toEqual({
       customTheme: { ...customTheme, id: 'custom' },
+      localePreference: DEFAULT_APP_SETTINGS.localePreference,
       restoreLastWorkspaceOnLaunch: true,
       themeId: 'custom',
       uiFontId: DEFAULT_APP_SETTINGS.uiFontId,
@@ -86,10 +89,31 @@ describe('normalizeAppSettings custom themes', () => {
 });
 
 describe('normalizeAppSettings fonts', () => {
+  it('keeps valid expanded font choices', () => {
+    const settings = normalizeAppSettings({
+      uiFontId: 'korean-sans',
+      writingFontId: 'literary-serif',
+    });
+
+    expect(settings.uiFontId).toBe('korean-sans');
+    expect(settings.writingFontId).toBe('literary-serif');
+  });
+
   it('migrates legacy fontId to the writing font only', () => {
     const settings = normalizeAppSettings({ fontId: 'mono' });
 
     expect(settings.uiFontId).toBe(DEFAULT_APP_SETTINGS.uiFontId);
     expect(settings.writingFontId).toBe('mono');
+  });
+});
+
+describe('normalizeAppSettings locale preference', () => {
+  it('keeps valid locale preferences and falls back for invalid values', () => {
+    expect(normalizeAppSettings({ localePreference: 'system' }).localePreference).toBe('system');
+    expect(normalizeAppSettings({ localePreference: 'en' }).localePreference).toBe('en');
+    expect(normalizeAppSettings({ localePreference: 'ko' }).localePreference).toBe('ko');
+    expect(normalizeAppSettings({ localePreference: 'fr' }).localePreference).toBe(
+      DEFAULT_APP_SETTINGS.localePreference,
+    );
   });
 });

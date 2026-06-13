@@ -201,6 +201,8 @@
 - [x] Added desktop app settings storage and a library settings surface with writing, appearance, and sync/account sections.
 - [x] Added a non-destructive launch restore preference that starts in the library without deleting saved workspace state when disabled.
 - [x] Added preset light and dark writing themes, custom color chip sharing, and theme color editing in Settings.
+- [x] Expand font diversity support with more writing fonts, interface fonts, Korean-friendly type choices, and genre-appropriate presets.
+- [x] Bundled open-source Inter, Noto Sans KR, Noto Serif KR, Literata, Source Serif 4, and Source Code Pro fonts behind preview dropdowns with system/English/Korean language-controlled samples.
 - [x] Added local recovery point metadata backed by desktop SQLite snapshots.
 - [x] Added automatic checkpoint recovery points using the existing editor snapshot cadence and core recovery policy.
 - [x] Added a quiet writing toolbar action for manual restore point creation from the current Yjs document state.

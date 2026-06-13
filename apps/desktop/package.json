@@ -11,6 +11,12 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/literata": "^5.2.8",
+    "@fontsource/noto-sans-kr": "^5.2.9",
+    "@fontsource/noto-serif-kr": "^5.2.9",
+    "@fontsource/source-code-pro": "^5.2.7",
+    "@fontsource/source-serif-4": "^5.2.9",
     "@tailwindcss/vite": "^4.3.0",
     "@vitejs/plugin-react": "^5.2.0",
     "@writer/core": "workspace:*",
