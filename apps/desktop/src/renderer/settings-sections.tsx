@@ -3,7 +3,10 @@ import { APP_FONTS } from '../shared/app-fonts';
 import type { AppSettings } from '../shared/app-settings';
 import { APP_THEMES, type AppTheme } from '../shared/app-themes';
 import { CustomThemeEditor } from './custom-theme-editor';
+import { DeletedDocumentRecovery } from './deleted-document-recovery';
+import type { WritingWorkspaceState } from './document-workspace-types';
 import { DevelopmentSettings } from './settings-development';
+import { SyncRecoverySettings } from './sync-recovery-settings';
 
 type AppearanceTab = 'custom' | 'themes';
 
@@ -15,6 +18,7 @@ export function SettingsSections({
   onChangeSettings,
   onRequestResetLocalData,
   settings,
+  workspace,
 }: {
   appearanceTab: AppearanceTab;
   isDevelopment: boolean;
@@ -23,6 +27,7 @@ export function SettingsSections({
   onChangeSettings: (settings: AppSettings) => void;
   onRequestResetLocalData: () => void;
   settings: AppSettings;
+  workspace: WritingWorkspaceState;
 }): ReactElement {
   return (
     <div className="mt-8 space-y-7">
@@ -64,9 +69,11 @@ export function SettingsSections({
       </SettingsSection>
 
       <SettingsSection title="Sync & Account">
-        <p className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/45 p-4 text-[var(--goyo-text-muted)] text-sm leading-relaxed">
-          Sync and account preferences will appear here once account management is available.
-        </p>
+        <SyncRecoverySettings />
+      </SettingsSection>
+
+      <SettingsSection title="Recovery">
+        <DeletedDocumentRecovery workspace={workspace} />
       </SettingsSection>
 
       {isDevelopment ? (

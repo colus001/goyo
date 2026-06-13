@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import type { AppSettings } from '../shared/app-settings';
+import type { WritingWorkspaceState } from './document-workspace-types';
 import { DiscardSettingsDialog, SettingsHeader } from './settings-actions';
 import { ResetLocalDataDialog } from './settings-development';
 import { SettingsSections } from './settings-sections';
@@ -13,12 +14,14 @@ export function SettingsScreen({
   settings,
   onClose,
   onSaveSettings,
+  workspace,
 }: {
   settings: AppSettings;
   onClose: () => void;
   onSaveSettings: (settings: AppSettings) => void;
+  workspace: WritingWorkspaceState;
 }): ReactElement {
-  const state = useSettingsScreenState(settings, onClose, onSaveSettings);
+  const state = useSettingsScreenState(settings, onClose, onSaveSettings, workspace);
 
   return <SettingsLayout {...state} />;
 }
@@ -27,6 +30,7 @@ function useSettingsScreenState(
   settings: AppSettings,
   onClose: () => void,
   onSaveSettings: (settings: AppSettings) => void,
+  workspace: WritingWorkspaceState,
 ) {
   const [appearanceTab, setAppearanceTab] = useState<AppearanceTab>('themes');
   const [draftSettings, setDraftSettings] = useState(settings);
@@ -78,6 +82,7 @@ function useSettingsScreenState(
       onSaveSettings(draftSettings);
       onClose();
     },
+    workspace,
   };
 }
 
@@ -98,6 +103,7 @@ function SettingsLayout({
   onRequestResetLocalData,
   onResetLocalData,
   onSave,
+  workspace,
 }: ReturnType<typeof useSettingsScreenState>): ReactElement {
   return (
     <main
@@ -117,6 +123,7 @@ function SettingsLayout({
             onChangeSettings={onChangeSettings}
             onRequestResetLocalData={onRequestResetLocalData}
             settings={draftSettings}
+            workspace={workspace}
           />
         </div>
       </div>
@@ -144,6 +151,7 @@ function SettingsNavigation({ isDevelopment }: { isDevelopment: boolean }): Reac
         <SettingsNavItem label="Writing" />
         <SettingsNavItem label="Appearance" />
         <SettingsNavItem label="Sync & Account" />
+        <SettingsNavItem label="Recovery" />
         {isDevelopment ? <SettingsNavItem label="Development" /> : null}
       </nav>
     </aside>

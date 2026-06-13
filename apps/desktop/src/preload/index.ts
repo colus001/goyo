@@ -4,6 +4,7 @@ import type {
   DocumentMetadata,
   DocumentSnapshotRecord,
   DocumentUpdateRecord,
+  RecoveryPoint,
   SyncQueueItem,
 } from '@writer/core';
 import { contextBridge, ipcRenderer } from 'electron';
@@ -19,6 +20,13 @@ const desktopApi = {
     get: () => ipcRenderer.invoke('appSettings:get') as Promise<AppSettings>,
     save: (settings: AppSettings) =>
       ipcRenderer.invoke('appSettings:save', settings) as Promise<void>,
+  },
+  backup: {
+    exportLocalData: () =>
+      ipcRenderer.invoke('backup:exportLocalData') as Promise<{
+        exported: boolean;
+        filePath: string | null;
+      }>,
   },
   dev: {
     isDevelopment: () => ipcRenderer.invoke('dev:isDevelopment') as Promise<boolean>,
@@ -36,6 +44,9 @@ const desktopApi = {
   },
   documents: {
     list: () => ipcRenderer.invoke('documents:list') as Promise<DocumentMetadata[]>,
+    listArchived: () => ipcRenderer.invoke('documents:listArchived') as Promise<DocumentMetadata[]>,
+    restoreArchived: (documentId: string, restoredAt: string) =>
+      ipcRenderer.invoke('documents:restoreArchived', documentId, restoredAt) as Promise<void>,
     saveMetadata: (document: DocumentMetadata) =>
       ipcRenderer.invoke('documents:saveMetadata', document) as Promise<void>,
   },
@@ -50,6 +61,11 @@ const desktopApi = {
       >,
   },
   documentSnapshots: {
+    get: (snapshotId: string) =>
+      ipcRenderer.invoke(
+        'documentSnapshots:get',
+        snapshotId,
+      ) as Promise<DocumentSnapshotRecord | null>,
     getLatest: (documentId: string) =>
       ipcRenderer.invoke(
         'documentSnapshots:getLatest',
@@ -57,6 +73,16 @@ const desktopApi = {
       ) as Promise<DocumentSnapshotRecord | null>,
     save: (snapshot: DocumentSnapshotRecord) =>
       ipcRenderer.invoke('documentSnapshots:save', snapshot) as Promise<void>,
+    list: (documentId: string) =>
+      ipcRenderer.invoke('documentSnapshots:list', documentId) as Promise<DocumentSnapshotRecord[]>,
+  },
+  recoveryPoints: {
+    get: (recoveryPointId: string) =>
+      ipcRenderer.invoke('recoveryPoints:get', recoveryPointId) as Promise<RecoveryPoint | null>,
+    list: (documentId: string) =>
+      ipcRenderer.invoke('recoveryPoints:list', documentId) as Promise<RecoveryPoint[]>,
+    save: (point: RecoveryPoint) =>
+      ipcRenderer.invoke('recoveryPoints:save', point) as Promise<void>,
   },
   syncQueue: {
     enqueue: (item: SyncQueueItem) =>
@@ -66,6 +92,13 @@ const desktopApi = {
       ipcRenderer.invoke('syncQueue:markCompleted', syncItemId, completedAt) as Promise<void>,
   },
   sync: {
+    getStatusSummary: () =>
+      ipcRenderer.invoke('sync:getStatusSummary') as Promise<{
+        failedItemCount: number;
+        needsAttention: boolean;
+        oldestFailedAt: string | null;
+        pendingItemCount: number;
+      }>,
     pushPendingUpdates: () =>
       ipcRenderer.invoke('sync:pushPendingUpdates') as Promise<{
         pushedUpdateCount: number;
@@ -85,6 +118,13 @@ const desktopApi = {
       ipcRenderer.invoke('sync:pullRemoteSnapshots') as Promise<{
         pulledSnapshotCount: number;
         skippedDocumentCount: number;
+      }>,
+    retryNow: () =>
+      ipcRenderer.invoke('sync:retryNow') as Promise<{
+        snapshotPull: { pulledSnapshotCount: number; skippedDocumentCount: number };
+        snapshotPush: { pushedSnapshotCount: number; skippedSnapshotCount: number };
+        updatePull: { pulledUpdateCount: number; skippedDocumentCount: number };
+        updatePush: { pushedUpdateCount: number; skippedUpdateCount: number };
       }>,
   },
   platform: process.platform,

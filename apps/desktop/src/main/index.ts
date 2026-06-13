@@ -1,3 +1,4 @@
+// biome-ignore lint/nursery/noExcessiveLinesPerFile: IPC and native lifecycle are centralized around one Electron app instance until this module is split by concern.
 import { rmSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type {
@@ -5,6 +6,7 @@ import type {
   ChapterMetadata,
   DocumentMetadata,
   DocumentSnapshotRecord,
+  RecoveryPoint,
   SyncQueueItem,
 } from '@writer/core';
 import { APP_NAME } from '@writer/shared';
@@ -12,11 +14,14 @@ import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 import { createDesktopLocalStore } from './document-metadata-store';
+import { exportLocalBackup } from './local-backup';
 import {
+  getSyncStatusSummary,
   pullRemoteDocumentSnapshots,
   pullRemoteDocumentUpdates,
   pushPendingDocumentSnapshots,
   pushPendingDocumentUpdates,
+  retryRemoteSyncNow,
 } from './remote-sync';
 
 const isDevelopment = !app.isPackaged;
@@ -48,6 +53,14 @@ function registerDocumentIpc() {
       store.saveAppSettings(settings);
     } catch (error) {
       console.error('Failed to save app settings', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('backup:exportLocalData', async () => {
+    try {
+      return await exportLocalBackup(store);
+    } catch (error) {
+      console.error('Failed to export local backup', getErrorMessage(error));
       throw error;
     }
   });
@@ -83,11 +96,20 @@ function registerDocumentIpc() {
     }
   });
   ipcMain.handle('documents:list', () => store.listDocuments());
+  ipcMain.handle('documents:listArchived', () => store.listArchivedDocuments());
   ipcMain.handle('documents:saveMetadata', (_event, document: DocumentMetadata) => {
     try {
       store.saveDocument(document);
     } catch (error) {
       console.error('Failed to save document metadata', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('documents:restoreArchived', (_event, documentId: string, restoredAt: string) => {
+    try {
+      store.restoreArchivedDocument(documentId, restoredAt);
+    } catch (error) {
+      console.error('Failed to restore archived document', getErrorMessage(error));
       throw error;
     }
   });
@@ -108,11 +130,31 @@ function registerDocumentIpc() {
   ipcMain.handle('documentSnapshots:getLatest', (_event, documentId: string) =>
     store.getLatestDocumentSnapshot(documentId),
   );
+  ipcMain.handle('documentSnapshots:get', (_event, snapshotId: string) =>
+    store.getDocumentSnapshot(snapshotId),
+  );
+  ipcMain.handle('documentSnapshots:list', (_event, documentId: string) =>
+    store.listDocumentSnapshots(documentId),
+  );
   ipcMain.handle('documentSnapshots:save', (_event, snapshot: DocumentSnapshotRecord) => {
     try {
       store.saveDocumentSnapshot(snapshot);
     } catch (error) {
       console.error('Failed to save document snapshot', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('recoveryPoints:list', (_event, documentId: string) =>
+    store.listRecoveryPoints(documentId),
+  );
+  ipcMain.handle('recoveryPoints:get', (_event, recoveryPointId: string) =>
+    store.getRecoveryPoint(recoveryPointId),
+  );
+  ipcMain.handle('recoveryPoints:save', (_event, point: RecoveryPoint) => {
+    try {
+      store.saveRecoveryPoint(point);
+    } catch (error) {
+      console.error('Failed to save recovery point', getErrorMessage(error));
       throw error;
     }
   });
@@ -162,6 +204,15 @@ function registerDocumentIpc() {
       return await pullRemoteDocumentSnapshots(store);
     } catch (error) {
       console.error('Failed to pull remote document snapshots', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('sync:getStatusSummary', () => getSyncStatusSummary(store));
+  ipcMain.handle('sync:retryNow', async () => {
+    try {
+      return await retryRemoteSyncNow(store);
+    } catch (error) {
+      console.error('Failed to retry remote sync', getErrorMessage(error));
       throw error;
     }
   });

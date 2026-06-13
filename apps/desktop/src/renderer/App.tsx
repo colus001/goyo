@@ -22,6 +22,7 @@ export function App() {
           onClose={workspace.closeSettings}
           onSaveSettings={workspace.updateAppSettings}
           settings={workspace.appSettings}
+          workspace={workspace}
         />
       </div>
     );

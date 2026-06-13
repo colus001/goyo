@@ -9,6 +9,7 @@ import type {
   DocumentMetadata,
   DocumentSnapshotRecord,
   DocumentUpdateRecord,
+  RecoveryPoint,
   SyncQueueItem,
 } from '@writer/core';
 import { DEFAULT_BOOK_ACCENT_COLOR } from '@writer/core';
@@ -67,6 +68,16 @@ interface DocumentSnapshotRow {
   created_at: string;
 }
 
+interface RecoveryPointRow {
+  id: string;
+  document_id: string;
+  snapshot_id: string;
+  kind: RecoveryPoint['kind'];
+  label: string;
+  created_at: string;
+  update_count_at_creation: number;
+}
+
 interface SyncQueueRow {
   id: string;
   document_id: string;
@@ -101,18 +112,30 @@ export interface DesktopLocalStore {
   getAppUiState(): AppUiState | null;
   getDocumentSnapshot(snapshotId: string): DocumentSnapshotRecord | null;
   getLatestDocumentSnapshot(documentId: string): DocumentSnapshotRecord | null;
+  getRecoveryPoint(recoveryPointId: string): RecoveryPoint | null;
+  listAllBooks(): BookMetadata[];
+  listAllChapters(): ChapterMetadata[];
+  listAllDocuments(): DocumentMetadata[];
+  listAllDocumentSnapshots(): DocumentSnapshotRecord[];
+  listAllDocumentUpdates(): DocumentUpdateRecord[];
+  listAllRecoveryPoints(): RecoveryPoint[];
   listBooks(): BookMetadata[];
   listChapters(): ChapterMetadata[];
+  listArchivedDocuments(): DocumentMetadata[];
   listDocuments(): DocumentMetadata[];
+  listDocumentSnapshots(documentId: string): DocumentSnapshotRecord[];
   listDocumentUpdates(documentId: string): DocumentUpdateRecord[];
   listDocumentUpdatesAfter(documentId: string, updateId: string): DocumentUpdateRecord[];
   listPendingSyncItems(): SyncQueueItem[];
+  listRecoveryPoints(documentId: string): RecoveryPoint[];
   markSyncItemAttempted(syncItemId: string, attemptedAt: string): void;
   markSyncItemCompleted(syncItemId: string, completedAt: string): void;
   saveBook(book: BookMetadata): void;
   saveChapter(chapter: ChapterMetadata): void;
   saveDocument(document: DocumentMetadata): void;
   saveDocumentSnapshot(snapshot: SerializedDocumentSnapshotRecord): void;
+  saveRecoveryPoint(point: RecoveryPoint): void;
+  restoreArchivedDocument(documentId: string, restoredAt: string): void;
   saveAppUiState(state: AppUiState): void;
   saveAppSettings(settings: AppSettings): void;
 }
@@ -177,6 +200,21 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     CREATE INDEX IF NOT EXISTS document_snapshots_latest_idx
       ON document_snapshots(document_id, created_at DESC, id DESC);
 
+    CREATE TABLE IF NOT EXISTS document_recovery_points (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      snapshot_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      label TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      update_count_at_creation INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+      FOREIGN KEY(snapshot_id) REFERENCES document_snapshots(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS document_recovery_points_document_created_idx
+      ON document_recovery_points(document_id, created_at DESC, id DESC);
+
     CREATE TABLE IF NOT EXISTS sync_queue (
       id TEXT PRIMARY KEY,
       document_id TEXT NOT NULL,
@@ -223,6 +261,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     WHERE archived_at IS NULL
     ORDER BY updated_at DESC, title ASC;
   `);
+  const listAllBooksStatement = database.prepare(`
+    SELECT id, title, accent_color, created_at, updated_at, archived_at
+    FROM books
+    ORDER BY updated_at DESC, title ASC;
+  `);
   const saveBookStatement = database.prepare(`
     INSERT INTO books (id, title, accent_color, created_at, updated_at, archived_at)
     VALUES (@id, @title, @accentColor, @createdAt, @updatedAt, @archivedAt)
@@ -237,6 +280,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     SELECT id, book_id, title, sort_order, created_at, updated_at, archived_at
     FROM chapters
     WHERE archived_at IS NULL
+    ORDER BY book_id ASC, sort_order ASC, created_at ASC;
+  `);
+  const listAllChaptersStatement = database.prepare(`
+    SELECT id, book_id, title, sort_order, created_at, updated_at, archived_at
+    FROM chapters
     ORDER BY book_id ASC, sort_order ASC, created_at ASC;
   `);
   const saveChapterStatement = database.prepare(`
@@ -256,6 +304,17 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     WHERE archived_at IS NULL
     ORDER BY book_id ASC, chapter_id ASC, sort_order ASC, created_at ASC;
   `);
+  const listAllDocumentsStatement = database.prepare(`
+    SELECT id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
+    FROM documents
+    ORDER BY book_id ASC, chapter_id ASC, sort_order ASC, created_at ASC;
+  `);
+  const listArchivedDocumentsStatement = database.prepare(`
+    SELECT id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
+    FROM documents
+    WHERE archived_at IS NOT NULL
+    ORDER BY archived_at DESC, updated_at DESC, title ASC;
+  `);
   const saveDocumentStatement = database.prepare(`
     INSERT INTO documents (id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at)
     VALUES (@id, @bookId, @chapterId, @title, @kind, @order, @createdAt, @updatedAt, @archivedAt)
@@ -268,11 +327,22 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
       updated_at = excluded.updated_at,
       archived_at = excluded.archived_at;
   `);
+  const restoreArchivedDocumentStatement = database.prepare(`
+    UPDATE documents
+    SET archived_at = NULL,
+      updated_at = @restoredAt
+    WHERE id = @documentId;
+  `);
   const listDocumentUpdatesStatement = database.prepare(`
     SELECT id, document_id, client_id, update_blob, created_at
     FROM document_updates
     WHERE document_id = ?
     ORDER BY created_at ASC, id ASC;
+  `);
+  const listAllDocumentUpdatesStatement = database.prepare(`
+    SELECT id, document_id, client_id, update_blob, created_at
+    FROM document_updates
+    ORDER BY document_id ASC, created_at ASC, id ASC;
   `);
   const listDocumentUpdatesAfterStatement = database.prepare(`
     WITH checkpoint AS (
@@ -308,9 +378,44 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     ORDER BY created_at DESC, id DESC
     LIMIT 1;
   `);
+  const listDocumentSnapshotsStatement = database.prepare(`
+    SELECT id, document_id, last_update_id, snapshot_blob, created_at
+    FROM document_snapshots
+    WHERE document_id = ?
+    ORDER BY created_at DESC, id DESC;
+  `);
+  const listAllDocumentSnapshotsStatement = database.prepare(`
+    SELECT id, document_id, last_update_id, snapshot_blob, created_at
+    FROM document_snapshots
+    ORDER BY document_id ASC, created_at DESC, id DESC;
+  `);
   const getDocumentSnapshotStatement = database.prepare(`
     SELECT id, document_id, last_update_id, snapshot_blob, created_at
     FROM document_snapshots
+    WHERE id = ?;
+  `);
+  const saveRecoveryPointStatement = database.prepare(`
+    INSERT OR IGNORE INTO document_recovery_points (
+      id, document_id, snapshot_id, kind, label, created_at, update_count_at_creation
+    )
+    VALUES (
+      @id, @documentId, @snapshotId, @kind, @label, @createdAt, @updateCountAtCreation
+    );
+  `);
+  const listRecoveryPointsStatement = database.prepare(`
+    SELECT id, document_id, snapshot_id, kind, label, created_at, update_count_at_creation
+    FROM document_recovery_points
+    WHERE document_id = ?
+    ORDER BY created_at DESC, id DESC;
+  `);
+  const listAllRecoveryPointsStatement = database.prepare(`
+    SELECT id, document_id, snapshot_id, kind, label, created_at, update_count_at_creation
+    FROM document_recovery_points
+    ORDER BY document_id ASC, created_at DESC, id DESC;
+  `);
+  const getRecoveryPointStatement = database.prepare(`
+    SELECT id, document_id, snapshot_id, kind, label, created_at, update_count_at_creation
+    FROM document_recovery_points
     WHERE id = ?;
   `);
   const enqueueSyncItemStatement = database.prepare(`
@@ -393,6 +498,32 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
 
       return row ? rowToDocumentSnapshotRecord(row) : null;
     },
+    getRecoveryPoint(recoveryPointId) {
+      const row = getRecoveryPointStatement.get(recoveryPointId);
+
+      return row ? rowToRecoveryPoint(row) : null;
+    },
+    listAllBooks() {
+      return listAllBooksStatement.all().map(rowToBookMetadata);
+    },
+    listAllChapters() {
+      return listAllChaptersStatement.all().map(rowToChapterMetadata);
+    },
+    listAllDocuments() {
+      return listAllDocumentsStatement.all().map(rowToDocumentMetadata);
+    },
+    listAllDocumentSnapshots() {
+      return listAllDocumentSnapshotsStatement.all().map(rowToDocumentSnapshotRecord);
+    },
+    listAllDocumentUpdates() {
+      return listAllDocumentUpdatesStatement.all().map(rowToDocumentUpdateRecord);
+    },
+    listAllRecoveryPoints() {
+      return listAllRecoveryPointsStatement.all().map(rowToRecoveryPoint);
+    },
+    listArchivedDocuments() {
+      return listArchivedDocumentsStatement.all().map(rowToDocumentMetadata);
+    },
     listBooks() {
       return listBooksStatement.all().map(rowToBookMetadata);
     },
@@ -401,6 +532,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     listDocuments() {
       return listDocumentsStatement.all().map(rowToDocumentMetadata);
+    },
+    listDocumentSnapshots(documentId) {
+      return listDocumentSnapshotsStatement.all(documentId).map(rowToDocumentSnapshotRecord);
     },
     listDocumentUpdates(documentId) {
       return listDocumentUpdatesStatement.all(documentId).map(rowToDocumentUpdateRecord);
@@ -412,6 +546,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     listPendingSyncItems() {
       return listPendingSyncItemsStatement.all().map(rowToSyncQueueItem);
+    },
+    listRecoveryPoints(documentId) {
+      return listRecoveryPointsStatement.all(documentId).map(rowToRecoveryPoint);
     },
     markSyncItemAttempted(syncItemId, attemptedAt) {
       markSyncItemAttemptedStatement.run({ attemptedAt, syncItemId });
@@ -433,6 +570,12 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
         ...snapshot,
         snapshot: toUpdateBuffer(snapshot.snapshot),
       });
+    },
+    saveRecoveryPoint(point) {
+      saveRecoveryPointStatement.run(point);
+    },
+    restoreArchivedDocument(documentId, restoredAt) {
+      restoreArchivedDocumentStatement.run({ documentId, restoredAt });
     },
     saveAppUiState(state) {
       saveAppUiStateStatement.run({
@@ -599,6 +742,28 @@ function rowToDocumentSnapshotRecord(row: unknown): DocumentSnapshotRecord {
     lastUpdateId: snapshot.last_update_id,
     snapshot: new Uint8Array(snapshot.snapshot_blob),
   };
+}
+
+function rowToRecoveryPoint(row: unknown): RecoveryPoint {
+  const point = row as RecoveryPointRow;
+
+  return {
+    createdAt: point.created_at,
+    documentId: point.document_id,
+    id: point.id,
+    kind: normalizeRecoveryPointKind(point.kind),
+    label: point.label,
+    snapshotId: point.snapshot_id,
+    updateCountAtCreation: point.update_count_at_creation,
+  };
+}
+
+function normalizeRecoveryPointKind(kind: string): RecoveryPoint['kind'] {
+  if (kind === 'manual-restore-point' || kind === 'remote-snapshot') {
+    return kind;
+  }
+
+  return 'automatic-checkpoint';
 }
 
 function rowToSyncQueueItem(row: unknown): SyncQueueItem {

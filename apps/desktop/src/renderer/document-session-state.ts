@@ -29,6 +29,11 @@ import { createBookWithDetails } from './document-workspace-book-actions';
 import { moveChapter } from './document-workspace-chapter-actions';
 import { archiveBook, archiveChapter, archiveDocument } from './document-workspace-delete-actions';
 import { createEpisodeAfter } from './document-workspace-episode-actions';
+import { persistManualRestorePoint } from './document-workspace-persistence';
+import {
+  restoreDeletedDocument,
+  restoreRecoveryPointAsCopy,
+} from './document-workspace-recovery-actions';
 import type {
   DocumentSnapshotMap,
   DocumentUpdateMap,
@@ -95,6 +100,14 @@ export function useWritingWorkspace(): WritingWorkspaceState {
       createDocumentInChapter(chapterId, kind, setSession, setSaveStatus),
     createEpisodeAfter: (chapterId, previousDocumentId) =>
       createEpisodeAfter(chapterId, previousDocumentId, setSession, setSaveStatus),
+    createManualRestorePoint: (snapshot) => {
+      if (!activeDocument || !snapshot) {
+        setSaveStatus('Save failed');
+        return;
+      }
+
+      void persistManualRestorePoint(activeDocument.id, snapshot, setSaveStatus);
+    },
     deleteBook: (bookId) => archiveBook(bookId, setSession, setSaveStatus),
     deleteChapter: (chapterId) => archiveChapter(chapterId, setSession, setSaveStatus),
     deleteDocument: (documentId) => archiveDocument(documentId, setSession, setSaveStatus),
@@ -116,6 +129,10 @@ export function useWritingWorkspace(): WritingWorkspaceState {
       renameChapterTitle(session, chapterId, title, setSession, setSaveStatus),
     renameDocumentTitle: (title) =>
       renameDocumentTitle(session, activeDocument, title, setSession, setSaveStatus),
+    restoreRecoveryPointAsCopy: (recoveryPointId) =>
+      restoreRecoveryPointAsCopy(recoveryPointId, activeDocument, setSession, setSaveStatus),
+    restoreDeletedDocument: (document) =>
+      restoreDeletedDocument(document, session, setSession, setSaveStatus),
     saveStatus,
     screen,
     selectBook: (bookId) => selectBook(bookId, setSession, setScreen),

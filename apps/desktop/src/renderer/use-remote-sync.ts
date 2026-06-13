@@ -23,12 +23,13 @@ export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
         const snapshotPush = await window.writerDesktop.sync.pushPendingSnapshots();
         const updatePull = await window.writerDesktop.sync.pullRemoteUpdates();
         const snapshotPull = await window.writerDesktop.sync.pullRemoteSnapshots();
+        const summary = await window.writerDesktop.sync.getStatusSummary();
 
         setSyncStatus(
-          getCompletedSyncStatus({ snapshotPull, snapshotPush, updatePull, updatePush }),
+          getCompletedSyncStatus({ snapshotPull, snapshotPush, summary, updatePull, updatePush }),
         );
       } catch {
-        setSyncStatus(globalThis.navigator.onLine ? 'Sync pending' : 'Offline');
+        void setPendingOrAttentionStatus(setSyncStatus);
       } finally {
         isSyncing = false;
       }
@@ -56,19 +57,40 @@ export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
 function getCompletedSyncStatus({
   snapshotPull,
   snapshotPush,
+  summary,
   updatePull,
   updatePush,
 }: {
   snapshotPull: { skippedDocumentCount: number };
   snapshotPush: { skippedSnapshotCount: number };
+  summary: { needsAttention: boolean; pendingItemCount: number };
   updatePull: { skippedDocumentCount: number };
   updatePush: { skippedUpdateCount: number };
 }): SyncStatus {
+  if (summary.needsAttention) {
+    return 'Sync needs attention';
+  }
+
   const hasPendingSyncWork =
+    summary.pendingItemCount > 0 ||
     updatePush.skippedUpdateCount > 0 ||
     snapshotPush.skippedSnapshotCount > 0 ||
     updatePull.skippedDocumentCount > 0 ||
     snapshotPull.skippedDocumentCount > 0;
 
   return hasPendingSyncWork ? 'Sync pending' : 'Synced';
+}
+
+async function setPendingOrAttentionStatus(setSyncStatus: (syncStatus: SyncStatus) => void) {
+  if (!globalThis.navigator.onLine) {
+    setSyncStatus('Offline');
+    return;
+  }
+
+  try {
+    const summary = await window.writerDesktop.sync.getStatusSummary();
+    setSyncStatus(summary.needsAttention ? 'Sync needs attention' : 'Sync pending');
+  } catch {
+    setSyncStatus('Sync pending');
+  }
 }

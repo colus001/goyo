@@ -1,4 +1,4 @@
-import { ChevronRight, Menu, Plus, Settings } from 'lucide-react';
+import { ChevronRight, History, Menu, Plus, Settings } from 'lucide-react';
 import type { ReactElement, ReactNode, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { WritingShellProps } from './writing-shell';
@@ -19,6 +19,7 @@ export function WritingTopBar({
   isSidebarCollapsed,
   onCreateChapter,
   onCreateDocument,
+  onCreateRestorePoint,
   onOpenSettings,
   onToggleSidebar,
   wordCountLabel,
@@ -30,6 +31,7 @@ export function WritingTopBar({
   isSidebarCollapsed: boolean;
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
+  onCreateRestorePoint?: () => void;
   onOpenSettings?: () => void;
   onToggleSidebar: () => void;
   wordCountLabel?: string;
@@ -61,6 +63,13 @@ export function WritingTopBar({
             {wordCountLabel}
           </p>
         ) : null}
+        <CommandButton
+          disabled={!activeDocument || !onCreateRestorePoint}
+          label="Create restore point"
+          onClick={onCreateRestorePoint}
+        >
+          <History aria-hidden="true" size={16} strokeWidth={2.1} />
+        </CommandButton>
         <CommandButton label="Settings" onClick={onOpenSettings}>
           <Settings aria-hidden="true" size={16} strokeWidth={2.1} />
         </CommandButton>

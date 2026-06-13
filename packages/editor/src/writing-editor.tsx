@@ -18,6 +18,7 @@ export interface WritingEditorProps {
 
 export interface WritingEditorRef {
   focus: () => void;
+  getSnapshot: () => Uint8Array | null;
 }
 
 export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
@@ -40,8 +41,9 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
       ref,
       () => ({
         focus: () => editor?.chain().focus('end').run(),
+        getSnapshot: () => (editor ? Y.encodeStateAsUpdate(yDocument) : null),
       }),
-      [editor],
+      [editor, yDocument],
     );
 
     useDocumentUpdateEmitter(yDocument, onDocumentUpdate);

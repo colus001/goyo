@@ -12,7 +12,13 @@ export type SaveStatus =
   | 'Saved locally'
   | 'Saving locally'
   | 'Save failed';
-export type SyncStatus = 'Offline' | 'Sync idle' | 'Sync pending' | 'Synced' | 'Syncing';
+export type SyncStatus =
+  | 'Offline'
+  | 'Sync idle'
+  | 'Sync needs attention'
+  | 'Sync pending'
+  | 'Synced'
+  | 'Syncing';
 export type WorkspaceScreen = 'book' | 'library' | 'loading' | 'settings';
 export type DocumentSnapshotMap = Record<string, Uint8Array | undefined>;
 export type DocumentUpdateMap = Record<string, Uint8Array[]>;
@@ -28,6 +34,7 @@ export interface WritingWorkspaceState {
   createDocument: (kind: DocumentKind) => void;
   createDocumentInChapter: (chapterId: string, kind: DocumentKind) => void;
   createEpisodeAfter: (chapterId: string | null, previousDocumentId: string | null) => void;
+  createManualRestorePoint: (snapshot: Uint8Array | null) => void;
   deleteBook: (bookId: string) => void;
   deleteChapter: (chapterId: string) => void;
   deleteDocument: (documentId: string) => void;
@@ -42,6 +49,8 @@ export interface WritingWorkspaceState {
   renameBook: (title: string) => void;
   renameChapterTitle: (chapterId: string, title: string) => void;
   renameDocumentTitle: (title: string) => void;
+  restoreRecoveryPointAsCopy: (recoveryPointId: string) => void;
+  restoreDeletedDocument: (document: DocumentMetadata) => void;
   saveStatus: SaveStatus;
   screen: WorkspaceScreen;
   closeSettings: () => void;

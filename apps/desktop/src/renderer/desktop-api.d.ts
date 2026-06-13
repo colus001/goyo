@@ -4,6 +4,7 @@ import type {
   DocumentMetadata,
   DocumentSnapshotRecord,
   DocumentUpdateRecord,
+  RecoveryPoint,
   SyncQueueItem,
 } from '@writer/core';
 import type { AppSettings } from '../shared/app-settings';
@@ -20,6 +21,12 @@ declare global {
         get: () => Promise<AppSettings>;
         save: (settings: AppSettings) => Promise<void>;
       };
+      backup: {
+        exportLocalData: () => Promise<{
+          exported: boolean;
+          filePath: string | null;
+        }>;
+      };
       dev: {
         isDevelopment: () => Promise<boolean>;
         resetLocalData: () => Promise<void>;
@@ -34,6 +41,8 @@ declare global {
       };
       documents: {
         list: () => Promise<DocumentMetadata[]>;
+        listArchived: () => Promise<DocumentMetadata[]>;
+        restoreArchived: (documentId: string, restoredAt: string) => Promise<void>;
         saveMetadata: (document: DocumentMetadata) => Promise<void>;
       };
       documentUpdates: {
@@ -42,8 +51,15 @@ declare global {
         listAfter: (documentId: string, updateId: string) => Promise<DocumentUpdateRecord[]>;
       };
       documentSnapshots: {
+        get: (snapshotId: string) => Promise<DocumentSnapshotRecord | null>;
         getLatest: (documentId: string) => Promise<DocumentSnapshotRecord | null>;
+        list: (documentId: string) => Promise<DocumentSnapshotRecord[]>;
         save: (snapshot: DocumentSnapshotRecord) => Promise<void>;
+      };
+      recoveryPoints: {
+        get: (recoveryPointId: string) => Promise<RecoveryPoint | null>;
+        list: (documentId: string) => Promise<RecoveryPoint[]>;
+        save: (point: RecoveryPoint) => Promise<void>;
       };
       syncQueue: {
         enqueue: (item: SyncQueueItem) => Promise<void>;
@@ -51,6 +67,12 @@ declare global {
         markCompleted: (syncItemId: string, completedAt: string) => Promise<void>;
       };
       sync: {
+        getStatusSummary: () => Promise<{
+          failedItemCount: number;
+          needsAttention: boolean;
+          oldestFailedAt: string | null;
+          pendingItemCount: number;
+        }>;
         pullRemoteUpdates: () => Promise<{
           pulledUpdateCount: number;
           skippedDocumentCount: number;
@@ -66,6 +88,12 @@ declare global {
         pushPendingUpdates: () => Promise<{
           pushedUpdateCount: number;
           skippedUpdateCount: number;
+        }>;
+        retryNow: () => Promise<{
+          snapshotPull: { pulledSnapshotCount: number; skippedDocumentCount: number };
+          snapshotPush: { pushedSnapshotCount: number; skippedSnapshotCount: number };
+          updatePull: { pulledUpdateCount: number; skippedDocumentCount: number };
+          updatePush: { pushedUpdateCount: number; skippedUpdateCount: number };
         }>;
       };
       platform: string;

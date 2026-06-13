@@ -1,4 +1,10 @@
-import type { DocumentMetadata, DocumentSnapshotRecord, DocumentUpdateRecord } from '@writer/core';
+// biome-ignore lint/nursery/noExcessiveLinesPerFile: Remote sync request, retry, and status helpers are kept together around one API boundary for now.
+import {
+  createRecoveryPoint,
+  type DocumentMetadata,
+  type DocumentSnapshotRecord,
+  type DocumentUpdateRecord,
+} from '@writer/core';
 import type { DesktopLocalStore } from './document-metadata-store';
 import { isSyncItemReadyForRetry } from './sync-retry';
 
@@ -7,6 +13,17 @@ const GOYO_API_BASE_URL = 'https://goyo-api.seokjun.kim';
 interface PushPendingUpdatesResult {
   pushedUpdateCount: number;
   skippedUpdateCount: number;
+}
+
+export interface SyncStatusSummary {
+  failedItemCount: number;
+  needsAttention: boolean;
+  oldestFailedAt: string | null;
+  pendingItemCount: number;
+}
+
+interface PushOptions {
+  forceRetry?: boolean;
 }
 
 interface PullRemoteUpdatesResult {
@@ -46,6 +63,7 @@ interface RemoteLatestDocumentSnapshotResponse {
 
 export async function pushPendingDocumentUpdates(
   store: DesktopLocalStore,
+  options: PushOptions = {},
 ): Promise<PushPendingUpdatesResult> {
   const now = new Date();
   const pendingItems = store
@@ -56,7 +74,7 @@ export async function pushPendingDocumentUpdates(
   let skippedUpdateCount = 0;
 
   for (const item of pendingItems) {
-    if (!isSyncItemReadyForRetry(item, now)) {
+    if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
       skippedUpdateCount += 1;
       continue;
     }
@@ -117,6 +135,7 @@ export async function pullRemoteDocumentUpdates(
 
 export async function pushPendingDocumentSnapshots(
   store: DesktopLocalStore,
+  options: PushOptions = {},
 ): Promise<PushPendingSnapshotsResult> {
   const now = new Date();
   const pendingItems = store
@@ -127,7 +146,7 @@ export async function pushPendingDocumentSnapshots(
   let skippedSnapshotCount = 0;
 
   for (const item of pendingItems) {
-    if (!isSyncItemReadyForRetry(item, now)) {
+    if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
       skippedSnapshotCount += 1;
       continue;
     }
@@ -181,6 +200,17 @@ export async function pullRemoteDocumentSnapshots(
         lastUpdateId: remoteSnapshot.snapshot.lastUpdateId,
         snapshot: Buffer.from(remoteSnapshot.snapshot.snapshotBase64, 'base64'),
       });
+      store.saveRecoveryPoint(
+        createRecoveryPoint({
+          createdAt: remoteSnapshot.snapshot.createdAt,
+          documentId: remoteSnapshot.documentId,
+          id: `recovery_remote_${remoteSnapshot.snapshot.id}`,
+          kind: 'remote-snapshot',
+          label: 'Remote snapshot',
+          snapshotId: remoteSnapshot.snapshot.id,
+          updateCountAtCreation: store.listDocumentUpdates(remoteSnapshot.documentId).length,
+        }),
+      );
       pulledSnapshotCount += 1;
     } catch {
       skippedDocumentCount += 1;
@@ -188,6 +218,30 @@ export async function pullRemoteDocumentSnapshots(
   }
 
   return { pulledSnapshotCount, skippedDocumentCount };
+}
+
+export async function retryRemoteSyncNow(store: DesktopLocalStore) {
+  const updatePush = await pushPendingDocumentUpdates(store, { forceRetry: true });
+  const snapshotPush = await pushPendingDocumentSnapshots(store, { forceRetry: true });
+  const updatePull = await pullRemoteDocumentUpdates(store);
+  const snapshotPull = await pullRemoteDocumentSnapshots(store);
+
+  return { snapshotPull, snapshotPush, updatePull, updatePush };
+}
+
+export function getSyncStatusSummary(store: DesktopLocalStore): SyncStatusSummary {
+  const pendingItems = store.listPendingSyncItems();
+  const failedItems = pendingItems.filter((item) => item.attempts >= 3);
+  const oldestFailedAt = failedItems
+    .map((item) => item.lastAttemptAt ?? item.createdAt)
+    .sort((first, second) => first.localeCompare(second))[0];
+
+  return {
+    failedItemCount: failedItems.length,
+    needsAttention: failedItems.length > 0,
+    oldestFailedAt: oldestFailedAt ?? null,
+    pendingItemCount: pendingItems.length,
+  };
 }
 
 async function pushDocumentMetadata(document: DocumentMetadata) {

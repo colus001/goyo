@@ -39,12 +39,12 @@ export function WritingWorkspaceScreen({
   const openNewChapterModal = () => setIsNewChapterModalOpen(true);
   const requestNewChapter = canCreateChapter ? openNewChapterModal : undefined;
   const closeNewChapterModal = () => setIsNewChapterModalOpen(false);
-  const shellProps = getWritingShellProps(
-    workspace,
-    onOpenSettings,
-    wordCountLabel,
-    requestNewChapter,
-  );
+  const shellProps = {
+    ...getWritingShellProps(workspace, onOpenSettings, wordCountLabel, requestNewChapter),
+    onCreateRestorePoint: activeDocument
+      ? () => workspace.createManualRestorePoint(editorRef.current?.getSnapshot() ?? null)
+      : undefined,
+  };
 
   useWorkspaceKeyboardShortcuts(workspace, activeDocument, editorRef, requestNewChapter);
 
