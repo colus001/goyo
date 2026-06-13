@@ -101,7 +101,7 @@
 - [x] Add `documents` table.
 - [x] Add `document_updates` table.
 - [x] Add `document_snapshots` table.
-- [ ] Add `document_revisions` or equivalent revision metadata table if needed.
+- [x] Add `document_revisions` or equivalent revision metadata table if needed.
 - [x] Add `sync_clients` table if needed.
 - [x] Add document metadata API.
 - [x] Add CRDT update upload API.
@@ -201,18 +201,34 @@
 - [x] Added desktop app settings storage and a library settings surface with writing, appearance, and sync/account sections.
 - [x] Added a non-destructive launch restore preference that starts in the library without deleting saved workspace state when disabled.
 - [x] Added preset light and dark writing themes, custom color chip sharing, and theme color editing in Settings.
+- [x] Added local recovery point metadata backed by desktop SQLite snapshots.
+- [x] Added automatic checkpoint recovery points using the existing editor snapshot cadence and core recovery policy.
+- [x] Added a quiet writing toolbar action for manual restore point creation from the current Yjs document state.
+- [x] Added core recovery tests for checkpoint policy, recovery point retention, and update log compaction candidates.
+- [x] Added desktop APIs for recovery point listing/saving and archived document listing/restoration foundations.
+- [x] Identified that restore-as-copy needs a Yjs fragment migration because current snapshots are keyed by source `documentId`.
+- [x] Added Yjs snapshot fragment copy support so recovery snapshots can be restored into a new document id.
+- [x] Added restore-as-copy from document recovery points without mutating the source document.
+- [x] Added a quiet document-level restore points strip with refresh and restore-copy actions.
+- [x] Added Settings Recovery section for deleted documents with original-location restore and Quick Drafts copy fallback.
+- [x] Added sync failure summary, forced retry-now action, and Settings sync recovery card that separates remote sync issues from local writing safety.
+- [x] Added export-only local JSON backup for books, chapters, documents, CRDT updates, snapshots, and recovery points.
+- [x] Treated local `document_recovery_points` as the current revision metadata equivalent; defer remote `document_revisions` until auth and ownership are defined.
+- [x] Added remote snapshot policy: pulled remote snapshots are saved as local snapshots and recorded as `remote-snapshot` recovery points without adding a D1 revisions table.
+- [x] Verified recovery from local data after remote sync failure via local checkpoints, restore-as-copy, deleted-document recovery, sync attention status, retry-now, and export-only backup paths.
+- [x] Verified snapshot plus later update recovery through existing snapshot replay/load tests and the latest-snapshot-plus-`listAfter(lastUpdateId)` desktop loading path.
 
 ## Milestone 9: Recovery And Version Safety
 
-- [ ] Add automatic local checkpoints.
-- [ ] Add remote snapshot policy.
-- [ ] Add manual restore points.
-- [ ] Add deleted document recovery.
-- [ ] Add sync failure recovery path.
-- [ ] Add local backup export.
-- [ ] Add update log compaction policy.
-- [ ] Verify recovery from local data after remote sync failure.
-- [ ] Verify recovery from snapshot plus later updates.
+- [x] Add automatic local checkpoints.
+- [x] Add remote snapshot policy.
+- [x] Add manual restore points.
+- [x] Add deleted document recovery.
+- [x] Add sync failure recovery path.
+- [x] Add local backup export.
+- [x] Add update log compaction policy.
+- [x] Verify recovery from local data after remote sync failure.
+- [x] Verify recovery from snapshot plus later updates.
 
 ## Milestone 10: Realtime Same-Document Editing
 
