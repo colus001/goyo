@@ -7,8 +7,48 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "tsc -b && electron-vite build",
+    "dist": "pnpm build && electron-builder --publish never",
+    "dist:linux": "pnpm build && electron-builder --linux --publish never",
+    "dist:mac": "pnpm build && electron-builder --mac --publish never",
+    "dist:win": "pnpm build && electron-builder --win --publish never",
+    "pack": "pnpm build && electron-builder --dir --publish never",
     "rebuild:native": "electron-rebuild -f -w better-sqlite3",
     "typecheck": "tsc -b"
+  },
+  "build": {
+    "appId": "kim.seokjun.goyo",
+    "productName": "Goyo",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "identity": null,
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "category": "Office",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
@@ -38,6 +78,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "electron": "^39.2.7",
+    "electron-builder": "^26.15.3",
     "typescript": "~6.0.2"
   }
 }
