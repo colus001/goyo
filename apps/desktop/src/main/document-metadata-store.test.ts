@@ -3,12 +3,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDocumentMetadata } from '@writer/core';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createDesktopLocalStore } from './document-metadata-store';
+import { createDesktopLocalStore, type DesktopLocalStore } from './document-metadata-store';
 
 const temporaryStorePaths: string[] = [];
+const temporaryStores: DesktopLocalStore[] = [];
 const canRunNativeSqliteTests = canCreateDesktopLocalStore();
 
 afterEach(() => {
+  for (const store of temporaryStores.splice(0)) {
+    store.close();
+  }
+
   for (const path of temporaryStorePaths.splice(0)) {
     rmSync(path, { force: true, recursive: true });
   }
@@ -143,7 +148,10 @@ function createTestStore() {
   const path = mkdtempSync(join(tmpdir(), 'writer-store-'));
   temporaryStorePaths.push(path);
 
-  return createDesktopLocalStore(path);
+  const store = createDesktopLocalStore(path);
+  temporaryStores.push(store);
+
+  return store;
 }
 
 function createExpectedSyncItem(id: string, recordId: string, createdAt: string) {
