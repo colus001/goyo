@@ -10,7 +10,7 @@ A browser web app is planned later. Shared code should live in packages where pr
 
 `apps/desktop` is the primary app. It owns Electron main/preload/renderer composition, native window lifecycle, native menus, desktop-specific IPC, and later desktop persistence wiring.
 
-`apps/web` is a future browser app scaffold. It should reuse shared packages and provide browser-specific storage and runtime integrations when web work becomes a milestone.
+`apps/landing` is the public landing site. The future browser app should be added separately when web app work becomes a milestone, and should reuse shared packages instead of duplicating product logic.
 
 `apps/worker` owns Cloudflare Worker API endpoints, D1 persistence, and later sync authorization.
 

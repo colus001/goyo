@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy worker and web
+    name: Deploy worker and landing
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -52,8 +52,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Deploy web
-        run: pnpm --filter @writer/web run deploy
+      - name: Deploy landing
+        run: pnpm --filter @writer/landing run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -1,13 +1,13 @@
 {
   "name": "writer",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Local-first writing app for essays and fiction.",
   "type": "module",
   "scripts": {
     "dev": "turbo run dev --parallel",
     "dev:desktop": "pnpm --filter @writer/desktop dev",
-    "dev:web": "pnpm --filter @writer/web dev",
+    "dev:landing": "pnpm --filter @writer/landing dev",
     "dev:worker": "pnpm --filter @writer/worker dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
