@@ -40,7 +40,7 @@ const R2_FILE_NAMES: Record<DownloadTarget, string> = {
   'linux-appimage': 'Goyo.AppImage',
   'linux-deb': 'Goyo.deb',
   mac: 'Goyo.dmg',
-  windows: 'Goyo.exe',
+  windows: 'Goyo-Setup.exe',
 };
 
 export function matchDownloadRoute(pathname: string): DownloadTarget | null {
