@@ -329,10 +329,10 @@
 
 ### 13F: Hosted Sync Auth
 
-- [ ] Extend Worker sync auth so hosted Goyo Cloud sessions use `ownerId = user.id` while self-hosted tokens continue to use `ownerId = 'self'`.
-- [ ] Keep self-hosted bearer-token auth working independently from Goyo Cloud sessions.
-- [ ] Add sync status response fields that identify local/self-hosted/Goyo Cloud auth mode without exposing secrets.
-- [ ] Keep all document metadata, update, and snapshot ownership checks based on authenticated `ownerId`.
+- [x] Extend Worker sync auth so hosted Goyo Cloud sessions use `ownerId = user.id` while self-hosted tokens continue to use `ownerId = 'self'`.
+- [x] Keep self-hosted bearer-token auth working independently from Goyo Cloud sessions.
+- [x] Add sync status response fields that identify local/self-hosted/Goyo Cloud auth mode without exposing secrets.
+- [x] Keep all document metadata, update, and snapshot ownership checks based on authenticated `ownerId`.
 
 ### 13G: Web Login And Account UI
 
