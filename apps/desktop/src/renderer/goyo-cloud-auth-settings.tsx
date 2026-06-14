@@ -44,6 +44,7 @@ export function GoyoCloudAuthSection({
             };
             onChangeSettings(newSettings);
             void window.writerDesktop.appSettings.save(newSettings);
+            void window.writerDesktop.sync.retryNow().catch(() => {});
           }
         }
       });
@@ -83,6 +84,7 @@ export function GoyoCloudAuthSection({
           };
           onChangeSettings(newSettings);
           void window.writerDesktop.appSettings.save(newSettings);
+          void window.writerDesktop.sync.retryNow().catch(() => {});
         }
         return;
       }
