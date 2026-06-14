@@ -11,6 +11,6 @@
     "target": "ES2022",
     "types": ["@cloudflare/workers-types"]
   },
-  "exclude": ["src/**/*.test.ts"],
+  "exclude": ["src/**/*.test.ts", "src/sync-test-helpers.ts"],
   "include": ["src"]
 }

@@ -270,8 +270,8 @@
 - [x] Add sync client registration if needed.
 - [x] Block unauthorized document metadata access.
 - [x] Block unauthorized document update access.
-- [ ] Verify multiple devices can sync documents for the same user.
-- [ ] Verify one user cannot access another user's document updates.
+- [x] Verify multiple devices can sync documents for the same user.
+- [x] Verify one user cannot access another user's document updates.
 
 ## Milestone 13: Future Browser Web App
 
