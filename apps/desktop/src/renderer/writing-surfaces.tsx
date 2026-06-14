@@ -1,4 +1,4 @@
-import type { DocumentMetadata, RecoveryPoint } from '@writer/core';
+import type { DocumentMetadata } from '@writer/core';
 import { WritingEditor, type WritingEditorRef } from '@writer/editor';
 import {
   type KeyboardEvent as ReactKeyboardEvent,
@@ -107,7 +107,6 @@ export function EpisodeSurface({
           onRename={workspace.renameDocumentTitle}
           onSubmit={() => editorRef.current?.focus()}
         />
-        <RecoveryPointStrip documentId={activeDocument.id} workspace={workspace} />
       </header>
 
       <WritingEditor
@@ -121,74 +120,6 @@ export function EpisodeSurface({
         ref={editorRef}
       />
     </article>
-  );
-}
-
-function RecoveryPointStrip({
-  documentId,
-  workspace,
-}: {
-  documentId: string;
-  workspace: WritingWorkspaceState;
-}) {
-  const [recoveryPoints, setRecoveryPoints] = useState<RecoveryPoint[]>([]);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    void window.writerDesktop.recoveryPoints.list(documentId).then((points) => {
-      if (!isCancelled) {
-        setRecoveryPoints(points.slice(0, 3));
-      }
-    });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [documentId]);
-
-  if (recoveryPoints.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="mt-5 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-raised)]/55 p-3">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="font-semibold text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.14em]">
-          Restore points
-        </p>
-        <button
-          className="text-[var(--goyo-text-muted)] text-xs hover:text-[var(--goyo-text)]"
-          onClick={() =>
-            void window.writerDesktop.recoveryPoints
-              .list(documentId)
-              .then((points) => setRecoveryPoints(points.slice(0, 3)))
-          }
-          type="button"
-        >
-          Refresh
-        </button>
-      </div>
-      <div className="grid gap-2">
-        {recoveryPoints.map((point) => (
-          <div className="flex items-center justify-between gap-3 text-sm" key={point.id}>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-[var(--goyo-text)]">{point.label}</p>
-              <p className="text-[var(--goyo-text-muted)] text-xs">
-                {formatRecoveryPointDate(point.createdAt)}
-              </p>
-            </div>
-            <button
-              className="shrink-0 rounded-full border border-[var(--goyo-border)] px-3 py-1 text-[var(--goyo-text-muted)] text-xs hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
-              onClick={() => workspace.restoreRecoveryPointAsCopy(point.id)}
-              type="button"
-            >
-              Restore copy
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -255,11 +186,4 @@ function isComposing(event: ReactKeyboardEvent<HTMLInputElement>): boolean {
 
 function formatDocumentKind(kind: DocumentMetadata['kind']): string {
   return kind[0].toUpperCase() + kind.slice(1);
-}
-
-function formatRecoveryPointDate(createdAt: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(createdAt));
 }

@@ -38,7 +38,6 @@ export interface WritingShellProps {
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
   onCreateDocumentInChapter?: (chapterId: string, kind: 'draft' | 'episode' | 'note') => void;
   onCreateEpisodeAfter?: (chapterId: string | null, previousDocumentId: string | null) => void;
-  onCreateRestorePoint?: () => void;
   onExportChapter?: (format: 'html' | 'markdown' | 'text') => void;
   onDeleteChapter?: (chapterId: string) => void;
   onDeleteDocument?: (documentId: string) => void;
@@ -84,7 +83,6 @@ export function WritingShell(props: WritingShellProps): ReactElement {
         isSidebarCollapsed={isSidebarCollapsed}
         onCreateChapter={normalizedProps.onCreateChapter}
         onCreateDocument={normalizedProps.onCreateDocument}
-        onCreateRestorePoint={normalizedProps.onCreateRestorePoint}
         onExportChapter={normalizedProps.onExportChapter}
         onExportDocument={normalizedProps.onExportDocument}
         onOpenSettings={normalizedProps.onOpenSettings}
