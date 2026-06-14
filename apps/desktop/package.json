@@ -2,6 +2,12 @@
   "name": "@writer/desktop",
   "private": true,
   "version": "0.1.0",
+  "description": "Distraction-free long-form writing desktop app.",
+  "author": {
+    "name": "Seokjun Kim",
+    "email": "seokjun@seokjun.kim"
+  },
+  "homepage": "https://goyo.seokjun.kim",
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
@@ -45,6 +51,7 @@
     },
     "linux": {
       "category": "Office",
+      "maintainer": "Seokjun Kim <seokjun@seokjun.kim>",
       "target": [
         "AppImage",
         "deb"
