@@ -10,13 +10,16 @@ import type {
   SyncQueueItem,
 } from '@writer/core';
 import { APP_NAME } from '@writer/shared';
-import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
 import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 import { exportDocument } from './document-export';
 import { createDesktopLocalStore } from './document-metadata-store';
 import { cloudAuthLogout, cloudAuthStart, cloudAuthVerify } from './goyo-cloud-auth-client';
-import { createGoyoCloudSessionStore } from './goyo-cloud-session';
+import {
+  createGoyoCloudSessionStore,
+  type GoyoCloudSessionStoreWithAccount,
+} from './goyo-cloud-session';
 import { exportLocalBackup } from './local-backup';
 import {
   getSyncStatusSummary,
@@ -33,6 +36,38 @@ import { createSyncCredentialsStore } from './sync-credentials';
 
 const isDevelopment = !app.isPackaged;
 const GOYO_CLOUD_SYNC_URL = 'https://goyo-api.seokjun.kim';
+const GOYO_CLOUD_WEB_URL = 'https://goyo-cloud.seokjun.kim';
+const GOYO_DEEP_LINK_SCHEME = 'goyo';
+
+let goyoCloudSessionStore: GoyoCloudSessionStoreWithAccount | null = null;
+
+function handleDeepLinkUrl(url: string) {
+  if (!goyoCloudSessionStore) return;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return;
+  }
+
+  if (parsed.pathname !== '/auth/callback') return;
+
+  const token = parsed.searchParams.get('token');
+  if (!token) return;
+
+  goyoCloudSessionStore.saveSessionToken(token);
+
+  const email = parsed.searchParams.get('email');
+  const userId = parsed.searchParams.get('userId');
+  if (email && userId) {
+    goyoCloudSessionStore.saveAccount({ email, id: userId });
+  }
+
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('goyoCloud:deepLinkToken', { email, userId });
+  }
+}
 
 function configureUserDataPath() {
   if (!isDevelopment) {
@@ -40,6 +75,25 @@ function configureUserDataPath() {
   }
 
   app.setPath('userData', join(app.getPath('appData'), `${APP_NAME} Dev`));
+}
+
+app.setAsDefaultProtocolClient(GOYO_DEEP_LINK_SCHEME);
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, commandLine) => {
+    const url = commandLine.find((arg) => arg.startsWith(`${GOYO_DEEP_LINK_SCHEME}://`));
+    if (url) handleDeepLinkUrl(url);
+
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
 }
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: IPC registration is kept centralized around one local store instance.
@@ -136,6 +190,17 @@ function registerDocumentIpc() {
 
     goyoCloudSession.saveSessionToken('');
     return { ok: true };
+  });
+  ipcMain.handle('goyoCloud:authStartBrowser', async () => {
+    try {
+      const clientId = syncClientIdentity.getOrCreateClientId();
+      const loginUrl = `${GOYO_CLOUD_WEB_URL}/login?clientId=${encodeURIComponent(clientId)}&source=desktop`;
+      await shell.openExternal(loginUrl);
+      return { ok: true };
+    } catch (error) {
+      console.error('Failed to open browser for Goyo Cloud auth', getErrorMessage(error));
+      throw error;
+    }
   });
   ipcMain.handle('backup:exportLocalData', async () => {
     try {
@@ -313,6 +378,8 @@ function registerDocumentIpc() {
       throw error;
     }
   });
+
+  return goyoCloudSession;
 }
 
 function resetDevelopmentUserData(store: ReturnType<typeof createDesktopLocalStore>) {
@@ -416,9 +483,14 @@ configureUserDataPath();
 
 void app.whenReady().then(() => {
   app.setName(APP_NAME);
-  registerDocumentIpc();
+  goyoCloudSessionStore = registerDocumentIpc();
   createApplicationMenu();
   createWindow();
+
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleDeepLinkUrl(url);
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

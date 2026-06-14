@@ -7,7 +7,7 @@ import type {
   RecoveryPoint,
   SyncQueueItem,
 } from '@writer/core';
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron';
 import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 
@@ -35,6 +35,8 @@ const desktopApi = {
         ok: boolean;
         error?: string;
       }>,
+    authStartBrowser: () =>
+      ipcRenderer.invoke('goyoCloud:authStartBrowser') as Promise<{ ok: boolean }>,
     authVerify: (input: { email: string; code: string }) =>
       ipcRenderer.invoke('goyoCloud:authVerify', input) as Promise<{
         ok: boolean;
@@ -47,6 +49,20 @@ const desktopApi = {
         hasSession: boolean;
       }>,
     logout: () => ipcRenderer.invoke('goyoCloud:logout') as Promise<{ ok: boolean }>,
+    onDeepLinkToken: (
+      callback: (data: { email: string | null; userId: string | null }) => void,
+    ) => {
+      const listener = (
+        _event: IpcRendererEvent,
+        data: { email: string | null; userId: string | null },
+      ) => {
+        callback(data);
+      };
+      ipcRenderer.on('goyoCloud:deepLinkToken', listener);
+      return () => {
+        ipcRenderer.removeListener('goyoCloud:deepLinkToken', listener);
+      };
+    },
   },
   backup: {
     exportLocalData: () =>
