@@ -263,13 +263,13 @@
 
 ## Milestone 12: Auth And Multi-Device Accounts
 
-- [ ] Choose an authentication approach.
-- [ ] Add user identity model.
+- [x] Choose an authentication approach.
+- [x] Add user identity model.
 - [ ] Add document ownership checks.
 - [ ] Add device or sync client identity.
 - [ ] Add sync client registration if needed.
-- [ ] Block unauthorized document metadata access.
-- [ ] Block unauthorized document update access.
+- [x] Block unauthorized document metadata access.
+- [x] Block unauthorized document update access.
 - [ ] Verify multiple devices can sync documents for the same user.
 - [ ] Verify one user cannot access another user's document updates.
 

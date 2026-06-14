@@ -21,6 +21,11 @@ const desktopApi = {
     save: (settings: AppSettings) =>
       ipcRenderer.invoke('appSettings:save', settings) as Promise<void>,
   },
+  syncCredentials: {
+    hasToken: () => ipcRenderer.invoke('syncCredentials:hasToken') as Promise<boolean>,
+    saveToken: (token: string) =>
+      ipcRenderer.invoke('syncCredentials:saveToken', token) as Promise<void>,
+  },
   backup: {
     exportLocalData: () =>
       ipcRenderer.invoke('backup:exportLocalData') as Promise<{
@@ -133,6 +138,7 @@ const desktopApi = {
         updatePull: { pulledUpdateCount: number; skippedDocumentCount: number };
         updatePush: { pushedUpdateCount: number; skippedUpdateCount: number };
       }>,
+    testConnection: () => ipcRenderer.invoke('sync:testConnection') as Promise<{ ok: boolean }>,
   },
   platform: process.platform,
 } as const;
