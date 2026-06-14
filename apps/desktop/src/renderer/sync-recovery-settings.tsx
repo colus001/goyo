@@ -2,6 +2,7 @@
 import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 import type { AppSettings } from '../shared/app-settings';
+import { GoyoCloudAuthSection } from './goyo-cloud-auth-settings';
 
 interface SyncStatusSummary {
   failedItemCount: number;
@@ -33,29 +34,12 @@ function SyncProviderSettings({
   settings: AppSettings;
 }): ReactElement {
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
-  const [hasToken, setHasToken] = useState(false);
   const [isSavingToken, setIsSavingToken] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [tokenDraft, setTokenDraft] = useState('');
+  const hasToken = useHasToken();
 
-  useEffect(() => {
-    void window.writerDesktop.syncCredentials.hasToken().then(setHasToken);
-  }, []);
-
-  const saveToken = (token: string) => {
-    setIsSavingToken(true);
-    setConnectionStatus(null);
-    void window.writerDesktop.syncCredentials
-      .saveToken(token)
-      .then(() => window.writerDesktop.syncCredentials.hasToken())
-      .then((hasSavedToken) => {
-        setHasToken(hasSavedToken);
-        setTokenDraft('');
-        setConnectionStatus(hasSavedToken ? 'Sync token saved.' : 'Sync token cleared.');
-      })
-      .catch(() => setConnectionStatus('Sync token could not be saved.'))
-      .finally(() => setIsSavingToken(false));
-  };
+  const saveToken = createTokenSaveHandler(setIsSavingToken, setTokenDraft, setConnectionStatus);
 
   return (
     <div className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/45 p-4">
@@ -74,8 +58,8 @@ function SyncProviderSettings({
           tokenDraft={tokenDraft}
         />
       ) : null}
-      {settings.sync.provider === 'goyo-cloud' ? <GoyoCloudSummary /> : null}
-      {settings.sync.provider !== 'local' ? (
+      {settings.sync.provider === 'goyo-cloud' ? <GoyoCloudAuthSection /> : null}
+      {settings.sync.provider === 'self-hosted' ? (
         <SyncConnectionActions
           hasToken={hasToken}
           isSavingToken={isSavingToken}
@@ -87,12 +71,72 @@ function SyncProviderSettings({
           settings={settings}
           tokenDraft={tokenDraft}
         />
-      ) : null}
+      ) : (
+        settings.sync.provider === 'goyo-cloud' &&
+        testConnectionButton(isTestingConnection, setIsTestingConnection, setConnectionStatus)
+      )}
       {connectionStatus ? (
         <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{connectionStatus}</p>
       ) : null}
     </div>
   );
+}
+
+function useHasToken() {
+  const [hasToken, setHasToken] = useState(false);
+
+  useEffect(() => {
+    void window.writerDesktop.syncCredentials.hasToken().then(setHasToken);
+  }, []);
+
+  return hasToken;
+}
+
+function testConnectionButton(
+  isTestingConnection: boolean,
+  setIsTestingConnection: (value: boolean) => void,
+  setConnectionStatus: (value: string | null) => void,
+): ReactElement {
+  return (
+    <div className="mt-4">
+      <button
+        className="rounded-full bg-[var(--goyo-accent)] px-4 py-2 font-medium text-[var(--goyo-accent-text)] text-sm hover:opacity-90 disabled:opacity-50"
+        disabled={isTestingConnection}
+        onClick={() => {
+          setIsTestingConnection(true);
+          setConnectionStatus(null);
+          void window.writerDesktop.sync.testConnection().then((result) => {
+            setIsTestingConnection(false);
+            setConnectionStatus(
+              result.ok ? 'Goyo Cloud connected.' : 'Goyo Cloud did not connect.',
+            );
+          });
+        }}
+        type="button"
+      >
+        {isTestingConnection ? 'Testing…' : 'Test connection'}
+      </button>
+    </div>
+  );
+}
+
+function createTokenSaveHandler(
+  setIsSavingToken: (value: boolean) => void,
+  setTokenDraft: (value: string) => void,
+  setConnectionStatus: (value: string | null) => void,
+) {
+  return (token: string) => {
+    setIsSavingToken(true);
+    setConnectionStatus(null);
+    void window.writerDesktop.syncCredentials
+      .saveToken(token)
+      .then(() => {
+        setTokenDraft('');
+        setConnectionStatus(token ? 'Sync token saved.' : 'Sync token cleared.');
+      })
+      .catch(() => setConnectionStatus('Sync token could not be saved.'))
+      .finally(() => setIsSavingToken(false));
+  };
 }
 
 function SyncModePicker({
@@ -167,17 +211,6 @@ function SyncModeOption({
         {description}
       </span>
     </button>
-  );
-}
-
-function GoyoCloudSummary(): ReactElement {
-  return (
-    <div className="mt-3 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-3 text-sm">
-      <p className="font-medium text-[var(--goyo-text)]">Server: goyo-api.seokjun.kim</p>
-      <p className="mt-1 text-[var(--goyo-text-muted)] leading-relaxed">
-        Hosted accounts are still early. Use this mode only after you have a Goyo Cloud token.
-      </p>
-    </div>
   );
 }
 
