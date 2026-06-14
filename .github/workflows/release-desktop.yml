@@ -137,10 +137,10 @@ jobs:
           for f in ../desktop/dist/*; do
             if [ -f "$f" ]; then
               case "$f" in
-                *.dmg)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.dmg --file "$f" ;;
-                *.exe)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.exe --file "$f" ;;
-                *.AppImage) npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.AppImage --file "$f" ;;
-                *.deb)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.deb --file "$f" ;;
+                *.dmg)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.dmg --file "$f" --remote ;;
+                *.exe)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.exe --file "$f" --remote ;;
+                *.AppImage) npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.AppImage --file "$f" --remote ;;
+                *.deb)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.deb --file "$f" --remote ;;
               esac
             fi
           done
