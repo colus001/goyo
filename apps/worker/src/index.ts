@@ -3,6 +3,7 @@ import { authorizeSyncRequest, type EnvWithSyncAuth, type SyncAuthContext } from
 import { handleCloudAuthRequest } from './cloud-auth-routes';
 import {
   getDocumentMetadata,
+  listDocuments,
   matchDocumentMetadataRoute,
   upsertDocumentMetadata,
 } from './document-metadata';
@@ -88,6 +89,10 @@ async function handleSyncApiRequest(
 
   if (url.pathname === '/v1/sync/status' && request.method === 'GET') {
     return Response.json({ auth: auth.context.authMode, ok: true, storage: 'd1' });
+  }
+
+  if (url.pathname === '/v1/documents' && request.method === 'GET') {
+    return listDocuments(env, auth.context);
   }
 
   const syncClientRoute = matchSyncClientRoute(url.pathname);

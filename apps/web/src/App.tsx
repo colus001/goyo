@@ -1,18 +1,33 @@
-import { type ReactElement, useEffect, useState } from 'react';
-import { authLogout, authMe, authStart, authVerify } from './goyo-cloud-api';
+// biome-ignore lint/nursery/noExcessiveLinesPerFile: SPA pages are co-located in App.tsx until split by route
+import { yjsUpdatesToExportContent } from '@writer/editor';
+import { type ReactElement, useEffect, useMemo, useState } from 'react';
+import {
+  authLogout,
+  authMe,
+  authStart,
+  authVerify,
+  base64ToUint8Array,
+  type CloudDocument,
+  fetchDocumentContent,
+  fetchDocuments,
+} from './goyo-cloud-api';
 
 interface CloudUser {
   email: string;
   id: string;
 }
 
-type Page = 'account' | 'billing' | 'login' | 'verify';
+type Page = 'account' | 'billing' | 'documents' | 'login' | 'verify';
 
 interface AuthState {
   clientId: string | null;
+  documentContent: string | null;
+  documents: CloudDocument[];
   email: string;
   isDesktopFlow: boolean;
+  loadedDocuments: boolean;
   page: Page;
+  selectedDocumentId: string | null;
   status: string | null;
   user: CloudUser | null;
 }
@@ -25,9 +40,13 @@ export default function App(): ReactElement {
     const isDesktopFlow = params.get('source') === 'desktop';
     return {
       clientId,
+      documentContent: null,
+      documents: [],
       email: '',
       isDesktopFlow,
+      loadedDocuments: false,
       page: isDesktopFlow ? 'login' : getInitialPage(),
+      selectedDocumentId: null,
       status: null,
       user: null,
     };
@@ -37,12 +56,74 @@ export default function App(): ReactElement {
     if (state.user) return;
     void authMe().then((result) => {
       if (result.ok && result.user) {
-        setState((prev) => ({ ...prev, page: 'account', user: result.user ?? null }));
+        setState((prev) => {
+          if (prev.page === 'login' || prev.page === 'verify') {
+            return { ...prev, page: 'account', user: result.user ?? null };
+          }
+          return { ...prev, user: result.user ?? null };
+        });
       }
     });
   }, [state.user]);
 
-  const onRouteChange = (page: Page) => setState((prev) => ({ ...prev, page, status: null }));
+  useEffect(() => {
+    if (state.page === 'documents' && state.user && !state.loadedDocuments) {
+      void fetchDocuments().then((result) => {
+        if (result.ok && result.documents) {
+          setState((prev) => ({
+            ...prev,
+            documents: result.documents ?? [],
+            loadedDocuments: true,
+          }));
+        }
+      });
+    }
+  }, [state.page, state.user, state.loadedDocuments]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const documentId = params.get('id');
+
+    if (state.page === 'documents' && documentId && documentId !== state.selectedDocumentId) {
+      setState((prev) => ({
+        ...prev,
+        documentContent: null,
+        selectedDocumentId: documentId,
+      }));
+
+      void fetchDocumentContent(documentId).then((result) => {
+        if (result.ok && result.snapshotBase64) {
+          try {
+            const snapshot = base64ToUint8Array(result.snapshotBase64);
+            const { html } = yjsUpdatesToExportContent({
+              documentId,
+              snapshot,
+              updates: [],
+            });
+            setState((prev) => {
+              if (prev.selectedDocumentId !== documentId) return prev;
+              return { ...prev, documentContent: html };
+            });
+          } catch {
+            setState((prev) => {
+              if (prev.selectedDocumentId !== documentId) return prev;
+              return { ...prev, documentContent: '<p>Could not decode document content.</p>' };
+            });
+          }
+        }
+      });
+    }
+  }, [state.page, state.selectedDocumentId]);
+
+  const onRouteChange = (page: Page) =>
+    setState((prev) => ({
+      ...prev,
+      documentContent: null,
+      loadedDocuments: false,
+      page,
+      selectedDocumentId: null,
+      status: null,
+    }));
   const onStart = (email: string) => {
     setState((prev) => ({ ...prev, status: 'Sending code…' }));
     void authStart(email).then((result) => {
@@ -89,7 +170,18 @@ export default function App(): ReactElement {
     );
   };
 
-  return renderPage(state, onRouteChange, onStart, onVerify, onLogout);
+  const onSelectDocument = (id: string) => {
+    window.history.pushState(null, '', `/documents?id=${encodeURIComponent(id)}`);
+    setState((prev) => ({ ...prev, selectedDocumentId: id }));
+  };
+
+  return renderPage(state, onRouteChange, onStart, onVerify, onLogout, onSelectDocument);
+}
+
+interface DocumentRenderProps {
+  documentContent: string | null;
+  documents: CloudDocument[];
+  selectedDocumentId: string | null;
 }
 
 function renderPage(
@@ -98,12 +190,29 @@ function renderPage(
   onStart: (email: string) => void,
   onVerify: (code: string) => void,
   onLogout: () => void,
+  onSelectDocument: (id: string) => void,
 ): ReactElement {
+  const docProps: DocumentRenderProps = {
+    documentContent: state.documentContent,
+    documents: state.documents,
+    selectedDocumentId: state.selectedDocumentId,
+  };
+
   if (state.page === 'account') {
     return <AccountPage onLogout={onLogout} onRouteChange={onRouteChange} user={state.user} />;
   }
   if (state.page === 'billing') {
-    return <BillingPage onRouteChange={onRouteChange} />;
+    return <BillingPage onRouteChange={onRouteChange} user={state.user} />;
+  }
+  if (state.page === 'documents') {
+    return (
+      <DocumentsPage
+        docProps={docProps}
+        onRouteChange={onRouteChange}
+        onSelectDocument={onSelectDocument}
+        user={state.user}
+      />
+    );
   }
   if (state.page === 'verify') {
     return (
@@ -112,6 +221,7 @@ function renderPage(
         onRouteChange={onRouteChange}
         onVerify={onVerify}
         status={state.status}
+        user={state.user}
       />
     );
   }
@@ -182,11 +292,13 @@ function VerifyPage({
   onRouteChange,
   onVerify,
   status,
+  user,
 }: {
   email: string;
   onRouteChange: (page: Page) => void;
   onVerify: (code: string) => void;
   status: string | null;
+  user: CloudUser | null;
 }): ReactElement {
   const [code, setCode] = useState('');
 
@@ -195,6 +307,7 @@ function VerifyPage({
       eyebrow="Verification"
       onRouteChange={onRouteChange}
       title="Enter the code we sent to your email."
+      user={user}
     >
       <Panel>
         <p className="text-[#8f978b] text-sm">
@@ -268,6 +381,7 @@ function AccountPage({
       eyebrow="Account"
       onRouteChange={onRouteChange}
       title="Cloud status before billing complexity."
+      user={user}
     >
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel>
@@ -304,12 +418,19 @@ function AccountPage({
   );
 }
 
-function BillingPage({ onRouteChange }: { onRouteChange: (page: Page) => void }): ReactElement {
+function BillingPage({
+  onRouteChange,
+  user,
+}: {
+  onRouteChange: (page: Page) => void;
+  user: CloudUser | null;
+}): ReactElement {
   return (
     <CloudShell
       eyebrow="Billing"
       onRouteChange={onRouteChange}
       title="Payment is intentionally parked."
+      user={user}
     >
       <Panel>
         <p className="max-w-2xl text-[#b8b9ac] leading-7">
@@ -322,16 +443,135 @@ function BillingPage({ onRouteChange }: { onRouteChange: (page: Page) => void })
   );
 }
 
+function DocumentsPage({
+  docProps,
+  onRouteChange,
+  onSelectDocument,
+  user,
+}: {
+  docProps: DocumentRenderProps;
+  onRouteChange: (page: Page) => void;
+  onSelectDocument: (id: string) => void;
+  user: CloudUser | null;
+}): ReactElement {
+  const selectedDocument = useMemo(() => {
+    if (!docProps.selectedDocumentId) return null;
+    return docProps.documents.find((doc) => doc.id === docProps.selectedDocumentId) ?? null;
+  }, [docProps.documents, docProps.selectedDocumentId]);
+
+  if (!user) {
+    return (
+      <CloudShell
+        eyebrow="Documents"
+        onRouteChange={onRouteChange}
+        title="Sign in to see your documents."
+        user={user}
+      >
+        <Panel>
+          <p className="text-[#b8b9ac] text-sm">
+            Documents synced from the Goyo desktop app appear here after you sign in.
+          </p>
+        </Panel>
+      </CloudShell>
+    );
+  }
+
+  if (selectedDocument) {
+    return (
+      <CloudShell
+        eyebrow="Document"
+        onRouteChange={onRouteChange}
+        title={selectedDocument.title || 'Untitled'}
+        user={user}
+      >
+        <div className="mb-6">
+          <button
+            className="rounded-full border border-[#f3f0df]/20 px-4 py-2 text-[#b8b9ac] text-sm transition hover:bg-[#f3f0df]/8 hover:text-[#f3f0df]"
+            onClick={() => onRouteChange('documents')}
+            type="button"
+          >
+            Back to documents
+          </button>
+        </div>
+        <DocumentContent content={docProps.documentContent} />
+      </CloudShell>
+    );
+  }
+
+  if (docProps.documents.length === 0) {
+    return (
+      <CloudShell
+        eyebrow="Documents"
+        onRouteChange={onRouteChange}
+        title="Your writing"
+        user={user}
+      >
+        <Panel>
+          <p className="text-[#b8b9ac] text-sm">
+            No synced documents yet. Start writing in the Goyo desktop app and enable sync to see
+            your work here.
+          </p>
+        </Panel>
+      </CloudShell>
+    );
+  }
+
+  return (
+    <CloudShell eyebrow="Documents" onRouteChange={onRouteChange} title="Your writing" user={user}>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {docProps.documents.map((doc) => (
+          <button
+            className="rounded-[2rem] border border-[#f3f0df]/10 bg-[#20251f]/72 p-6 text-left shadow-[0_28px_100px_rgba(0,0,0,0.28)] backdrop-blur transition hover:border-[#d9be7f]/30 hover:bg-[#272d26]/72"
+            key={doc.id}
+            onClick={() => onSelectDocument(doc.id)}
+            type="button"
+          >
+            <p className="font-serif text-lg leading-snug tracking-[-0.03em] text-[#f3f0df]">
+              {doc.title || 'Untitled'}
+            </p>
+            <p className="mt-2 text-[#9fa99b] text-xs">
+              {doc.kind}
+              {doc.updatedAt ? ` · ${new Date(doc.updatedAt).toLocaleDateString()}` : ''}
+            </p>
+          </button>
+        ))}
+      </div>
+    </CloudShell>
+  );
+}
+
+function DocumentContent({ content }: { content: string | null }): ReactElement {
+  if (!content) {
+    return (
+      <Panel>
+        <p className="text-[#b8b9ac] text-sm">Loading document content…</p>
+      </Panel>
+    );
+  }
+
+  return (
+    <Panel>
+      <div
+        className="prose prose-invert prose-lg max-w-none font-serif leading-relaxed text-[#eef0e8]"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: snapshot content is from the user's own D1 data via authenticated API
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    </Panel>
+  );
+}
+
 function CloudShell({
   children,
   eyebrow,
   onRouteChange,
   title,
+  user,
 }: {
   children: ReactElement | ReactElement[];
   eyebrow: string;
   onRouteChange: (page: Page) => void;
   title: string;
+  user?: CloudUser | null;
 }): ReactElement {
   return (
     <main className="min-h-screen overflow-hidden bg-[#151816] px-5 py-6 text-[#eef0e8] sm:px-8 lg:px-12">
@@ -346,6 +586,15 @@ function CloudShell({
             Goyo Cloud
           </button>
           <div className="flex gap-2 text-sm">
+            {user ? (
+              <button
+                className="rounded-full px-3 py-1.5 text-[#b8b9ac] hover:bg-[#f3f0df]/8 hover:text-[#f3f0df]"
+                onClick={() => onRouteChange('documents')}
+                type="button"
+              >
+                Documents
+              </button>
+            ) : null}
             <button
               className="rounded-full px-3 py-1.5 text-[#b8b9ac] hover:bg-[#f3f0df]/8 hover:text-[#f3f0df]"
               onClick={() => onRouteChange('account')}
@@ -390,6 +639,7 @@ function getInitialPage(): Page {
   if (pathname === '/verify') return 'verify';
   if (pathname === '/account') return 'account';
   if (pathname === '/billing') return 'billing';
+  if (pathname.startsWith('/documents')) return 'documents';
 
   return 'login';
 }
