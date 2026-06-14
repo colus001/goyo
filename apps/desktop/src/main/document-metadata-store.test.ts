@@ -1,7 +1,8 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createDocumentMetadata } from '@writer/core';
+import { createDocumentMetadata, type LocalDocumentStore } from '@writer/core';
+import Database from 'better-sqlite3';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createDesktopLocalStore, type DesktopLocalStore } from './document-metadata-store';
 
@@ -22,10 +23,52 @@ afterEach(() => {
 describe.skipIf(!canRunNativeSqliteTests)('desktop local metadata store initialization', () => {
   it('starts without creating placeholder books or chapters', () => {
     const store = createTestStore();
+    const localStore: LocalDocumentStore = store;
 
+    expect(localStore.listDocumentMetadata()).toEqual([]);
     expect(store.listBooks()).toEqual([]);
     expect(store.listChapters()).toEqual([]);
     expect(store.listDocuments()).toEqual([]);
+  });
+
+  it('creates document list indexes for active and archived document queries', () => {
+    const { path } = createTestStoreWithPath();
+
+    expect(listDocumentIndexes(path)).toEqual(
+      expect.arrayContaining(['documents_active_list_idx', 'documents_archived_list_idx']),
+    );
+  });
+});
+
+describe.skipIf(!canRunNativeSqliteTests)('desktop local document metadata store', () => {
+  it('lists active and archived document metadata through the core store interface', () => {
+    const store = createTestStore();
+    const activeDocument = createTestDocument('doc_active');
+    const archivedDocument = {
+      ...createTestDocument('doc_archived'),
+      archivedAt: '2026-06-12T10:03:00.000Z',
+      order: 1,
+      updatedAt: '2026-06-12T10:03:00.000Z',
+    };
+
+    store.saveDocumentMetadata(activeDocument);
+    store.saveDocumentMetadata(archivedDocument);
+
+    expect(store.getDocumentMetadata('doc_active')).toEqual(activeDocument);
+    expect(store.listDocumentMetadata()).toEqual([activeDocument]);
+    expect(store.listArchivedDocumentMetadata()).toEqual([archivedDocument]);
+
+    store.restoreArchivedDocumentMetadata('doc_archived', '2026-06-12T10:04:00.000Z');
+
+    expect(store.listArchivedDocumentMetadata()).toEqual([]);
+    expect(store.listDocumentMetadata()).toEqual([
+      activeDocument,
+      {
+        ...archivedDocument,
+        archivedAt: null,
+        updatedAt: '2026-06-12T10:04:00.000Z',
+      },
+    ]);
   });
 });
 
@@ -145,13 +188,31 @@ function canCreateDesktopLocalStore(): boolean {
 }
 
 function createTestStore() {
+  return createTestStoreWithPath().store;
+}
+
+function createTestStoreWithPath() {
   const path = mkdtempSync(join(tmpdir(), 'writer-store-'));
   temporaryStorePaths.push(path);
 
   const store = createDesktopLocalStore(path);
   temporaryStores.push(store);
 
-  return store;
+  return { path, store };
+}
+
+function listDocumentIndexes(path: string) {
+  const database = new Database(join(path, 'goyo.sqlite'), { readonly: true });
+
+  try {
+    return database
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'documents';")
+      .all()
+      .map((row) => (row as { name: string }).name)
+      .sort();
+  } finally {
+    database.close();
+  }
 }
 
 function createExpectedSyncItem(id: string, recordId: string, createdAt: string) {
