@@ -1,4 +1,5 @@
 import { type ReactElement, useEffect, useState } from 'react';
+import type { AppSettings } from '../shared/app-settings';
 
 interface GoyoCloudAccount {
   email: string;
@@ -6,7 +7,13 @@ interface GoyoCloudAccount {
 }
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: auth state and wiring for one UI surface
-export function GoyoCloudAuthSection(): ReactElement {
+export function GoyoCloudAuthSection({
+  onChangeSettings,
+  settings,
+}: {
+  onChangeSettings: (settings: AppSettings) => void;
+  settings: AppSettings;
+}): ReactElement {
   const [status, setStatus] = useState<string | null>(null);
   const [account, setAccount] = useState<GoyoCloudAccount | null>(null);
   const [email, setEmail] = useState('');
@@ -30,11 +37,17 @@ export function GoyoCloudAuthSection(): ReactElement {
         if (result.account) {
           setAccount(result.account);
           setStatus('Signed in via browser.');
+          if (settings.sync.provider !== 'goyo-cloud') {
+            onChangeSettings({
+              ...settings,
+              sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' },
+            });
+          }
         }
       });
     });
     return unsubscribe;
-  }, []);
+  }, [onChangeSettings, settings]);
 
   const onSendCode = () => {
     if (!email) return;
@@ -61,6 +74,12 @@ export function GoyoCloudAuthSection(): ReactElement {
         setEmail('');
         setCode('');
         setStatus('Signed in to Goyo Cloud.');
+        if (settings.sync.provider !== 'goyo-cloud') {
+          onChangeSettings({
+            ...settings,
+            sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' },
+          });
+        }
         return;
       }
       setStatus(result.error ?? 'Verification failed.');

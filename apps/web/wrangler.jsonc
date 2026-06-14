@@ -1,11 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "goyo-cloud-web",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2026-06-14",
-  "assets": {
-    "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  },
   "routes": [
     {
       "pattern": "goyo-cloud.seokjun.kim",

@@ -1,6 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "workspaces": {
+    "apps/web": {
+      "ignoreDependencies": ["tailwindcss"],
+      "project": ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}"]
+    },
     "apps/desktop": {
       "entry": [
         "electron.vite.config.ts",

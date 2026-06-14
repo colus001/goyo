@@ -18,12 +18,13 @@ import {
   listDocumentUpdates,
   matchDocumentUpdatesRoute,
 } from './document-updates';
-import { matchDownloadRoute, redirectToLatestDownload } from './downloads';
+import { matchDownloadRoute, serveDownload } from './downloads';
 import { corsPreflightResponse, withCors } from './http';
 import { matchSyncClientRoute, registerSyncClient } from './sync-clients';
 
 interface Env extends EnvWithSyncAuth {
   DB: D1Database;
+  RELEASES?: R2Bucket;
 }
 
 export default {
@@ -50,7 +51,7 @@ export default {
       );
     }
 
-    const downloadResponse = await handleDownloadRequest(request, url);
+    const downloadResponse = await handleDownloadRequest(request, url, env);
 
     if (downloadResponse) {
       return withCors(downloadResponse);
@@ -172,12 +173,20 @@ async function handleDocumentSnapshotRequest(
   return null;
 }
 
-async function handleDownloadRequest(request: Request, url: URL): Promise<Response | null> {
+async function handleDownloadRequest(
+  request: Request,
+  url: URL,
+  env: EnvWithR2,
+): Promise<Response | null> {
   if (request.method !== 'GET') {
     return null;
   }
 
   const downloadTarget = matchDownloadRoute(url.pathname);
 
-  return downloadTarget ? redirectToLatestDownload(downloadTarget) : null;
+  return downloadTarget ? serveDownload(downloadTarget, env.RELEASES) : null;
+}
+
+interface EnvWithR2 {
+  RELEASES?: R2Bucket;
 }

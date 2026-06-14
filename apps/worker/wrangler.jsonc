@@ -23,6 +23,12 @@
       "migrations_dir": "migrations"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "RELEASES",
+      "bucket_name": "goyo-releases"
+    }
+  ],
   "routes": [
     {
       "pattern": "goyo-api.seokjun.kim",
