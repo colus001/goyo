@@ -297,20 +297,20 @@
 
 ### 13C: Shared Auth Contracts
 
-- [ ] Add shared auth API contracts in `packages/shared` for login start, login verification, current user, and logout.
-- [ ] Define `AuthStartRequest` and `AuthStartResponse`.
-- [ ] Define `AuthVerifyRequest` and `AuthVerifyResponse`.
-- [ ] Define `AuthUser`, `AuthMeResponse`, and `AuthLogoutResponse`.
-- [ ] Define shared auth error response types.
-- [ ] Reuse shared auth contracts from Worker, Web, and Desktop.
+- [x] Add shared auth API contracts in `packages/shared` for login start, login verification, current user, and logout.
+- [x] Define `AuthStartRequest` and `AuthStartResponse`.
+- [x] Define `AuthVerifyRequest` and `AuthVerifyResponse`.
+- [x] Define `AuthUser`, `AuthMeResponse`, and `AuthLogoutResponse`.
+- [x] Define shared auth error response types.
+- [x] Reuse shared auth contracts from Worker, Web, and Desktop.
 
 ### 13D: Worker Auth Storage And Email
 
-- [ ] Add Worker D1 tables for users, email login codes, and auth sessions.
-- [ ] Add future-ready billing or entitlement tables without enforcing plan limits yet.
-- [ ] Store user emails normalized and unique.
-- [ ] Store only hashed login codes and hashed session tokens in D1.
-- [ ] Add login code expiry, attempt limits, and resend cooldowns.
+- [x] Add Worker D1 tables for users, email login codes, and auth sessions.
+- [x] Add future-ready billing or entitlement tables without enforcing plan limits yet.
+- [x] Store user emails normalized and unique.
+- [x] Store only hashed login codes and hashed session tokens in D1.
+- [x] Add login code expiry, attempt limits, and resend cooldowns.
 - [ ] Add Cloudflare Email Service integration for sending one-time email login codes.
 - [ ] Send login emails from `Goyo <no-reply@goyo.seokjun.kim>`.
 - [ ] Keep email existence private by returning the same start-login response for new and existing users.
