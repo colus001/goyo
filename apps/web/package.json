@@ -9,7 +9,7 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "start": "next start",
-    "deploy": "next build && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv src/lib/cloudflare-env.d.ts"
   },
   "dependencies": {
