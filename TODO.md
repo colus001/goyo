@@ -336,11 +336,11 @@
 
 ### 13G: Web Login And Account UI
 
-- [ ] Add `apps/web` login, verify-code, and account screens.
-- [ ] Add email-code send, verify, resend, and logout interactions.
-- [ ] Use cookie-based web auth; do not expose the web session token to client JavaScript.
-- [ ] Add unauthenticated redirects from `/account` and `/billing` to `/login`.
-- [ ] Add signed-in redirects from `/login` to `/account`.
+- [x] Add `apps/web` login, verify-code, and account screens.
+- [x] Add email-code send, verify, resend, and logout interactions.
+- [x] Use cookie-based web auth; do not expose the web session token to client JavaScript.
+- [x] Add unauthenticated redirects from `/account` and `/billing` to `/login`.
+- [x] Add signed-in redirects from `/login` to `/account`.
 
 ### 13H: Desktop Goyo Cloud Login And Status
 
@@ -354,13 +354,13 @@
 
 ### 13I: Verification
 
-- [ ] Verify hosted user A cannot access hosted user B document metadata, updates, or snapshots.
-- [ ] Verify self-hosted sync still works independently from hosted Goyo Cloud auth.
-- [ ] Verify open signup, login, logout, expired code, invalid code, and revoked session behavior.
-- [ ] Verify web cookie sessions work without exposing tokens to client JavaScript.
-- [ ] Verify Desktop bearer sessions work without sharing self-hosted token storage.
-- [ ] Verify sync remains available for all signed-in Goyo Cloud users while payment enforcement is disabled.
-- [ ] Verify local writing remains safe when Goyo Cloud login or session refresh fails.
+- [x] Verify hosted user A cannot access hosted user B document metadata, updates, or snapshots.
+- [x] Verify self-hosted sync still works independently from hosted Goyo Cloud auth.
+- [x] Verify open signup, login, logout, expired code, invalid code, and revoked session behavior.
+- [x] Verify web cookie sessions work without exposing tokens to client JavaScript.
+- [x] Verify Desktop bearer sessions work without sharing self-hosted token storage.
+- [x] Verify sync remains available for all signed-in Goyo Cloud users while payment enforcement is disabled.
+- [x] Verify local writing remains safe when Goyo Cloud login or session refresh fails.
 
 ## Milestone 14: Future Browser Writing App
 
