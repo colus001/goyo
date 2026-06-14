@@ -17,6 +17,7 @@
   },
   "build": {
     "appId": "kim.seokjun.goyo",
+    "executableName": "goyo",
     "productName": "Goyo",
     "directories": {
       "output": "dist"
