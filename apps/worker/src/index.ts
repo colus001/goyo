@@ -18,6 +18,7 @@ import {
   matchDocumentUpdatesRoute,
 } from './document-updates';
 import { matchDownloadRoute, redirectToLatestDownload } from './downloads';
+import { corsPreflightResponse, withCors } from './http';
 import { matchSyncClientRoute, registerSyncClient } from './sync-clients';
 
 interface Env extends EnvWithSyncAuth {
@@ -26,41 +27,47 @@ interface Env extends EnvWithSyncAuth {
 
 export default {
   async fetch(request, env) {
+    if (request.method === 'OPTIONS') {
+      return corsPreflightResponse();
+    }
+
     const url = new URL(request.url);
 
     if (url.pathname === '/health') {
-      return Response.json({ ok: true, service: `${APP_NAME} sync api` });
+      return withCors(Response.json({ ok: true, service: `${APP_NAME} sync api` }));
     }
 
     if (url.pathname === '/health/db') {
       const result = await env.DB.prepare('SELECT 1 AS ok').first<{ ok: number }>();
 
-      return Response.json({
-        ok: result?.ok === 1,
-        service: `${APP_NAME} sync api`,
-        storage: 'd1',
-      });
+      return withCors(
+        Response.json({
+          ok: result?.ok === 1,
+          service: `${APP_NAME} sync api`,
+          storage: 'd1',
+        }),
+      );
     }
 
     const downloadResponse = await handleDownloadRequest(request, url);
 
     if (downloadResponse) {
-      return downloadResponse;
+      return withCors(downloadResponse);
     }
 
     const authResponse = await handleCloudAuthRequest(request, env, url);
 
     if (authResponse) {
-      return authResponse;
+      return withCors(authResponse);
     }
 
     const syncResponse = await handleSyncApiRequest(request, env, url);
 
     if (syncResponse) {
-      return syncResponse;
+      return withCors(syncResponse);
     }
 
-    return new Response('Not found', { status: 404 });
+    return withCors(new Response('Not found', { status: 404 }));
   },
 } satisfies ExportedHandler<Env>;
 
