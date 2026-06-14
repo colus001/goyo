@@ -19,7 +19,8 @@
     {
       "binding": "DB",
       "database_name": "writer-sync",
-      "database_id": "a1577590-0b95-4bfb-9103-e224ef86407d"
+      "database_id": "a1577590-0b95-4bfb-9103-e224ef86407d",
+      "migrations_dir": "migrations"
     }
   ],
   "routes": [

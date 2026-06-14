@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler d1 migrations apply writer-sync && wrangler deploy",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit"
   },
