@@ -4,13 +4,14 @@
     "apps/desktop": {
       "entry": [
         "electron.vite.config.ts",
+        "scripts/notarize.cjs",
         "src/main/index.ts",
         "src/preload/index.ts",
         "src/renderer/desktop-api.d.ts",
         "src/renderer/main.tsx"
       ],
       "ignoreDependencies": ["tailwindcss"],
-      "project": ["src/**/*.{ts,tsx}"]
+      "project": ["scripts/**/*.cjs", "src/**/*.{ts,tsx}"]
     }
   }
 }

@@ -23,6 +23,7 @@
     "typecheck": "tsc -b"
   },
   "build": {
+    "afterSign": "scripts/notarize.cjs",
     "appId": "kim.seokjun.goyo",
     "executableName": "goyo",
     "icon": "build/icon",
@@ -40,9 +41,12 @@
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "mac": {
       "category": "public.app-category.productivity",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
       "executableName": "Goyo",
+      "gatekeeperAssess": false,
+      "hardenedRuntime": true,
       "icon": "build/icon.icns",
-      "identity": null,
       "target": [
         "dmg",
         "zip"
@@ -107,6 +111,7 @@
     "vite": "^7.3.5"
   },
   "devDependencies": {
+    "@electron/notarize": "^3.1.1",
     "@electron/rebuild": "^4.0.4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.12.3",
