@@ -273,17 +273,39 @@
 - [x] Verify multiple devices can sync documents for the same user.
 - [x] Verify one user cannot access another user's document updates.
 
-## Milestone 13: Future Browser Web App
+## Milestone 13: Goyo Cloud Web Account And Login
 
-- [ ] Reuse `packages/ui` in the future browser app.
-- [ ] Reuse `packages/core` in the future browser app.
+- [ ] Add `apps/web` as the Goyo Cloud product web app, separate from the public `apps/landing` marketing site.
+- [ ] Keep `apps/landing` focused on marketing, downloads, and public product information without account or billing state.
+- [ ] Add shared auth API contracts in `packages/shared` for login start, login verification, current user, and logout.
+- [ ] Add Worker D1 tables for users, email login codes, and auth sessions.
+- [ ] Add Cloudflare Email Service integration for sending one-time email login codes.
+- [ ] Add open signup with email code verification; create a user automatically when a verified email has no existing account.
+- [ ] Store only hashed login codes and hashed session tokens in D1.
+- [ ] Add login code expiry, attempt limits, and resend cooldowns.
+- [ ] Add Worker auth endpoints: `POST /v1/auth/start`, `POST /v1/auth/verify`, `GET /v1/auth/me`, and `POST /v1/auth/logout`.
+- [ ] Extend Worker sync auth so hosted Goyo Cloud sessions use `ownerId = user.id` while self-hosted tokens continue to use `ownerId = 'self'`.
+- [ ] Add `apps/web` login, verify-code, and account screens.
+- [ ] Add a billing placeholder in `apps/web` without implementing payment yet.
+- [ ] Add Desktop Goyo Cloud login UI that uses the same Worker auth flow and stores the hosted session separately from self-hosted tokens.
+- [ ] Add Desktop logout and account status display for Goyo Cloud.
+- [ ] Add a Desktop "Manage account" link that opens the `apps/web` account page.
+- [ ] Verify hosted user A cannot access hosted user B document metadata, updates, or snapshots.
+- [ ] Verify self-hosted sync still works independently from hosted Goyo Cloud auth.
+- [ ] Verify open signup, login, logout, expired code, invalid code, and revoked session behavior.
+- [ ] Defer payment implementation until the auth/account foundation is working.
+
+## Milestone 14: Future Browser Writing App
+
+- [ ] Reuse `packages/ui` in the future browser writing app.
+- [ ] Reuse `packages/core` in the future browser writing app.
 - [ ] Add IndexedDB implementation for core local store interfaces.
-- [ ] Add responsive baseline for primary browser screens.
+- [ ] Add responsive baseline for primary browser writing screens.
 - [ ] Review web editor constraints separately from Electron desktop constraints.
 - [ ] Test offline and reconnect behavior in browser runtime.
-- [ ] Ensure web app does not duplicate desktop-only logic.
+- [ ] Ensure the browser writing app does not duplicate desktop-only logic.
 
-## Milestone 14: Mobile-Compatible Pass
+## Milestone 15: Mobile-Compatible Pass
 
 - [ ] Add responsive baseline for primary screens.
 - [ ] Review mobile editor constraints.
