@@ -43,6 +43,14 @@ const roadmap = [
   },
 ];
 
+const downloadLinks = {
+  linuxAppImage: 'https://goyo-api.seokjun.kim/downloads/linux-appimage',
+  linuxDeb: 'https://goyo-api.seokjun.kim/downloads/linux-deb',
+  mac: 'https://goyo-api.seokjun.kim/downloads/mac',
+  releases: 'https://github.com/colus001/goyo/releases/latest',
+  windows: 'https://goyo-api.seokjun.kim/downloads/windows',
+};
+
 function App() {
   return (
     <main className="min-h-screen overflow-hidden scroll-smooth bg-[#f3eadc] text-[#1e1a15] selection:bg-[#263d38] selection:text-[#fff8ec]">
@@ -99,7 +107,9 @@ function App() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <a
                 className="inline-flex items-center justify-center rounded-full bg-[#b84c2f] px-6 py-3.5 font-semibold text-[#fff8ec] shadow-[0_20px_50px_rgba(184,76,47,0.28)] transition hover:-translate-y-0.5 hover:bg-[#a33f25]"
-                href="#download"
+                href={downloadLinks.mac}
+                rel="noreferrer"
+                target="_blank"
               >
                 Download for macOS
               </a>
@@ -279,20 +289,7 @@ function App() {
                 plan for writers who want safe backup and access across devices.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              <a
-                className="rounded-2xl bg-[#b84c2f] px-5 py-4 text-center font-semibold text-[#fff8ec] transition hover:-translate-y-0.5 hover:bg-[#a33f25]"
-                href="/downloads/goyo-macos.dmg"
-              >
-                Download for macOS
-              </a>
-              <span className="rounded-2xl border border-[#241b13]/10 bg-[#eee4d6] px-5 py-4 text-center font-semibold text-[#796b5f]">
-                Windows coming soon
-              </span>
-              <span className="rounded-2xl border border-[#241b13]/10 bg-[#e3ebdc] px-5 py-4 text-center font-semibold text-[#52694d]">
-                Mobile coming soon
-              </span>
-            </div>
+            <DownloadButtons />
           </div>
         </div>
       </section>
@@ -334,6 +331,64 @@ function App() {
         </div>
       </footer>
     </main>
+  );
+}
+
+function DownloadButtons() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+      <DownloadLink
+        className="bg-[#b84c2f] text-[#fff8ec] hover:bg-[#a33f25]"
+        href={downloadLinks.mac}
+      >
+        macOS Apple Silicon
+      </DownloadLink>
+      <DownloadLink
+        className="border border-[#241b13]/10 bg-[#eee4d6] text-[#6c5c4e] hover:bg-[#e7dac9]"
+        href={downloadLinks.windows}
+      >
+        Windows x64
+      </DownloadLink>
+      <DownloadLink
+        className="border border-[#241b13]/10 bg-[#e3ebdc] text-[#52694d] hover:bg-[#d9e5d0]"
+        href={downloadLinks.linuxAppImage}
+      >
+        Linux AppImage
+      </DownloadLink>
+      <DownloadLink
+        className="border border-[#241b13]/10 bg-[#e3ebdc] text-[#52694d] hover:bg-[#d9e5d0]"
+        href={downloadLinks.linuxDeb}
+      >
+        Linux .deb
+      </DownloadLink>
+      <DownloadLink
+        className="border border-[#241b13]/10 bg-[#fff8ec] text-[#5f5145] hover:bg-[#f7eddc]"
+        href={downloadLinks.releases}
+      >
+        View all releases
+      </DownloadLink>
+    </div>
+  );
+}
+
+function DownloadLink({
+  children,
+  className,
+  href,
+}: {
+  children: string;
+  className: string;
+  href: string;
+}) {
+  return (
+    <a
+      className={`rounded-2xl px-5 py-4 text-center font-semibold transition hover:-translate-y-0.5 ${className}`}
+      href={href}
+      rel="noreferrer"
+      target="_blank"
+    >
+      {children}
+    </a>
   );
 }
 

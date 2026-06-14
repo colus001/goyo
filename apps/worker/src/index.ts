@@ -15,6 +15,7 @@ import {
   listDocumentUpdates,
   matchDocumentUpdatesRoute,
 } from './document-updates';
+import { matchDownloadRoute, redirectToLatestDownload } from './downloads';
 
 interface Env {
   DB: D1Database;
@@ -36,6 +37,12 @@ export default {
         service: `${APP_NAME} sync api`,
         storage: 'd1',
       });
+    }
+
+    const downloadResponse = await handleDownloadRequest(request, url);
+
+    if (downloadResponse) {
+      return downloadResponse;
     }
 
     const metadataRoute = matchDocumentMetadataRoute(url.pathname);
@@ -77,3 +84,13 @@ export default {
     return new Response('Not found', { status: 404 });
   },
 } satisfies ExportedHandler<Env>;
+
+async function handleDownloadRequest(request: Request, url: URL): Promise<Response | null> {
+  if (request.method !== 'GET') {
+    return null;
+  }
+
+  const downloadTarget = matchDownloadRoute(url.pathname);
+
+  return downloadTarget ? redirectToLatestDownload(downloadTarget) : null;
+}
