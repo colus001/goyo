@@ -311,21 +311,21 @@
 - [x] Store user emails normalized and unique.
 - [x] Store only hashed login codes and hashed session tokens in D1.
 - [x] Add login code expiry, attempt limits, and resend cooldowns.
-- [ ] Add Cloudflare Email Service integration for sending one-time email login codes.
-- [ ] Send login emails from `Goyo <no-reply@goyo.seokjun.kim>`.
-- [ ] Keep email existence private by returning the same start-login response for new and existing users.
+- [x] Add Cloudflare Email Service integration for sending one-time email login codes.
+- [x] Send login emails from `Goyo <no-reply@goyo.seokjun.kim>`.
+- [x] Keep email existence private by returning the same start-login response for new and existing users.
 
 ### 13E: Worker Auth Endpoints
 
-- [ ] Add Worker auth endpoint `POST /v1/auth/start`.
-- [ ] Add Worker auth endpoint `POST /v1/auth/verify`.
-- [ ] Add Worker auth endpoint `GET /v1/auth/me`.
-- [ ] Add Worker auth endpoint `POST /v1/auth/logout`.
-- [ ] Add open signup with email code verification; create a user automatically when a verified email has no existing account.
-- [ ] Use secure httpOnly, Secure, SameSite=Lax cookies for web sessions.
-- [ ] Return a Desktop bearer token from verification when the request is from Desktop.
-- [ ] Revoke sessions on logout.
-- [ ] Add account status response that reports sync availability without enforcing paid limits.
+- [x] Add Worker auth endpoint `POST /v1/auth/start`.
+- [x] Add Worker auth endpoint `POST /v1/auth/verify`.
+- [x] Add Worker auth endpoint `GET /v1/auth/me`.
+- [x] Add Worker auth endpoint `POST /v1/auth/logout`.
+- [x] Add open signup with email code verification; create a user automatically when a verified email has no existing account.
+- [x] Use secure httpOnly, Secure, SameSite=Lax cookies for web sessions.
+- [x] Return a Desktop bearer token from verification when the request is from Desktop.
+- [x] Revoke sessions on logout.
+- [x] Add account status response that reports sync availability without enforcing paid limits.
 
 ### 13F: Hosted Sync Auth
 

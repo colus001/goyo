@@ -1,5 +1,6 @@
 import { APP_NAME } from '@writer/shared';
 import { authorizeSyncRequest, type SyncAuthContext } from './auth';
+import { type EnvWithCloudAuth, handleCloudAuthRequest } from './cloud-auth-routes';
 import {
   getDocumentMetadata,
   matchDocumentMetadataRoute,
@@ -19,7 +20,7 @@ import {
 import { matchDownloadRoute, redirectToLatestDownload } from './downloads';
 import { matchSyncClientRoute, registerSyncClient } from './sync-clients';
 
-interface Env {
+interface Env extends EnvWithCloudAuth {
   DB: D1Database;
   GOYO_SYNC_TOKEN?: string;
 }
@@ -46,6 +47,12 @@ export default {
 
     if (downloadResponse) {
       return downloadResponse;
+    }
+
+    const authResponse = await handleCloudAuthRequest(request, env, url);
+
+    if (authResponse) {
+      return authResponse;
     }
 
     const syncResponse = await handleSyncApiRequest(request, env, url);
