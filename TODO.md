@@ -275,25 +275,92 @@
 
 ## Milestone 13: Goyo Cloud Web Account And Login
 
-- [ ] Add `apps/web` as the Goyo Cloud product web app, separate from the public `apps/landing` marketing site.
-- [ ] Keep `apps/landing` focused on marketing, downloads, and public product information without account or billing state.
+### 13A: Product Scope And Deployment Shape
+
+- [x] Add `apps/web` as the Goyo Cloud product web app, separate from the public `apps/landing` marketing site.
+- [ ] Deploy the Goyo Cloud web app at `goyo-cloud.seokjun.kim`.
+- [x] Keep `apps/landing` focused on marketing, downloads, and public product information without account or billing state.
+- [x] Keep Goyo Cloud signup open; do not add invite-only or closed beta gating.
+- [x] Defer payment implementation until the auth/account foundation is working.
+- [x] Add a billing placeholder in `apps/web` without implementing payment yet.
+- [ ] Add billing and entitlement data structures only where they help future payment integration.
+- [x] Do not enforce sync usage limits in this milestone so login and sync can be tested freely.
+
+### 13B: Web App Foundation
+
+- [x] Scaffold `apps/web` with React, Vite, TypeScript, and Tailwind using the current workspace conventions.
+- [x] Add root `pnpm dev:web` script.
+- [x] Ensure root `pnpm dev`, `pnpm build`, `pnpm typecheck`, and `pnpm check` include `apps/web` through Turbo.
+- [x] Add `apps/web` routes for `/login`, `/verify`, `/account`, and `/billing`.
+- [x] Add a minimal authenticated account shell showing email, account status, sync status, and billing placeholder.
+- [x] Keep browser writing/editor functionality out of `apps/web` for this milestone.
+
+### 13C: Shared Auth Contracts
+
 - [ ] Add shared auth API contracts in `packages/shared` for login start, login verification, current user, and logout.
+- [ ] Define `AuthStartRequest` and `AuthStartResponse`.
+- [ ] Define `AuthVerifyRequest` and `AuthVerifyResponse`.
+- [ ] Define `AuthUser`, `AuthMeResponse`, and `AuthLogoutResponse`.
+- [ ] Define shared auth error response types.
+- [ ] Reuse shared auth contracts from Worker, Web, and Desktop.
+
+### 13D: Worker Auth Storage And Email
+
 - [ ] Add Worker D1 tables for users, email login codes, and auth sessions.
-- [ ] Add Cloudflare Email Service integration for sending one-time email login codes.
-- [ ] Add open signup with email code verification; create a user automatically when a verified email has no existing account.
+- [ ] Add future-ready billing or entitlement tables without enforcing plan limits yet.
+- [ ] Store user emails normalized and unique.
 - [ ] Store only hashed login codes and hashed session tokens in D1.
 - [ ] Add login code expiry, attempt limits, and resend cooldowns.
-- [ ] Add Worker auth endpoints: `POST /v1/auth/start`, `POST /v1/auth/verify`, `GET /v1/auth/me`, and `POST /v1/auth/logout`.
+- [ ] Add Cloudflare Email Service integration for sending one-time email login codes.
+- [ ] Send login emails from `Goyo <no-reply@goyo.seokjun.kim>`.
+- [ ] Keep email existence private by returning the same start-login response for new and existing users.
+
+### 13E: Worker Auth Endpoints
+
+- [ ] Add Worker auth endpoint `POST /v1/auth/start`.
+- [ ] Add Worker auth endpoint `POST /v1/auth/verify`.
+- [ ] Add Worker auth endpoint `GET /v1/auth/me`.
+- [ ] Add Worker auth endpoint `POST /v1/auth/logout`.
+- [ ] Add open signup with email code verification; create a user automatically when a verified email has no existing account.
+- [ ] Use secure httpOnly, Secure, SameSite=Lax cookies for web sessions.
+- [ ] Return a Desktop bearer token from verification when the request is from Desktop.
+- [ ] Revoke sessions on logout.
+- [ ] Add account status response that reports sync availability without enforcing paid limits.
+
+### 13F: Hosted Sync Auth
+
 - [ ] Extend Worker sync auth so hosted Goyo Cloud sessions use `ownerId = user.id` while self-hosted tokens continue to use `ownerId = 'self'`.
+- [ ] Keep self-hosted bearer-token auth working independently from Goyo Cloud sessions.
+- [ ] Add sync status response fields that identify local/self-hosted/Goyo Cloud auth mode without exposing secrets.
+- [ ] Keep all document metadata, update, and snapshot ownership checks based on authenticated `ownerId`.
+
+### 13G: Web Login And Account UI
+
 - [ ] Add `apps/web` login, verify-code, and account screens.
-- [ ] Add a billing placeholder in `apps/web` without implementing payment yet.
+- [ ] Add email-code send, verify, resend, and logout interactions.
+- [ ] Use cookie-based web auth; do not expose the web session token to client JavaScript.
+- [ ] Add unauthenticated redirects from `/account` and `/billing` to `/login`.
+- [ ] Add signed-in redirects from `/login` to `/account`.
+
+### 13H: Desktop Goyo Cloud Login And Status
+
 - [ ] Add Desktop Goyo Cloud login UI that uses the same Worker auth flow and stores the hosted session separately from self-hosted tokens.
 - [ ] Add Desktop logout and account status display for Goyo Cloud.
-- [ ] Add a Desktop "Manage account" link that opens the `apps/web` account page.
+- [ ] Add a Desktop "Manage account" link that opens `https://goyo-cloud.seokjun.kim/account`.
+- [ ] Split Desktop credential storage between self-hosted sync tokens and Goyo Cloud hosted sessions.
+- [ ] Hide manual token entry for the Goyo Cloud provider.
+- [ ] Keep manual token entry only for the self-hosted Worker provider.
+- [ ] Show whether Goyo Cloud is signed in, signed out, expired, or unable to connect.
+
+### 13I: Verification
+
 - [ ] Verify hosted user A cannot access hosted user B document metadata, updates, or snapshots.
 - [ ] Verify self-hosted sync still works independently from hosted Goyo Cloud auth.
 - [ ] Verify open signup, login, logout, expired code, invalid code, and revoked session behavior.
-- [ ] Defer payment implementation until the auth/account foundation is working.
+- [ ] Verify web cookie sessions work without exposing tokens to client JavaScript.
+- [ ] Verify Desktop bearer sessions work without sharing self-hosted token storage.
+- [ ] Verify sync remains available for all signed-in Goyo Cloud users while payment enforcement is disabled.
+- [ ] Verify local writing remains safe when Goyo Cloud login or session refresh fails.
 
 ## Milestone 14: Future Browser Writing App
 
