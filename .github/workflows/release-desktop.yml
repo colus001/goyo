@@ -127,6 +127,24 @@ jobs:
             apps/desktop/dist/*.yml
             apps/desktop/dist/*.zip
 
+      - name: Upload to R2
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          cd apps/worker
+          for f in ../desktop/dist/*; do
+            if [ -f "$f" ]; then
+              case "$f" in
+                *.dmg)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.dmg --file "$f" ;;
+                *.exe)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.exe --file "$f" ;;
+                *.AppImage) npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.AppImage --file "$f" ;;
+                *.deb)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.deb --file "$f" ;;
+              esac
+            fi
+          done
+
   release:
     name: Create GitHub release
     runs-on: ubuntu-latest
@@ -145,34 +163,3 @@ jobs:
         with:
           files: release-assets/**
           generate_release_notes: true
-
-      - name: Setup pnpm for R2 upload
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.4
-
-      - name: Setup Node.js for R2 upload
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install wrangler for R2 upload
-        run: pnpm --filter @writer/worker install
-
-      - name: Upload to R2
-        run: |
-          cd apps/worker
-          for f in ../desktop/dist/*; do
-            if [ -f "$f" ]; then
-              case "$f" in
-                *.dmg)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.dmg --file "$f" ;;
-                *.exe)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.exe --file "$f" ;;
-                *.AppImage) npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.AppImage --file "$f" ;;
-                *.deb)  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.deb --file "$f" ;;
-              esac
-            fi
-          done
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
