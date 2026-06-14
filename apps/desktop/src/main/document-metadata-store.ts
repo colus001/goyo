@@ -9,6 +9,7 @@ import type {
   DocumentMetadata,
   DocumentSnapshotRecord,
   DocumentUpdateRecord,
+  LocalDocumentStore,
   RecoveryPoint,
   SyncQueueItem,
 } from '@writer/core';
@@ -104,13 +105,14 @@ interface SerializedDocumentSnapshotRecord extends Omit<DocumentSnapshotRecord, 
   snapshot: ArrayBuffer | ArrayLike<number> | Uint8Array;
 }
 
-export interface DesktopLocalStore {
+export interface DesktopLocalStore extends LocalDocumentStore {
   appendDocumentUpdate(update: SerializedDocumentUpdateRecord): void;
   close(): void;
   enqueueSyncItem(item: SyncQueueItem): void;
   getAppSettings(): AppSettings;
   getAppUiState(): AppUiState | null;
   getDocumentSnapshot(snapshotId: string): DocumentSnapshotRecord | null;
+  getDocumentMetadata(documentId: string): DocumentMetadata | null;
   getLatestDocumentSnapshot(documentId: string): DocumentSnapshotRecord | null;
   getRecoveryPoint(recoveryPointId: string): RecoveryPoint | null;
   listAllBooks(): BookMetadata[];
@@ -122,7 +124,9 @@ export interface DesktopLocalStore {
   listBooks(): BookMetadata[];
   listChapters(): ChapterMetadata[];
   listArchivedDocuments(): DocumentMetadata[];
+  listArchivedDocumentMetadata(): DocumentMetadata[];
   listDocuments(): DocumentMetadata[];
+  listDocumentMetadata(): DocumentMetadata[];
   listDocumentSnapshots(documentId: string): DocumentSnapshotRecord[];
   listDocumentUpdates(documentId: string): DocumentUpdateRecord[];
   listDocumentUpdatesAfter(documentId: string, updateId: string): DocumentUpdateRecord[];
@@ -133,9 +137,11 @@ export interface DesktopLocalStore {
   saveBook(book: BookMetadata): void;
   saveChapter(chapter: ChapterMetadata): void;
   saveDocument(document: DocumentMetadata): void;
+  saveDocumentMetadata(document: DocumentMetadata): void;
   saveDocumentSnapshot(snapshot: SerializedDocumentSnapshotRecord): void;
   saveRecoveryPoint(point: RecoveryPoint): void;
   restoreArchivedDocument(documentId: string, restoredAt: string): void;
+  restoreArchivedDocumentMetadata(documentId: string, restoredAt: string): void;
   saveAppUiState(state: AppUiState): void;
   saveAppSettings(settings: AppSettings): void;
 }
@@ -254,6 +260,7 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     'accent_color',
     `TEXT NOT NULL DEFAULT '${DEFAULT_BOOK_ACCENT_COLOR}'`,
   );
+  ensureDocumentListIndexes(database);
 
   const listBooksStatement = database.prepare(`
     SELECT id, title, accent_color, created_at, updated_at, archived_at
@@ -314,6 +321,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     FROM documents
     WHERE archived_at IS NOT NULL
     ORDER BY archived_at DESC, updated_at DESC, title ASC;
+  `);
+  const getDocumentStatement = database.prepare(`
+    SELECT id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
+    FROM documents
+    WHERE id = ?;
   `);
   const saveDocumentStatement = database.prepare(`
     INSERT INTO documents (id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at)
@@ -493,6 +505,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
 
       return row ? rowToDocumentSnapshotRecord(row) : null;
     },
+    getDocumentMetadata(documentId) {
+      const row = getDocumentStatement.get(documentId);
+
+      return row ? rowToDocumentMetadata(row) : null;
+    },
     getLatestDocumentSnapshot(documentId) {
       const row = getLatestDocumentSnapshotStatement.get(documentId);
 
@@ -524,6 +541,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     listArchivedDocuments() {
       return listArchivedDocumentsStatement.all().map(rowToDocumentMetadata);
     },
+    listArchivedDocumentMetadata() {
+      return listArchivedDocumentsStatement.all().map(rowToDocumentMetadata);
+    },
     listBooks() {
       return listBooksStatement.all().map(rowToBookMetadata);
     },
@@ -531,6 +551,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
       return listChaptersStatement.all().map(rowToChapterMetadata);
     },
     listDocuments() {
+      return listDocumentsStatement.all().map(rowToDocumentMetadata);
+    },
+    listDocumentMetadata() {
       return listDocumentsStatement.all().map(rowToDocumentMetadata);
     },
     listDocumentSnapshots(documentId) {
@@ -565,6 +588,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     saveDocument(document) {
       saveDocumentStatement.run(document);
     },
+    saveDocumentMetadata(document) {
+      saveDocumentStatement.run(document);
+    },
     saveDocumentSnapshot(snapshot) {
       saveDocumentSnapshotStatement.run({
         ...snapshot,
@@ -575,6 +601,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
       saveRecoveryPointStatement.run(point);
     },
     restoreArchivedDocument(documentId, restoredAt) {
+      restoreArchivedDocumentStatement.run({ documentId, restoredAt });
+    },
+    restoreArchivedDocumentMetadata(documentId, restoredAt) {
       restoreArchivedDocumentStatement.run({ documentId, restoredAt });
     },
     saveAppUiState(state) {
@@ -692,6 +721,16 @@ function ensureBookColumn(
   }
 
   database.exec(`ALTER TABLE books ADD COLUMN ${columnName} ${columnDefinition};`);
+}
+
+function ensureDocumentListIndexes(database: Database.Database) {
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS documents_active_list_idx
+      ON documents(archived_at, book_id, chapter_id, sort_order, created_at, id);
+
+    CREATE INDEX IF NOT EXISTS documents_archived_list_idx
+      ON documents(archived_at DESC, updated_at DESC, title ASC, id);
+  `);
 }
 
 function ensureSnapshotColumn(

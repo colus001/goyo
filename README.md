@@ -12,8 +12,8 @@ and landing site are still changing quickly.
 Important limitations:
 
 - Do not rely on the hosted sync API for production writing yet.
-- Authentication and document ownership checks are not implemented in the Worker
-  API.
+- The Worker sync API currently supports self-hosted, single-user bearer-token
+  auth. Hosted multi-user accounts are not implemented yet.
 - Desktop release artifacts are currently unsigned.
 - Preserve your own backups while testing.
 
@@ -67,6 +67,24 @@ pnpm build
 
 Desktop release automation is configured through GitHub Actions. Tagged releases
 use `apps/desktop/package.json` as the desktop version source of truth.
+
+## Self-Hosted Sync
+
+Goyo can run local-only, connect to Goyo Cloud, or connect to a Cloudflare Worker
+that you deploy in your own Cloudflare account. The app build does not need to be
+customized; choose the sync mode, URL, and token in Settings.
+
+1. Create a Cloudflare D1 database.
+2. Update `apps/worker/wrangler.jsonc` with your D1 database binding.
+3. Apply the Worker migrations with Wrangler.
+4. Set a private sync token with `wrangler secret put GOYO_SYNC_TOKEN`.
+5. Deploy the Worker with `pnpm --filter @writer/worker deploy`.
+6. In the desktop app, open Settings -> Sync & Account, choose Self-hosted
+   Worker, enter your Worker URL, save the bearer token, and test the connection.
+
+The desktop app creates a stable local sync client id and registers it with your
+Worker before pushing or pulling document updates. Rotate `GOYO_SYNC_TOKEN` if it
+is exposed, then update the token in desktop Settings.
 
 ## Security
 

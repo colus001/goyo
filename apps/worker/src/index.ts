@@ -1,4 +1,5 @@
 import { APP_NAME } from '@writer/shared';
+import { authorizeSyncRequest, type SyncAuthContext } from './auth';
 import {
   getDocumentMetadata,
   matchDocumentMetadataRoute,
@@ -16,9 +17,11 @@ import {
   matchDocumentUpdatesRoute,
 } from './document-updates';
 import { matchDownloadRoute, redirectToLatestDownload } from './downloads';
+import { matchSyncClientRoute, registerSyncClient } from './sync-clients';
 
 interface Env {
   DB: D1Database;
+  GOYO_SYNC_TOKEN?: string;
 }
 
 export default {
@@ -45,45 +48,111 @@ export default {
       return downloadResponse;
     }
 
-    const metadataRoute = matchDocumentMetadataRoute(url.pathname);
+    const syncResponse = await handleSyncApiRequest(request, env, url);
 
-    if (metadataRoute && request.method === 'PUT') {
-      return upsertDocumentMetadata(request, env, metadataRoute.documentId);
-    }
-
-    if (metadataRoute && request.method === 'GET') {
-      return getDocumentMetadata(env, metadataRoute.documentId);
-    }
-
-    const updateRoute = matchDocumentUpdatesRoute(url.pathname);
-
-    if (updateRoute && request.method === 'POST') {
-      return createDocumentUpdate(request, env, updateRoute.documentId);
-    }
-
-    if (updateRoute && request.method === 'GET') {
-      return listDocumentUpdates(
-        env,
-        updateRoute.documentId,
-        url.searchParams.get('afterUpdateId'),
-      );
-    }
-
-    const latestSnapshotRoute = matchLatestDocumentSnapshotRoute(url.pathname);
-
-    if (latestSnapshotRoute && request.method === 'GET') {
-      return getLatestDocumentSnapshot(env, latestSnapshotRoute.documentId);
-    }
-
-    const snapshotRoute = matchDocumentSnapshotsRoute(url.pathname);
-
-    if (snapshotRoute && request.method === 'POST') {
-      return createDocumentSnapshot(request, env, snapshotRoute.documentId);
+    if (syncResponse) {
+      return syncResponse;
     }
 
     return new Response('Not found', { status: 404 });
   },
 } satisfies ExportedHandler<Env>;
+
+async function handleSyncApiRequest(
+  request: Request,
+  env: Env,
+  url: URL,
+): Promise<Response | null> {
+  if (!url.pathname.startsWith('/v1/')) {
+    return null;
+  }
+
+  const auth = authorizeSyncRequest(request, env);
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  if (url.pathname === '/v1/sync/status' && request.method === 'GET') {
+    return Response.json({ auth: 'bearer-token', ok: true, storage: 'd1' });
+  }
+
+  const syncClientRoute = matchSyncClientRoute(url.pathname);
+
+  if (syncClientRoute && request.method === 'PUT') {
+    return registerSyncClient(request, env, auth.context, syncClientRoute.clientId);
+  }
+
+  return (
+    (await handleDocumentMetadataRequest(request, env, auth.context, url)) ??
+    (await handleDocumentUpdateRequest(request, env, auth.context, url)) ??
+    (await handleDocumentSnapshotRequest(request, env, auth.context, url))
+  );
+}
+
+async function handleDocumentMetadataRequest(
+  request: Request,
+  env: Env,
+  auth: SyncAuthContext,
+  url: URL,
+): Promise<Response | null> {
+  const metadataRoute = matchDocumentMetadataRoute(url.pathname);
+
+  if (metadataRoute && request.method === 'PUT') {
+    return upsertDocumentMetadata(request, env, auth, metadataRoute.documentId);
+  }
+
+  if (metadataRoute && request.method === 'GET') {
+    return getDocumentMetadata(env, auth, metadataRoute.documentId);
+  }
+
+  return null;
+}
+
+async function handleDocumentUpdateRequest(
+  request: Request,
+  env: Env,
+  auth: SyncAuthContext,
+  url: URL,
+): Promise<Response | null> {
+  const updateRoute = matchDocumentUpdatesRoute(url.pathname);
+
+  if (updateRoute && request.method === 'POST') {
+    return createDocumentUpdate(request, env, auth, updateRoute.documentId);
+  }
+
+  if (updateRoute && request.method === 'GET') {
+    return listDocumentUpdates(
+      env,
+      auth,
+      updateRoute.documentId,
+      url.searchParams.get('afterUpdateId'),
+    );
+  }
+
+  return null;
+}
+
+async function handleDocumentSnapshotRequest(
+  request: Request,
+  env: Env,
+  auth: SyncAuthContext,
+  url: URL,
+): Promise<Response | null> {
+  const latestSnapshotRoute = matchLatestDocumentSnapshotRoute(url.pathname);
+
+  if (latestSnapshotRoute && request.method === 'GET') {
+    return getLatestDocumentSnapshot(env, auth, latestSnapshotRoute.documentId);
+  }
+
+  const snapshotRoute = matchDocumentSnapshotsRoute(url.pathname);
+
+  if (snapshotRoute && request.method === 'POST') {
+    return createDocumentSnapshot(request, env, auth, snapshotRoute.documentId);
+  }
+
+  return null;
+}
 
 async function handleDownloadRequest(request: Request, url: URL): Promise<Response | null> {
   if (request.method !== 'GET') {

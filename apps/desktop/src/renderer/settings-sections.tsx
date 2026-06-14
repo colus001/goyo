@@ -74,7 +74,7 @@ export function SettingsSections({
       </SettingsSection>
 
       <SettingsSection title="Sync & Account">
-        <SyncRecoverySettings />
+        <SyncRecoverySettings onChangeSettings={onChangeSettings} settings={settings} />
       </SettingsSection>
 
       <SettingsSection title="Recovery">

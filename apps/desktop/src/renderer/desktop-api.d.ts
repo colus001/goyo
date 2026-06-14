@@ -21,6 +21,13 @@ declare global {
         get: () => Promise<AppSettings>;
         save: (settings: AppSettings) => Promise<void>;
       };
+      syncCredentials: {
+        hasToken: () => Promise<boolean>;
+        saveToken: (token: string) => Promise<void>;
+      };
+      syncClient: {
+        getId: () => Promise<string>;
+      };
       backup: {
         exportLocalData: () => Promise<{
           exported: boolean;
@@ -105,6 +112,7 @@ declare global {
           updatePull: { pulledUpdateCount: number; skippedDocumentCount: number };
           updatePush: { pushedUpdateCount: number; skippedUpdateCount: number };
         }>;
+        testConnection: () => Promise<{ ok: boolean }>;
       };
       platform: string;
     };

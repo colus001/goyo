@@ -3,6 +3,8 @@ import type { DocumentMetadata } from './documents';
 import type { RecoveryPoint } from './recovery';
 import type { DocumentUpdateRecord, SyncQueueItem } from './sync';
 
+type MaybePromise<T> = Promise<T> | T;
+
 export interface DocumentSnapshotRecord {
   id: string;
   documentId: DocumentId;
@@ -32,16 +34,18 @@ export function createDocumentSnapshotRecord(
 }
 
 export interface LocalDocumentStore {
-  getDocumentMetadata(documentId: DocumentId): Promise<DocumentMetadata | null>;
-  listDocumentMetadata(): Promise<DocumentMetadata[]>;
-  listRecoveryPoints(documentId: DocumentId): Promise<RecoveryPoint[]>;
-  saveDocumentMetadata(document: DocumentMetadata): Promise<void>;
-  saveRecoveryPoint(point: RecoveryPoint): Promise<void>;
-  appendDocumentUpdate(update: DocumentUpdateRecord): Promise<void>;
-  listDocumentUpdates(documentId: DocumentId): Promise<DocumentUpdateRecord[]>;
-  saveDocumentSnapshot(snapshot: DocumentSnapshotRecord): Promise<void>;
-  getLatestDocumentSnapshot(documentId: DocumentId): Promise<DocumentSnapshotRecord | null>;
-  enqueueSyncItem(item: SyncQueueItem): Promise<void>;
-  listPendingSyncItems(): Promise<SyncQueueItem[]>;
-  markSyncItemCompleted(syncItemId: string, completedAt: string): Promise<void>;
+  getDocumentMetadata(documentId: DocumentId): MaybePromise<DocumentMetadata | null>;
+  listArchivedDocumentMetadata(): MaybePromise<DocumentMetadata[]>;
+  listDocumentMetadata(): MaybePromise<DocumentMetadata[]>;
+  listRecoveryPoints(documentId: DocumentId): MaybePromise<RecoveryPoint[]>;
+  saveDocumentMetadata(document: DocumentMetadata): MaybePromise<void>;
+  saveRecoveryPoint(point: RecoveryPoint): MaybePromise<void>;
+  restoreArchivedDocumentMetadata(documentId: DocumentId, restoredAt: string): MaybePromise<void>;
+  appendDocumentUpdate(update: DocumentUpdateRecord): MaybePromise<void>;
+  listDocumentUpdates(documentId: DocumentId): MaybePromise<DocumentUpdateRecord[]>;
+  saveDocumentSnapshot(snapshot: DocumentSnapshotRecord): MaybePromise<void>;
+  getLatestDocumentSnapshot(documentId: DocumentId): MaybePromise<DocumentSnapshotRecord | null>;
+  enqueueSyncItem(item: SyncQueueItem): MaybePromise<void>;
+  listPendingSyncItems(): MaybePromise<SyncQueueItem[]>;
+  markSyncItemCompleted(syncItemId: string, completedAt: string): MaybePromise<void>;
 }

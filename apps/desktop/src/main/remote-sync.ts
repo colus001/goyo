@@ -8,7 +8,12 @@ import {
 import type { DesktopLocalStore } from './document-metadata-store';
 import { isSyncItemReadyForRetry } from './sync-retry';
 
-const GOYO_API_BASE_URL = 'https://goyo-api.seokjun.kim';
+export interface SyncConnectionSettings {
+  clientId: string;
+  enabled: boolean;
+  serverUrl: string;
+  token: string | null;
+}
 
 interface PushPendingUpdatesResult {
   pushedUpdateCount: number;
@@ -63,6 +68,7 @@ interface RemoteLatestDocumentSnapshotResponse {
 
 export async function pushPendingDocumentUpdates(
   store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
   options: PushOptions = {},
 ): Promise<PushPendingUpdatesResult> {
   const now = new Date();
@@ -72,6 +78,12 @@ export async function pushPendingDocumentUpdates(
   const documentsById = new Map(store.listDocuments().map((document) => [document.id, document]));
   let pushedUpdateCount = 0;
   let skippedUpdateCount = 0;
+
+  if (!isSyncConnectionReady(connection)) {
+    return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
+  }
+
+  await registerSyncClient(connection);
 
   for (const item of pendingItems) {
     if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
@@ -90,8 +102,8 @@ export async function pushPendingDocumentUpdates(
     }
 
     try {
-      await pushDocumentMetadata(document);
-      await pushDocumentUpdate(update);
+      await pushDocumentMetadata(connection, document);
+      await pushDocumentUpdate(connection, update);
       store.markSyncItemCompleted(item.id, new Date().toISOString());
       pushedUpdateCount += 1;
     } catch {
@@ -105,15 +117,26 @@ export async function pushPendingDocumentUpdates(
 
 export async function pullRemoteDocumentUpdates(
   store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
 ): Promise<PullRemoteUpdatesResult> {
   let pulledUpdateCount = 0;
   let skippedDocumentCount = 0;
+
+  if (!isSyncConnectionReady(connection)) {
+    return { pulledUpdateCount, skippedDocumentCount };
+  }
+
+  await registerSyncClient(connection);
 
   for (const document of store.listDocuments()) {
     try {
       const updates = store.listDocumentUpdates(document.id);
       const latestUpdate = updates.at(-1);
-      const remoteUpdates = await fetchRemoteDocumentUpdates(document.id, latestUpdate?.id ?? null);
+      const remoteUpdates = await fetchRemoteDocumentUpdates(
+        connection,
+        document.id,
+        latestUpdate?.id ?? null,
+      );
 
       for (const update of remoteUpdates.updates) {
         store.appendDocumentUpdate({
@@ -135,6 +158,7 @@ export async function pullRemoteDocumentUpdates(
 
 export async function pushPendingDocumentSnapshots(
   store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
   options: PushOptions = {},
 ): Promise<PushPendingSnapshotsResult> {
   const now = new Date();
@@ -144,6 +168,12 @@ export async function pushPendingDocumentSnapshots(
   const documentsById = new Map(store.listDocuments().map((document) => [document.id, document]));
   let pushedSnapshotCount = 0;
   let skippedSnapshotCount = 0;
+
+  if (!isSyncConnectionReady(connection)) {
+    return { pushedSnapshotCount, skippedSnapshotCount: pendingItems.length };
+  }
+
+  await registerSyncClient(connection);
 
   for (const item of pendingItems) {
     if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
@@ -160,8 +190,8 @@ export async function pushPendingDocumentSnapshots(
     }
 
     try {
-      await pushDocumentMetadata(document);
-      await pushDocumentSnapshot(snapshot);
+      await pushDocumentMetadata(connection, document);
+      await pushDocumentSnapshot(connection, snapshot);
       store.markSyncItemCompleted(item.id, new Date().toISOString());
       pushedSnapshotCount += 1;
     } catch {
@@ -175,13 +205,20 @@ export async function pushPendingDocumentSnapshots(
 
 export async function pullRemoteDocumentSnapshots(
   store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
 ): Promise<PullRemoteSnapshotsResult> {
   let pulledSnapshotCount = 0;
   let skippedDocumentCount = 0;
 
+  if (!isSyncConnectionReady(connection)) {
+    return { pulledSnapshotCount, skippedDocumentCount };
+  }
+
+  await registerSyncClient(connection);
+
   for (const document of store.listDocuments()) {
     try {
-      const remoteSnapshot = await fetchLatestRemoteDocumentSnapshot(document.id);
+      const remoteSnapshot = await fetchLatestRemoteDocumentSnapshot(connection, document.id);
 
       if (!remoteSnapshot.snapshot) {
         continue;
@@ -220,11 +257,14 @@ export async function pullRemoteDocumentSnapshots(
   return { pulledSnapshotCount, skippedDocumentCount };
 }
 
-export async function retryRemoteSyncNow(store: DesktopLocalStore) {
-  const updatePush = await pushPendingDocumentUpdates(store, { forceRetry: true });
-  const snapshotPush = await pushPendingDocumentSnapshots(store, { forceRetry: true });
-  const updatePull = await pullRemoteDocumentUpdates(store);
-  const snapshotPull = await pullRemoteDocumentSnapshots(store);
+export async function retryRemoteSyncNow(
+  store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
+) {
+  const updatePush = await pushPendingDocumentUpdates(store, connection, { forceRetry: true });
+  const snapshotPush = await pushPendingDocumentSnapshots(store, connection, { forceRetry: true });
+  const updatePull = await pullRemoteDocumentUpdates(store, connection);
+  const snapshotPull = await pullRemoteDocumentSnapshots(store, connection);
 
   return { snapshotPull, snapshotPush, updatePull, updatePush };
 }
@@ -244,8 +284,11 @@ export function getSyncStatusSummary(store: DesktopLocalStore): SyncStatusSummar
   };
 }
 
-async function pushDocumentMetadata(document: DocumentMetadata) {
-  await fetchJson(`${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(document.id)}`, {
+async function pushDocumentMetadata(
+  connection: SyncConnectionSettings,
+  document: DocumentMetadata,
+) {
+  await fetchJson(connection, `/v1/documents/${encodeURIComponent(document.id)}`, {
     method: 'PUT',
     body: JSON.stringify({
       archivedAt: document.archivedAt,
@@ -260,24 +303,28 @@ async function pushDocumentMetadata(document: DocumentMetadata) {
   });
 }
 
-async function pushDocumentUpdate(update: DocumentUpdateRecord) {
-  await fetchJson(
-    `${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(update.documentId)}/updates`,
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        clientId: update.clientId,
-        createdAt: update.createdAt,
-        id: update.id,
-        updateBase64: Buffer.from(update.update).toString('base64'),
-      }),
-    },
-  );
+async function pushDocumentUpdate(
+  connection: SyncConnectionSettings,
+  update: DocumentUpdateRecord,
+) {
+  await fetchJson(connection, `/v1/documents/${encodeURIComponent(update.documentId)}/updates`, {
+    method: 'POST',
+    body: JSON.stringify({
+      clientId: update.clientId,
+      createdAt: update.createdAt,
+      id: update.id,
+      updateBase64: Buffer.from(update.update).toString('base64'),
+    }),
+  });
 }
 
-async function pushDocumentSnapshot(snapshot: DocumentSnapshotRecord) {
+async function pushDocumentSnapshot(
+  connection: SyncConnectionSettings,
+  snapshot: DocumentSnapshotRecord,
+) {
   await fetchJson(
-    `${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(snapshot.documentId)}/snapshots`,
+    connection,
+    `/v1/documents/${encodeURIComponent(snapshot.documentId)}/snapshots`,
     {
       method: 'POST',
       body: JSON.stringify({
@@ -291,25 +338,28 @@ async function pushDocumentSnapshot(snapshot: DocumentSnapshotRecord) {
 }
 
 async function fetchRemoteDocumentUpdates(
+  connection: SyncConnectionSettings,
   documentId: string,
   afterUpdateId: string | null,
 ): Promise<RemoteDocumentUpdatesResponse> {
   const url = new URL(
-    `${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(documentId)}/updates`,
+    `${connection.serverUrl}/v1/documents/${encodeURIComponent(documentId)}/updates`,
   );
 
   if (afterUpdateId) {
     url.searchParams.set('afterUpdateId', afterUpdateId);
   }
 
-  return fetchJson<RemoteDocumentUpdatesResponse>(url.toString(), { method: 'GET' });
+  return fetchJson<RemoteDocumentUpdatesResponse>(connection, url, { method: 'GET' });
 }
 
 async function fetchLatestRemoteDocumentSnapshot(
+  connection: SyncConnectionSettings,
   documentId: string,
 ): Promise<RemoteLatestDocumentSnapshotResponse> {
   return fetchJson<RemoteLatestDocumentSnapshotResponse>(
-    `${GOYO_API_BASE_URL}/v1/documents/${encodeURIComponent(documentId)}/snapshots/latest`,
+    connection,
+    `/v1/documents/${encodeURIComponent(documentId)}/snapshots/latest`,
     { method: 'GET' },
   );
 }
@@ -331,10 +381,45 @@ function isRemoteSnapshotNewer(
   return remoteSnapshot.id > localSnapshot.id;
 }
 
-async function fetchJson<T = unknown>(url: string, init: RequestInit): Promise<T> {
+export async function testSyncConnection(
+  connection: SyncConnectionSettings,
+): Promise<{ ok: boolean }> {
+  if (!isSyncConnectionReady(connection)) {
+    return { ok: false };
+  }
+
+  return fetchJson<{ ok: boolean }>(connection, '/v1/sync/status', { method: 'GET' });
+}
+
+async function registerSyncClient(connection: SyncConnectionSettings) {
+  await fetchJson(connection, `/v1/sync/clients/${encodeURIComponent(connection.clientId)}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      lastSeenAt: new Date().toISOString(),
+      name: 'Goyo Desktop',
+      platform: process.platform,
+    }),
+  });
+}
+
+function isSyncConnectionReady(
+  connection: SyncConnectionSettings,
+): connection is SyncConnectionSettings & {
+  token: string;
+} {
+  return connection.enabled && connection.serverUrl.length > 0 && !!connection.token;
+}
+
+async function fetchJson<T = unknown>(
+  connection: SyncConnectionSettings,
+  pathOrUrl: string | URL,
+  init: RequestInit,
+): Promise<T> {
+  const url = pathOrUrl instanceof URL ? pathOrUrl : `${connection.serverUrl}${pathOrUrl}`;
   const response = await fetch(url, {
     ...init,
     headers: {
+      authorization: `Bearer ${connection.token ?? ''}`,
       'content-type': 'application/json',
       ...init.headers,
     },

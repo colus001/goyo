@@ -23,9 +23,14 @@ import {
   pushPendingDocumentSnapshots,
   pushPendingDocumentUpdates,
   retryRemoteSyncNow,
+  type SyncConnectionSettings,
+  testSyncConnection,
 } from './remote-sync';
+import { createSyncClientIdentityStore } from './sync-client-identity';
+import { createSyncCredentialsStore } from './sync-credentials';
 
 const isDevelopment = !app.isPackaged;
+const GOYO_CLOUD_SYNC_URL = 'https://goyo-api.seokjun.kim';
 
 function configureUserDataPath() {
   if (!isDevelopment) {
@@ -37,7 +42,21 @@ function configureUserDataPath() {
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: IPC registration is kept centralized around one local store instance.
 function registerDocumentIpc() {
-  const store = createDesktopLocalStore(app.getPath('userData'));
+  const userDataPath = app.getPath('userData');
+  const store = createDesktopLocalStore(userDataPath);
+  const syncClientIdentity = createSyncClientIdentityStore(userDataPath);
+  const syncCredentials = createSyncCredentialsStore(userDataPath);
+  const getSyncConnection = (): SyncConnectionSettings => {
+    const syncSettings = store.getAppSettings().sync;
+
+    return {
+      clientId: syncClientIdentity.getOrCreateClientId(),
+      enabled: syncSettings.enabled && syncSettings.provider !== 'local',
+      serverUrl:
+        syncSettings.provider === 'goyo-cloud' ? GOYO_CLOUD_SYNC_URL : syncSettings.selfHostedUrl,
+      token: syncCredentials.getToken(),
+    };
+  };
 
   ipcMain.handle('appUiState:get', () => store.getAppUiState());
   ipcMain.handle('appUiState:save', (_event, state: AppUiState) => {
@@ -57,6 +76,16 @@ function registerDocumentIpc() {
       throw error;
     }
   });
+  ipcMain.handle('syncCredentials:hasToken', () => syncCredentials.getToken() !== null);
+  ipcMain.handle('syncCredentials:saveToken', (_event, token: string) => {
+    try {
+      syncCredentials.saveToken(token);
+    } catch (error) {
+      console.error('Failed to save sync credentials', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('syncClient:getId', () => syncClientIdentity.getOrCreateClientId());
   ipcMain.handle('backup:exportLocalData', async () => {
     try {
       return await exportLocalBackup(store);
@@ -186,7 +215,7 @@ function registerDocumentIpc() {
   });
   ipcMain.handle('sync:pushPendingUpdates', async () => {
     try {
-      return await pushPendingDocumentUpdates(store);
+      return await pushPendingDocumentUpdates(store, getSyncConnection());
     } catch (error) {
       console.error('Failed to push pending document updates', getErrorMessage(error));
       throw error;
@@ -194,7 +223,7 @@ function registerDocumentIpc() {
   });
   ipcMain.handle('sync:pushPendingSnapshots', async () => {
     try {
-      return await pushPendingDocumentSnapshots(store);
+      return await pushPendingDocumentSnapshots(store, getSyncConnection());
     } catch (error) {
       console.error('Failed to push pending document snapshots', getErrorMessage(error));
       throw error;
@@ -202,7 +231,7 @@ function registerDocumentIpc() {
   });
   ipcMain.handle('sync:pullRemoteUpdates', async () => {
     try {
-      return await pullRemoteDocumentUpdates(store);
+      return await pullRemoteDocumentUpdates(store, getSyncConnection());
     } catch (error) {
       console.error('Failed to pull remote document updates', getErrorMessage(error));
       throw error;
@@ -210,16 +239,23 @@ function registerDocumentIpc() {
   });
   ipcMain.handle('sync:pullRemoteSnapshots', async () => {
     try {
-      return await pullRemoteDocumentSnapshots(store);
+      return await pullRemoteDocumentSnapshots(store, getSyncConnection());
     } catch (error) {
       console.error('Failed to pull remote document snapshots', getErrorMessage(error));
       throw error;
     }
   });
   ipcMain.handle('sync:getStatusSummary', () => getSyncStatusSummary(store));
+  ipcMain.handle('sync:testConnection', async () => {
+    try {
+      return await testSyncConnection(getSyncConnection());
+    } catch {
+      return { ok: false };
+    }
+  });
   ipcMain.handle('sync:retryNow', async () => {
     try {
-      return await retryRemoteSyncNow(store);
+      return await retryRemoteSyncNow(store, getSyncConnection());
     } catch (error) {
       console.error('Failed to retry remote sync', getErrorMessage(error));
       throw error;

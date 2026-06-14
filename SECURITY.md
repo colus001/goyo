@@ -1,8 +1,9 @@
 # Security Policy
 
-Goyo is an early-preview writing app. Please do not use the sync API for
-production data until authentication, ownership checks, and abuse controls are
-implemented.
+Goyo is an early-preview writing app. Please do not use the hosted sync API for
+production data until multi-user ownership checks and abuse controls are
+implemented. Self-hosted sync uses a single-user bearer token and should be
+deployed only to infrastructure you control.
 
 ## Supported Versions
 
@@ -23,6 +24,8 @@ and coordinate a fix before public disclosure.
 ## Current Known Limitations
 
 - The deployed Worker sync endpoints are not a production-ready public API.
-- Document ownership and authentication are not implemented yet.
-- Do not send sensitive writing content to the sync API until those protections
-  are in place.
+- Self-hosted Worker sync uses bearer-token authentication, but hosted multi-user
+  accounts are not implemented yet. Self-hosted documents are scoped to the
+  single owner represented by that token.
+- Do not send sensitive writing content to a shared or hosted sync API until
+  those protections are in place.

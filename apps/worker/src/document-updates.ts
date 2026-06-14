@@ -1,3 +1,4 @@
+import type { SyncAuthContext } from './auth';
 import {
   decodeBase64,
   encodeBase64,
@@ -5,6 +6,7 @@ import {
   jsonError,
   readJsonBody,
 } from './http';
+import { requireRegisteredSyncClient } from './sync-clients';
 
 export interface EnvWithDocumentsDatabase {
   DB: D1Database;
@@ -27,6 +29,7 @@ interface DocumentUpdateRow {
 export async function createDocumentUpdate(
   request: Request,
   env: EnvWithDocumentsDatabase,
+  auth: SyncAuthContext,
   documentId: string,
 ) {
   const body = await readJsonBody<CreateDocumentUpdateRequestBody>(request);
@@ -42,15 +45,32 @@ export async function createDocumentUpdate(
   }
 
   try {
+    const documentExists = await documentBelongsToOwner(env, auth, documentId);
+
+    if (!documentExists) {
+      return jsonError('Document metadata must exist before updates can be uploaded.', 409);
+    }
+
+    const clientIsRegistered = await requireRegisteredSyncClient(
+      env,
+      auth,
+      validation.value.clientId,
+    );
+
+    if (!clientIsRegistered) {
+      return jsonError('Sync client must be registered before uploading updates.', 409);
+    }
+
     const update = decodeBase64(validation.value.updateBase64);
     const result = await env.DB.prepare(`
       INSERT OR IGNORE INTO document_updates (
-        id, document_id, client_id, update_blob, created_at, received_at
+        id, owner_id, document_id, client_id, update_blob, created_at, received_at
       )
-      VALUES (?, ?, ?, ?, ?, ?);
+      VALUES (?, ?, ?, ?, ?, ?, ?);
     `)
       .bind(
         validation.value.id,
+        auth.ownerId,
         documentId,
         validation.value.clientId,
         update,
@@ -75,6 +95,7 @@ export async function createDocumentUpdate(
 
 export async function listDocumentUpdates(
   env: EnvWithDocumentsDatabase,
+  auth: SyncAuthContext,
   documentId: string,
   afterUpdateId: string | null,
 ) {
@@ -83,25 +104,25 @@ export async function listDocumentUpdates(
         WITH checkpoint AS (
           SELECT created_at, id
           FROM document_updates
-          WHERE document_id = ? AND id = ?
+          WHERE owner_id = ? AND document_id = ? AND id = ?
         )
         SELECT updates.id, updates.client_id, updates.update_blob, updates.created_at
         FROM document_updates updates
         LEFT JOIN checkpoint ON TRUE
-        WHERE updates.document_id = ?
+        WHERE updates.owner_id = ? AND updates.document_id = ?
           AND (
             checkpoint.id IS NULL
             OR updates.created_at > checkpoint.created_at
             OR (updates.created_at = checkpoint.created_at AND updates.id > checkpoint.id)
           )
         ORDER BY updates.created_at ASC, updates.id ASC;
-      `).bind(documentId, afterUpdateId, documentId)
+      `).bind(auth.ownerId, documentId, afterUpdateId, auth.ownerId, documentId)
     : env.DB.prepare(`
         SELECT id, client_id, update_blob, created_at
         FROM document_updates
-        WHERE document_id = ?
+        WHERE owner_id = ? AND document_id = ?
         ORDER BY created_at ASC, id ASC;
-      `).bind(documentId);
+      `).bind(auth.ownerId, documentId);
   const { results } = await statement.all<DocumentUpdateRow>();
 
   return Response.json({
@@ -113,6 +134,22 @@ export async function listDocumentUpdates(
       updateBase64: encodeBase64(update.update_blob),
     })),
   });
+}
+
+export async function documentBelongsToOwner(
+  env: EnvWithDocumentsDatabase,
+  auth: SyncAuthContext,
+  documentId: string,
+) {
+  const document = await env.DB.prepare(`
+    SELECT id
+    FROM documents
+    WHERE id = ? AND owner_id = ?;
+  `)
+    .bind(documentId, auth.ownerId)
+    .first<{ id: string }>();
+
+  return !!document;
 }
 
 export function matchDocumentUpdatesRoute(pathname: string): { documentId: string } | null {

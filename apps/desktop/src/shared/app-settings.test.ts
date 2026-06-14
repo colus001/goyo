@@ -7,6 +7,7 @@ describe('normalizeAppSettings defaults', () => {
       customTheme: null,
       localePreference: DEFAULT_APP_SETTINGS.localePreference,
       restoreLastWorkspaceOnLaunch: false,
+      sync: DEFAULT_APP_SETTINGS.sync,
       themeId: 'sage',
       uiFontId: DEFAULT_APP_SETTINGS.uiFontId,
       writingFontId: DEFAULT_APP_SETTINGS.writingFontId,
@@ -18,6 +19,7 @@ describe('normalizeAppSettings defaults', () => {
       customTheme: null,
       localePreference: DEFAULT_APP_SETTINGS.localePreference,
       restoreLastWorkspaceOnLaunch: false,
+      sync: DEFAULT_APP_SETTINGS.sync,
       themeId: DEFAULT_APP_SETTINGS.themeId,
       uiFontId: DEFAULT_APP_SETTINGS.uiFontId,
       writingFontId: DEFAULT_APP_SETTINGS.writingFontId,
@@ -54,6 +56,7 @@ describe('normalizeAppSettings custom themes', () => {
       customTheme: { ...customTheme, id: 'custom' },
       localePreference: DEFAULT_APP_SETTINGS.localePreference,
       restoreLastWorkspaceOnLaunch: true,
+      sync: DEFAULT_APP_SETTINGS.sync,
       themeId: 'custom',
       uiFontId: DEFAULT_APP_SETTINGS.uiFontId,
       writingFontId: DEFAULT_APP_SETTINGS.writingFontId,
@@ -85,6 +88,60 @@ describe('normalizeAppSettings custom themes', () => {
     expect(settings.themeId).toBe('custom');
     expect(settings.uiFontId).toBe('sans');
     expect(settings.writingFontId).toBe('mono');
+  });
+});
+
+describe('normalizeAppSettings sync settings', () => {
+  it('keeps a valid self-host sync endpoint', () => {
+    expect(
+      normalizeAppSettings({
+        sync: {
+          enabled: true,
+          provider: 'self-hosted',
+          selfHostedUrl: 'https://sync.example.com/',
+        },
+      }).sync,
+    ).toEqual({
+      enabled: true,
+      provider: 'self-hosted',
+      selfHostedUrl: 'https://sync.example.com',
+    });
+  });
+
+  it('keeps the Goyo Cloud sync provider without a custom endpoint', () => {
+    expect(
+      normalizeAppSettings({
+        sync: { enabled: true, provider: 'goyo-cloud' },
+      }).sync,
+    ).toEqual({ enabled: true, provider: 'goyo-cloud', selfHostedUrl: '' });
+  });
+
+  it('disables sync when the endpoint is missing or unsafe', () => {
+    expect(
+      normalizeAppSettings({ sync: { enabled: true, provider: 'self-hosted', selfHostedUrl: '' } })
+        .sync,
+    ).toEqual(DEFAULT_APP_SETTINGS.sync);
+    expect(
+      normalizeAppSettings({
+        sync: { enabled: true, provider: 'self-hosted', selfHostedUrl: 'http://example.com' },
+      }).sync,
+    ).toEqual(DEFAULT_APP_SETTINGS.sync);
+    expect(
+      normalizeAppSettings({
+        sync: { enabled: true, provider: 'self-hosted', selfHostedUrl: 'http://localhost:8787' },
+      }).sync,
+    ).toEqual({ enabled: true, provider: 'self-hosted', selfHostedUrl: 'http://localhost:8787' });
+  });
+
+  it('migrates legacy sync serverUrl to self-hosted mode', () => {
+    expect(
+      normalizeAppSettings({ sync: { enabled: true, serverUrl: 'https://legacy.example.com' } })
+        .sync,
+    ).toEqual({
+      enabled: true,
+      provider: 'self-hosted',
+      selfHostedUrl: 'https://legacy.example.com',
+    });
   });
 });
 
