@@ -31,7 +31,30 @@ export function encodeBase64(value: ArrayBuffer): string {
 }
 
 export function jsonError(message: string, status: number) {
-  return Response.json({ error: message, ok: false }, { status });
+  return withCors(Response.json({ error: message, ok: false }, { status }));
+}
+
+export function corsPreflightResponse(): Response {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Max-Age': '86400',
+    },
+    status: 204,
+  });
+}
+
+export function withCors(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set('Access-Control-Allow-Origin', '*');
+
+  return new Response(response.body, {
+    headers,
+    status: response.status,
+    statusText: response.statusText,
+  });
 }
 
 export function getStorageErrorMessage(error: unknown): string {
