@@ -49,9 +49,6 @@ export function WritingWorkspaceScreen({
     onExportChapter: workspace.activeChapter
       ? (format: 'html' | 'markdown' | 'text') => exportActiveChapter(workspace, format)
       : undefined,
-    onCreateRestorePoint: activeDocument
-      ? () => workspace.createManualRestorePoint(editorRef.current?.getSnapshot() ?? null)
-      : undefined,
   };
 
   useWorkspaceKeyboardShortcuts(workspace, activeDocument, editorRef, requestNewChapter);

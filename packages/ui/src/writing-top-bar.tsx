@@ -1,4 +1,4 @@
-import { ChevronRight, History, Menu, Plus, Settings } from 'lucide-react';
+import { ChevronRight, Menu, Plus, Settings } from 'lucide-react';
 import type { ReactElement, ReactNode, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { WritingExportMenu } from './writing-export-menu';
@@ -20,7 +20,6 @@ export function WritingTopBar({
   isSidebarCollapsed,
   onCreateChapter,
   onCreateDocument,
-  onCreateRestorePoint,
   onExportChapter,
   onExportDocument,
   onOpenSettings,
@@ -34,7 +33,6 @@ export function WritingTopBar({
   isSidebarCollapsed: boolean;
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
-  onCreateRestorePoint?: () => void;
   onExportChapter?: (format: 'html' | 'markdown' | 'text') => void;
   onExportDocument?: (format: 'html' | 'markdown' | 'text') => void;
   onOpenSettings?: () => void;
@@ -68,13 +66,6 @@ export function WritingTopBar({
             {wordCountLabel}
           </p>
         ) : null}
-        <CommandButton
-          disabled={!activeDocument || !onCreateRestorePoint}
-          label="Create restore point"
-          onClick={onCreateRestorePoint}
-        >
-          <History aria-hidden="true" size={16} strokeWidth={2.1} />
-        </CommandButton>
         <WritingExportMenu
           canExportDocument={Boolean(activeDocument)}
           onExportChapter={onExportChapter}
