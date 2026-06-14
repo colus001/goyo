@@ -22,8 +22,9 @@ Important limitations:
 This repository uses pnpm and Turborepo.
 
 - `apps/desktop`: Electron desktop app.
-- `apps/landing`: Public landing site.
-- `apps/worker`: Cloudflare Worker sync API.
+- `apps/landing`: Public marketing site, downloads, and product information.
+- `apps/web`: Goyo Cloud product web app for login, account status, and future billing.
+- `apps/worker`: Cloudflare Worker sync, auth, and future billing API.
 - `packages/core`: Platform-agnostic writing, sync, recovery, and domain logic.
 - `packages/editor`: Shared editor integration.
 - `packages/shared`: Shared types and cross-runtime constants.
@@ -48,8 +49,23 @@ Run one target:
 ```sh
 pnpm dev:desktop
 pnpm dev:landing
+pnpm dev:web
 pnpm dev:worker
 ```
+
+## Apps And Deployment
+
+The public landing site and the Goyo Cloud product web app are intentionally
+separate. Keep account, login, billing, and authenticated cloud state out of
+`apps/landing`; those features belong in `apps/web` and `apps/worker`.
+
+- Landing site: `apps/landing`, deployed with Wrangler to `goyo.seokjun.kim`.
+- Goyo Cloud web: `apps/web`, deployed with Wrangler to
+  `goyo-cloud.seokjun.kim`.
+- Sync and auth API: `apps/worker`, deployed to `goyo-api.seokjun.kim`.
+
+Goyo Cloud signup is planned to be open. Payment and sync entitlement enforcement
+are deferred until the account and hosted sync foundation is working.
 
 Validate the workspace:
 

@@ -273,17 +273,106 @@
 - [x] Verify multiple devices can sync documents for the same user.
 - [x] Verify one user cannot access another user's document updates.
 
-## Milestone 13: Future Browser Web App
+## Milestone 13: Goyo Cloud Web Account And Login
 
-- [ ] Reuse `packages/ui` in the future browser app.
-- [ ] Reuse `packages/core` in the future browser app.
+### 13A: Product Scope And Deployment Shape
+
+- [x] Add `apps/web` as the Goyo Cloud product web app, separate from the public `apps/landing` marketing site.
+- [ ] Deploy the Goyo Cloud web app at `goyo-cloud.seokjun.kim`.
+- [x] Keep `apps/landing` focused on marketing, downloads, and public product information without account or billing state.
+- [x] Keep Goyo Cloud signup open; do not add invite-only or closed beta gating.
+- [x] Defer payment implementation until the auth/account foundation is working.
+- [x] Add a billing placeholder in `apps/web` without implementing payment yet.
+- [ ] Add billing and entitlement data structures only where they help future payment integration.
+- [x] Do not enforce sync usage limits in this milestone so login and sync can be tested freely.
+
+### 13B: Web App Foundation
+
+- [x] Scaffold `apps/web` with React, Vite, TypeScript, and Tailwind using the current workspace conventions.
+- [x] Add root `pnpm dev:web` script.
+- [x] Ensure root `pnpm dev`, `pnpm build`, `pnpm typecheck`, and `pnpm check` include `apps/web` through Turbo.
+- [x] Add `apps/web` routes for `/login`, `/verify`, `/account`, and `/billing`.
+- [x] Add a minimal authenticated account shell showing email, account status, sync status, and billing placeholder.
+- [x] Keep browser writing/editor functionality out of `apps/web` for this milestone.
+
+### 13C: Shared Auth Contracts
+
+- [x] Add shared auth API contracts in `packages/shared` for login start, login verification, current user, and logout.
+- [x] Define `AuthStartRequest` and `AuthStartResponse`.
+- [x] Define `AuthVerifyRequest` and `AuthVerifyResponse`.
+- [x] Define `AuthUser`, `AuthMeResponse`, and `AuthLogoutResponse`.
+- [x] Define shared auth error response types.
+- [x] Reuse shared auth contracts from Worker, Web, and Desktop.
+
+### 13D: Worker Auth Storage And Email
+
+- [x] Add Worker D1 tables for users, email login codes, and auth sessions.
+- [x] Add future-ready billing or entitlement tables without enforcing plan limits yet.
+- [x] Store user emails normalized and unique.
+- [x] Store only hashed login codes and hashed session tokens in D1.
+- [x] Add login code expiry, attempt limits, and resend cooldowns.
+- [x] Add Cloudflare Email Service integration for sending one-time email login codes.
+- [x] Send login emails from `Goyo <no-reply@goyo.seokjun.kim>`.
+- [x] Keep email existence private by returning the same start-login response for new and existing users.
+
+### 13E: Worker Auth Endpoints
+
+- [x] Add Worker auth endpoint `POST /v1/auth/start`.
+- [x] Add Worker auth endpoint `POST /v1/auth/verify`.
+- [x] Add Worker auth endpoint `GET /v1/auth/me`.
+- [x] Add Worker auth endpoint `POST /v1/auth/logout`.
+- [x] Add open signup with email code verification; create a user automatically when a verified email has no existing account.
+- [x] Use secure httpOnly, Secure, SameSite=Lax cookies for web sessions.
+- [x] Return a Desktop bearer token from verification when the request is from Desktop.
+- [x] Revoke sessions on logout.
+- [x] Add account status response that reports sync availability without enforcing paid limits.
+
+### 13F: Hosted Sync Auth
+
+- [x] Extend Worker sync auth so hosted Goyo Cloud sessions use `ownerId = user.id` while self-hosted tokens continue to use `ownerId = 'self'`.
+- [x] Keep self-hosted bearer-token auth working independently from Goyo Cloud sessions.
+- [x] Add sync status response fields that identify local/self-hosted/Goyo Cloud auth mode without exposing secrets.
+- [x] Keep all document metadata, update, and snapshot ownership checks based on authenticated `ownerId`.
+
+### 13G: Web Login And Account UI
+
+- [x] Add `apps/web` login, verify-code, and account screens.
+- [x] Add email-code send, verify, resend, and logout interactions.
+- [x] Use cookie-based web auth; do not expose the web session token to client JavaScript.
+- [x] Add unauthenticated redirects from `/account` and `/billing` to `/login`.
+- [x] Add signed-in redirects from `/login` to `/account`.
+
+### 13H: Desktop Goyo Cloud Login And Status
+
+- [ ] Add Desktop Goyo Cloud login UI that uses the same Worker auth flow and stores the hosted session separately from self-hosted tokens.
+- [ ] Add Desktop logout and account status display for Goyo Cloud.
+- [ ] Add a Desktop "Manage account" link that opens `https://goyo-cloud.seokjun.kim/account`.
+- [ ] Split Desktop credential storage between self-hosted sync tokens and Goyo Cloud hosted sessions.
+- [ ] Hide manual token entry for the Goyo Cloud provider.
+- [ ] Keep manual token entry only for the self-hosted Worker provider.
+- [ ] Show whether Goyo Cloud is signed in, signed out, expired, or unable to connect.
+
+### 13I: Verification
+
+- [x] Verify hosted user A cannot access hosted user B document metadata, updates, or snapshots.
+- [x] Verify self-hosted sync still works independently from hosted Goyo Cloud auth.
+- [x] Verify open signup, login, logout, expired code, invalid code, and revoked session behavior.
+- [x] Verify web cookie sessions work without exposing tokens to client JavaScript.
+- [x] Verify Desktop bearer sessions work without sharing self-hosted token storage.
+- [x] Verify sync remains available for all signed-in Goyo Cloud users while payment enforcement is disabled.
+- [x] Verify local writing remains safe when Goyo Cloud login or session refresh fails.
+
+## Milestone 14: Future Browser Writing App
+
+- [ ] Reuse `packages/ui` in the future browser writing app.
+- [ ] Reuse `packages/core` in the future browser writing app.
 - [ ] Add IndexedDB implementation for core local store interfaces.
-- [ ] Add responsive baseline for primary browser screens.
+- [ ] Add responsive baseline for primary browser writing screens.
 - [ ] Review web editor constraints separately from Electron desktop constraints.
 - [ ] Test offline and reconnect behavior in browser runtime.
-- [ ] Ensure web app does not duplicate desktop-only logic.
+- [ ] Ensure the browser writing app does not duplicate desktop-only logic.
 
-## Milestone 14: Mobile-Compatible Pass
+## Milestone 15: Mobile-Compatible Pass
 
 - [ ] Add responsive baseline for primary screens.
 - [ ] Review mobile editor constraints.

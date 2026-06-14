@@ -28,6 +28,18 @@ declare global {
       syncClient: {
         getId: () => Promise<string>;
       };
+      goyoCloud: {
+        authStart: (email: string) => Promise<{ ok: boolean; error?: string }>;
+        authVerify: (input: {
+          email: string;
+          code: string;
+        }) => Promise<{ ok: boolean; error?: string; user?: { email: string; id: string } }>;
+        getStatus: () => Promise<{
+          account: { email: string; id: string } | null;
+          hasSession: boolean;
+        }>;
+        logout: () => Promise<{ ok: boolean }>;
+      };
       backup: {
         exportLocalData: () => Promise<{
           exported: boolean;

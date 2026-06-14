@@ -1,5 +1,6 @@
 import { APP_NAME } from '@writer/shared';
-import { authorizeSyncRequest, type SyncAuthContext } from './auth';
+import { authorizeSyncRequest, type EnvWithSyncAuth, type SyncAuthContext } from './auth';
+import { handleCloudAuthRequest } from './cloud-auth-routes';
 import {
   getDocumentMetadata,
   matchDocumentMetadataRoute,
@@ -19,9 +20,8 @@ import {
 import { matchDownloadRoute, redirectToLatestDownload } from './downloads';
 import { matchSyncClientRoute, registerSyncClient } from './sync-clients';
 
-interface Env {
+interface Env extends EnvWithSyncAuth {
   DB: D1Database;
-  GOYO_SYNC_TOKEN?: string;
 }
 
 export default {
@@ -48,6 +48,12 @@ export default {
       return downloadResponse;
     }
 
+    const authResponse = await handleCloudAuthRequest(request, env, url);
+
+    if (authResponse) {
+      return authResponse;
+    }
+
     const syncResponse = await handleSyncApiRequest(request, env, url);
 
     if (syncResponse) {
@@ -67,14 +73,14 @@ async function handleSyncApiRequest(
     return null;
   }
 
-  const auth = authorizeSyncRequest(request, env);
+  const auth = await authorizeSyncRequest(request, env);
 
   if (!auth.ok) {
     return auth.response;
   }
 
   if (url.pathname === '/v1/sync/status' && request.method === 'GET') {
-    return Response.json({ auth: 'bearer-token', ok: true, storage: 'd1' });
+    return Response.json({ auth: auth.context.authMode, ok: true, storage: 'd1' });
   }
 
   const syncClientRoute = matchSyncClientRoute(url.pathname);

@@ -29,6 +29,25 @@ const desktopApi = {
   syncClient: {
     getId: () => ipcRenderer.invoke('syncClient:getId') as Promise<string>,
   },
+  goyoCloud: {
+    authStart: (email: string) =>
+      ipcRenderer.invoke('goyoCloud:authStart', email) as Promise<{
+        ok: boolean;
+        error?: string;
+      }>,
+    authVerify: (input: { email: string; code: string }) =>
+      ipcRenderer.invoke('goyoCloud:authVerify', input) as Promise<{
+        ok: boolean;
+        error?: string;
+        user?: { email: string; id: string };
+      }>,
+    getStatus: () =>
+      ipcRenderer.invoke('goyoCloud:getStatus') as Promise<{
+        account: { email: string; id: string } | null;
+        hasSession: boolean;
+      }>,
+    logout: () => ipcRenderer.invoke('goyoCloud:logout') as Promise<{ ok: boolean }>,
+  },
   backup: {
     exportLocalData: () =>
       ipcRenderer.invoke('backup:exportLocalData') as Promise<{

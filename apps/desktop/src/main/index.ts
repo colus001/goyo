@@ -15,6 +15,8 @@ import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 import { exportDocument } from './document-export';
 import { createDesktopLocalStore } from './document-metadata-store';
+import { cloudAuthLogout, cloudAuthStart, cloudAuthVerify } from './goyo-cloud-auth-client';
+import { createGoyoCloudSessionStore } from './goyo-cloud-session';
 import { exportLocalBackup } from './local-backup';
 import {
   getSyncStatusSummary,
@@ -46,15 +48,20 @@ function registerDocumentIpc() {
   const store = createDesktopLocalStore(userDataPath);
   const syncClientIdentity = createSyncClientIdentityStore(userDataPath);
   const syncCredentials = createSyncCredentialsStore(userDataPath);
+  const goyoCloudSession = createGoyoCloudSessionStore(userDataPath);
   const getSyncConnection = (): SyncConnectionSettings => {
     const syncSettings = store.getAppSettings().sync;
+    const token =
+      syncSettings.provider === 'goyo-cloud'
+        ? goyoCloudSession.getSessionToken()
+        : syncCredentials.getToken();
 
     return {
       clientId: syncClientIdentity.getOrCreateClientId(),
       enabled: syncSettings.enabled && syncSettings.provider !== 'local',
       serverUrl:
         syncSettings.provider === 'goyo-cloud' ? GOYO_CLOUD_SYNC_URL : syncSettings.selfHostedUrl,
-      token: syncCredentials.getToken(),
+      token,
     };
   };
 
@@ -86,6 +93,50 @@ function registerDocumentIpc() {
     }
   });
   ipcMain.handle('syncClient:getId', () => syncClientIdentity.getOrCreateClientId());
+  ipcMain.handle('goyoCloud:authStart', async (_event, email: string) => {
+    try {
+      return await cloudAuthStart(email);
+    } catch (error) {
+      console.error('Failed to start Goyo Cloud auth', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('goyoCloud:authVerify', async (_event, input: { email: string; code: string }) => {
+    try {
+      const clientId = syncClientIdentity.getOrCreateClientId();
+      const result = await cloudAuthVerify({ clientId, code: input.code, email: input.email });
+
+      if (result.ok && result.token) {
+        goyoCloudSession.saveSessionToken(result.token);
+        if (result.user) goyoCloudSession.saveAccount(result.user);
+      }
+
+      return { ok: result.ok, error: result.error, user: result.user };
+    } catch (error) {
+      console.error('Failed to verify Goyo Cloud auth', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('goyoCloud:getStatus', () => {
+    const token = goyoCloudSession.getSessionToken();
+    const account = goyoCloudSession.getAccount();
+
+    return { account, hasSession: !!token };
+  });
+  ipcMain.handle('goyoCloud:logout', async () => {
+    try {
+      const token = goyoCloudSession.getSessionToken();
+
+      if (token) {
+        await cloudAuthLogout(token);
+      }
+    } catch {
+      // logout is best-effort; clear local state regardless
+    }
+
+    goyoCloudSession.saveSessionToken('');
+    return { ok: true };
+  });
   ipcMain.handle('backup:exportLocalData', async () => {
     try {
       return await exportLocalBackup(store);

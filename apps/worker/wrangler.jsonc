@@ -6,6 +6,15 @@
   "observability": {
     "enabled": true
   },
+  "vars": {
+    "AUTH_EMAIL_FROM": "Goyo <no-reply@goyo.seokjun.kim>"
+  },
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "remote": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
