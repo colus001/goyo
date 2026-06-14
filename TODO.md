@@ -6,7 +6,7 @@
 - [x] Create the Electron + React + TypeScript desktop app.
 - [x] Create the Vite + React + TypeScript web app scaffold for future reuse.
 - [x] Create the Cloudflare Worker app structure.
-- [x] Decide the monorepo layout, preferably `apps/desktop`, `apps/web`, `apps/worker`, `packages/core`, `packages/shared`, and `packages/ui`.
+- [x] Decide the monorepo layout, preferably `apps/desktop`, `apps/landing`, `apps/worker`, `packages/core`, `packages/shared`, and `packages/ui`.
 - [x] Configure TypeScript across the workspace.
 - [x] Configure linting and formatting.
 - [x] Configure Turborepo workspace task runner.
@@ -275,8 +275,8 @@
 
 ## Milestone 13: Future Browser Web App
 
-- [ ] Reuse `packages/ui` in `apps/web`.
-- [ ] Reuse `packages/core` in `apps/web`.
+- [ ] Reuse `packages/ui` in the future browser app.
+- [ ] Reuse `packages/core` in the future browser app.
 - [ ] Add IndexedDB implementation for core local store interfaces.
 - [ ] Add responsive baseline for primary browser screens.
 - [ ] Review web editor constraints separately from Electron desktop constraints.

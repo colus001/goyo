@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "goyo-web",
+  "name": "goyo-landing",
   "compatibility_date": "2026-06-11",
   "assets": {
     "directory": "./dist",

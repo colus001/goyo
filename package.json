@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "turbo run dev --parallel",
     "dev:desktop": "pnpm --filter @writer/desktop dev",
-    "dev:web": "pnpm --filter @writer/web dev",
+    "dev:landing": "pnpm --filter @writer/landing dev",
     "dev:worker": "pnpm --filter @writer/worker dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",

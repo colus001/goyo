@@ -37,9 +37,9 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 ## Workspace And Tooling
 
 - Use `pnpm` as the package manager and Turborepo as the workspace task runner.
-- Keep the workspace layout as `apps/desktop`, `apps/web`, `apps/worker`, `packages/core`, `packages/shared`, and `packages/ui` unless there is a concrete reason to change it.
+- Keep the workspace layout as `apps/desktop`, `apps/landing`, `apps/worker`, `packages/core`, `packages/shared`, and `packages/ui` unless there is a concrete reason to change it.
 - `apps/desktop` is the primary app and should contain Electron main/preload/renderer composition, native lifecycle, IPC boundaries, and desktop-specific integration.
-- `apps/web` is retained for the future browser app and should reuse packages rather than duplicate app logic.
+- `apps/landing` contains the public landing site. Keep it separate from the future browser app so product code is not confused with marketing pages.
 - Put reusable UI components in `packages/ui`; keep app packages focused on app composition, routing, feature wiring, and platform-specific integration.
 - Put editor-agnostic product/domain logic in `packages/core`, including document operations, sync state machines, recovery policies, and local store interfaces.
 - Keep book, chapter, note, and draft metadata behavior in `packages/core`; app layers should compose these concepts rather than redefining them.
@@ -59,8 +59,8 @@ The product should prioritize calm long-form writing, drafting, revision, organi
 - If `pnpm check` reports Biome, Knip, lint, or typecheck issues, fix the reported issues instead of bypassing them.
 - Use `pnpm check:write` when safe automatic Biome fixes are appropriate, then rerun `pnpm check`.
 - Include tests in the root validation harness once test tooling is configured; `pnpm check` should cover formatting/linting, Knip, typechecking, and tests.
-- Use root scripts for common workflows: `pnpm dev`, `pnpm dev:desktop`, `pnpm dev:web`, `pnpm dev:worker`, `pnpm build`, `pnpm typecheck`, `pnpm test`, `pnpm lint`, `pnpm knip`, and `pnpm check`.
-- `pnpm dev` should run all app dev processes through Turbo; use `pnpm dev:desktop`, `pnpm dev:web`, or `pnpm dev:worker` only when intentionally running one target.
+- Use root scripts for common workflows: `pnpm dev`, `pnpm dev:desktop`, `pnpm dev:landing`, `pnpm dev:worker`, `pnpm build`, `pnpm typecheck`, `pnpm test`, `pnpm lint`, `pnpm knip`, and `pnpm check`.
+- `pnpm dev` should run all app dev processes through Turbo; use `pnpm dev:desktop`, `pnpm dev:landing`, or `pnpm dev:worker` only when intentionally running one target.
 
 ## Desktop Architecture
 
