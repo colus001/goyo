@@ -1,7 +1,7 @@
-const API_BASE = 'https://goyo-api.seokjun.kim';
+const API_BASE = '/api/v1';
 
 export async function authStart(email: string): Promise<{ ok: boolean; error?: string }> {
-  const response = await fetch(`${API_BASE}/v1/auth/start`, {
+  const response = await fetch(`${API_BASE}/auth/start`, {
     body: JSON.stringify({ email }),
     headers: { 'content-type': 'application/json' },
     method: 'POST',
@@ -19,9 +19,9 @@ export async function authVerify(input: {
   clientId?: string;
   code: string;
   email: string;
-  sessionKind?: 'desktop' | 'web';
+  sessionKind?: string;
 }): Promise<{ ok: boolean; error?: string; token?: string; user?: { id: string; email: string } }> {
-  const response = await fetch(`${API_BASE}/v1/auth/verify`, {
+  const response = await fetch(`${API_BASE}/auth/verify`, {
     body: JSON.stringify({ ...input, sessionKind: input.sessionKind ?? 'web' }),
     headers: { 'content-type': 'application/json' },
     method: 'POST',
@@ -46,9 +46,7 @@ export async function authMe(): Promise<{
   error?: string;
   user?: { id: string; email: string };
 }> {
-  const response = await fetch(`${API_BASE}/v1/auth/me`, {
-    credentials: 'include',
-  });
+  const response = await fetch(`${API_BASE}/auth/me`);
 
   const body = (await response.json().catch(() => ({}))) as {
     error?: string;
@@ -64,37 +62,19 @@ export async function authMe(): Promise<{
 }
 
 export async function authLogout(): Promise<{ ok: boolean }> {
-  await fetch(`${API_BASE}/v1/auth/logout`, {
-    credentials: 'include',
-    method: 'POST',
-  });
-
+  await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
   return { ok: true };
 }
 
-export interface CloudDocument {
-  archivedAt: string | null;
-  bookId: string;
-  chapterId: string | null;
-  createdAt: string;
-  id: string;
-  kind: string;
-  order: number;
-  title: string;
-  updatedAt: string;
-}
-
 export async function fetchDocuments(): Promise<{
-  documents?: CloudDocument[];
+  documents?: import('./types').CloudDocument[];
   error?: string;
   ok: boolean;
 }> {
-  const response = await fetch(`${API_BASE}/v1/documents`, {
-    credentials: 'include',
-  });
+  const response = await fetch(`${API_BASE}/documents`);
 
   const body = (await response.json().catch(() => ({}))) as {
-    documents?: CloudDocument[];
+    documents?: import('./types').CloudDocument[];
     error?: string;
     ok?: boolean;
   };
@@ -112,12 +92,10 @@ export async function fetchDocumentContent(documentId: string): Promise<{
   ok: boolean;
 }> {
   const response = await fetch(
-    `${API_BASE}/v1/documents/${encodeURIComponent(documentId)}/snapshots/latest`,
-    { credentials: 'include' },
+    `${API_BASE}/documents/${encodeURIComponent(documentId)}/snapshots/latest`,
   );
 
   const body = (await response.json().catch(() => ({}))) as {
-    documentId?: string;
     error?: string;
     ok?: boolean;
     snapshot?: { snapshotBase64: string } | null;

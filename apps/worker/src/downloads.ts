@@ -34,6 +34,15 @@ interface GitHubRelease {
   tag_name: string;
 }
 
+const R2_KEY_PREFIX = 'releases';
+
+const R2_FILE_NAMES: Record<DownloadTarget, string> = {
+  'linux-appimage': 'Goyo.AppImage',
+  'linux-deb': 'Goyo.deb',
+  mac: 'Goyo.dmg',
+  windows: 'Goyo.exe',
+};
+
 export function matchDownloadRoute(pathname: string): DownloadTarget | null {
   const match = /^\/downloads\/([^/]+)$/.exec(pathname);
 
@@ -46,7 +55,30 @@ export function matchDownloadRoute(pathname: string): DownloadTarget | null {
   return isDownloadTarget(target) ? target : null;
 }
 
-export async function redirectToLatestDownload(target: DownloadTarget): Promise<Response> {
+export async function serveDownload(
+  target: DownloadTarget,
+  releasesBucket: R2Bucket | undefined,
+): Promise<Response> {
+  if (releasesBucket) {
+    const r2Key = `${R2_KEY_PREFIX}/${R2_FILE_NAMES[target]}`;
+    const r2Object = await releasesBucket.get(r2Key);
+
+    if (r2Object) {
+      return new Response(r2Object.body, {
+        headers: {
+          'Cache-Control': `public, max-age=${REDIRECT_CACHE_SECONDS}, s-maxage=${REDIRECT_CACHE_SECONDS}`,
+          'Content-Disposition': `attachment; filename="${R2_FILE_NAMES[target]}"`,
+          'Content-Type': r2Object.httpMetadata?.contentType ?? 'application/octet-stream',
+        },
+        status: 200,
+      });
+    }
+  }
+
+  return redirectToLatestRelease(target);
+}
+
+async function redirectToLatestRelease(target: DownloadTarget): Promise<Response> {
   const release = await fetchLatestRelease();
   const downloadTarget = downloadTargets[target];
   const asset = release.assets.find((candidate) => downloadTarget.pattern.test(candidate.name));

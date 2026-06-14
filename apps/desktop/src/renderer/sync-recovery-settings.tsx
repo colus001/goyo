@@ -58,7 +58,10 @@ function SyncProviderSettings({
           tokenDraft={tokenDraft}
         />
       ) : null}
-      {settings.sync.provider === 'goyo-cloud' ? <GoyoCloudAuthSection /> : null}
+      <GoyoCloudAuthSection onChangeSettings={onChangeSettings} settings={settings} />
+      {settings.sync.provider === 'goyo-cloud'
+        ? testConnectionButton(isTestingConnection, setIsTestingConnection, setConnectionStatus)
+        : null}
       {settings.sync.provider === 'self-hosted' ? (
         <SyncConnectionActions
           hasToken={hasToken}
