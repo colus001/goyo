@@ -1,4 +1,6 @@
+import { APP_NAME } from '@writer/shared';
 import type { ReactElement, ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import {
   type AppLocalePreference,
   DEFAULT_APP_LOCALE_PREFERENCE,
@@ -89,6 +91,27 @@ export function SettingsSections({
           />
         </SettingsSection>
       ) : null}
+
+      <SettingsSection title="About">
+        <AboutVersion />
+      </SettingsSection>
+    </div>
+  );
+}
+
+function AboutVersion(): ReactElement {
+  const [version, setVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    void window.writerDesktop.version.getVersion().then(setVersion);
+  }, []);
+
+  return (
+    <div className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-4">
+      <p className="font-medium text-[var(--goyo-text)]">{APP_NAME}</p>
+      <p className="mt-1 text-[var(--goyo-text-muted)] text-sm">
+        {version ? `v${version}` : 'Loading version…'}
+      </p>
     </div>
   );
 }

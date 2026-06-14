@@ -153,6 +153,7 @@ function SettingsNavigation({ isDevelopment }: { isDevelopment: boolean }): Reac
         <SettingsNavItem label="Sync & Account" />
         <SettingsNavItem label="Recovery" />
         {isDevelopment ? <SettingsNavItem label="Development" /> : null}
+        <SettingsNavItem label="About" />
       </nav>
     </aside>
   );

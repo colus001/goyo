@@ -154,6 +154,7 @@ function registerDocumentIpc() {
     }
   });
   ipcMain.handle('dev:isDevelopment', () => isDevelopment);
+  ipcMain.handle('app:getVersion', () => app.getVersion());
   ipcMain.handle('dev:resetLocalData', () => {
     if (!isDevelopment) {
       throw new Error('Local data reset is only available in development.');
