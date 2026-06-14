@@ -16,11 +16,13 @@ export async function authStart(email: string): Promise<{ ok: boolean; error?: s
 }
 
 export async function authVerify(input: {
+  clientId?: string;
   code: string;
   email: string;
-}): Promise<{ ok: boolean; error?: string; user?: { id: string; email: string } }> {
+  sessionKind?: 'desktop' | 'web';
+}): Promise<{ ok: boolean; error?: string; token?: string; user?: { id: string; email: string } }> {
   const response = await fetch(`${API_BASE}/v1/auth/verify`, {
-    body: JSON.stringify({ ...input, sessionKind: 'web' }),
+    body: JSON.stringify({ ...input, sessionKind: input.sessionKind ?? 'web' }),
     headers: { 'content-type': 'application/json' },
     method: 'POST',
   });
@@ -28,6 +30,7 @@ export async function authVerify(input: {
   const body = (await response.json().catch(() => ({}))) as {
     error?: string;
     ok?: boolean;
+    token?: string;
     user?: { id: string; email: string };
   };
 
@@ -35,7 +38,7 @@ export async function authVerify(input: {
     return { error: body.error ?? 'Verification failed.', ok: false };
   }
 
-  return { ok: true, user: body.user };
+  return { ok: true, token: body.token, user: body.user };
 }
 
 export async function authMe(): Promise<{

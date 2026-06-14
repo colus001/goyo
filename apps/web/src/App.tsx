@@ -9,18 +9,28 @@ interface CloudUser {
 type Page = 'account' | 'billing' | 'login' | 'verify';
 
 interface AuthState {
+  clientId: string | null;
   email: string;
+  isDesktopFlow: boolean;
   page: Page;
   status: string | null;
   user: CloudUser | null;
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: auth flow for desktop deep link and web session
 export default function App(): ReactElement {
-  const [state, setState] = useState<AuthState>({
-    email: '',
-    page: getInitialPage(),
-    status: null,
-    user: null,
+  const [state, setState] = useState<AuthState>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const clientId = params.get('clientId');
+    const isDesktopFlow = params.get('source') === 'desktop';
+    return {
+      clientId,
+      email: '',
+      isDesktopFlow,
+      page: isDesktopFlow ? 'login' : getInitialPage(),
+      status: null,
+      user: null,
+    };
   });
 
   useEffect(() => {
@@ -45,10 +55,30 @@ export default function App(): ReactElement {
   };
   const onVerify = (code: string) => {
     setState((prev) => ({ ...prev, status: 'Verifying…' }));
-    void authVerify({ code, email: state.email }).then((result) => {
-      if (result.ok && result.user) {
-        setState((prev) => ({ ...prev, page: 'account', status: null, user: result.user ?? null }));
-        return;
+    void authVerify({
+      clientId: state.clientId ?? undefined,
+      code,
+      email: state.email,
+      sessionKind: state.isDesktopFlow ? 'desktop' : 'web',
+    }).then((result) => {
+      if (result.ok) {
+        if (state.isDesktopFlow && result.token && result.user) {
+          const params = new URLSearchParams();
+          params.set('token', result.token);
+          params.set('userId', result.user.id);
+          params.set('email', result.user.email);
+          window.location.href = `goyo://auth/callback?${params.toString()}`;
+          return;
+        }
+        if (result.user) {
+          setState((prev) => ({
+            ...prev,
+            page: 'account',
+            status: null,
+            user: result.user ?? null,
+          }));
+          return;
+        }
       }
       setState((prev) => ({ ...prev, status: result.error ?? null }));
     });

@@ -30,6 +30,7 @@ declare global {
       };
       goyoCloud: {
         authStart: (email: string) => Promise<{ ok: boolean; error?: string }>;
+        authStartBrowser: () => Promise<{ ok: boolean }>;
         authVerify: (input: {
           email: string;
           code: string;
@@ -39,6 +40,9 @@ declare global {
           hasSession: boolean;
         }>;
         logout: () => Promise<{ ok: boolean }>;
+        onDeepLinkToken: (
+          callback: (data: { email: string | null; userId: string | null }) => void,
+        ) => () => void;
       };
       backup: {
         exportLocalData: () => Promise<{

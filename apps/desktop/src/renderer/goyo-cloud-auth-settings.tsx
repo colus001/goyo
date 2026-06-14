@@ -13,6 +13,7 @@ export function GoyoCloudAuthSection(): ReactElement {
   const [code, setCode] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isOpeningBrowser, setIsOpeningBrowser] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -21,6 +22,18 @@ export function GoyoCloudAuthSection(): ReactElement {
       setAccount(result.account);
       setLoaded(true);
     });
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = window.writerDesktop.goyoCloud.onDeepLinkToken(() => {
+      void window.writerDesktop.goyoCloud.getStatus().then((result) => {
+        if (result.account) {
+          setAccount(result.account);
+          setStatus('Signed in via browser.');
+        }
+      });
+    });
+    return unsubscribe;
   }, []);
 
   const onSendCode = () => {
@@ -63,6 +76,19 @@ export function GoyoCloudAuthSection(): ReactElement {
     });
   };
 
+  const onStartBrowser = () => {
+    setIsOpeningBrowser(true);
+    setStatus(null);
+    void window.writerDesktop.goyoCloud.authStartBrowser().then((result) => {
+      setIsOpeningBrowser(false);
+      if (!result.ok) {
+        setStatus('Could not open browser for sign-in.');
+        return;
+      }
+      setStatus('Complete sign-in in your browser to return to the app.');
+    });
+  };
+
   if (!loaded) return null as unknown as ReactElement;
 
   if (account) {
@@ -80,11 +106,13 @@ export function GoyoCloudAuthSection(): ReactElement {
     <SignInView
       code={code}
       email={email}
+      isOpeningBrowser={isOpeningBrowser}
       isSending={isSending}
       isVerifying={isVerifying}
       onChangeCode={setCode}
       onChangeEmail={setEmail}
       onSendCode={onSendCode}
+      onStartBrowser={onStartBrowser}
       onVerify={onVerify}
       status={status}
     />
@@ -135,21 +163,25 @@ function SignedInView({
 function SignInView({
   code,
   email,
+  isOpeningBrowser,
   isSending,
   isVerifying,
   onChangeCode,
   onChangeEmail,
   onSendCode,
+  onStartBrowser,
   onVerify,
   status,
 }: {
   code: string;
   email: string;
+  isOpeningBrowser: boolean;
   isSending: boolean;
   isVerifying: boolean;
   onChangeCode: (code: string) => void;
   onChangeEmail: (email: string) => void;
   onSendCode: () => void;
+  onStartBrowser: () => void;
   onVerify: () => void;
   status: string | null;
 }): ReactElement {
@@ -196,6 +228,21 @@ function SignInView({
           type="button"
         >
           {isVerifying ? 'Verifying…' : 'Verify code'}
+        </button>
+      </div>
+      <div className="mt-4 flex items-center gap-3 text-[var(--goyo-text-muted)] text-xs">
+        <div className="flex-1 border-t border-[var(--goyo-border)]" />
+        <span>or</span>
+        <div className="flex-1 border-t border-[var(--goyo-border)]" />
+      </div>
+      <div className="mt-3">
+        <button
+          className="w-full rounded-xl bg-[var(--goyo-raised)] border border-[var(--goyo-border)] px-3 py-2 font-medium text-[var(--goyo-text)] text-sm hover:bg-[var(--goyo-accent-soft)] disabled:opacity-50"
+          disabled={isOpeningBrowser}
+          onClick={onStartBrowser}
+          type="button"
+        >
+          {isOpeningBrowser ? 'Opening browser…' : 'Sign in with browser'}
         </button>
       </div>
       {status ? <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{status}</p> : null}
