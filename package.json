@@ -21,7 +21,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "latest",
     "knip": "latest",

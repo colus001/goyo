@@ -8,6 +8,7 @@
     "email": "seokjun@seokjun.kim"
   },
   "homepage": "https://goyo.seokjun.kim",
+  "license": "MIT",
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
