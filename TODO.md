@@ -362,6 +362,18 @@
 - [x] Verify sync remains available for all signed-in Goyo Cloud users while payment enforcement is disabled.
 - [x] Verify local writing remains safe when Goyo Cloud login or session refresh fails.
 
+### 13J: Web Document Viewer
+
+- [x] Add Worker `GET /v1/documents` endpoint to list all synced documents for the authenticated user.
+- [x] Add web document list page at `/documents` showing title, kind, and last-updated date.
+- [x] Add web document detail read-only view with Yjs snapshot content rendering.
+- [x] Require web session (cookie) auth for document API calls; redirect unauthenticated access.
+- [x] Add Documents navigation link to the CloudShell nav bar visible when signed in.
+- [x] Add `@writer/editor` dependency to `apps/web` for Yjs snapshot content extraction.
+- [x] Keep browser writing/editor functionality out of the read-only viewer.
+- [ ] Verify document list renders synced documents from a real desktop sync.
+- [ ] Verify document detail decodes Yjs snapshot content correctly.
+
 ## Milestone 14: Future Browser Writing App
 
 - [ ] Reuse `packages/ui` in the future browser writing app.

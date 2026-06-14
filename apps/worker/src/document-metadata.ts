@@ -123,6 +123,23 @@ export function matchDocumentMetadataRoute(pathname: string): { documentId: stri
   return { documentId: decodeURIComponent(match[1]) };
 }
 
+export async function listDocuments(env: EnvWithDocumentsDatabase, auth: SyncAuthContext) {
+  const rows = await env.DB.prepare(`
+    SELECT id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
+    FROM documents
+    WHERE owner_id = ? AND archived_at IS NULL
+    ORDER BY updated_at DESC
+    LIMIT 100;
+  `)
+    .bind(auth.ownerId)
+    .all<DocumentMetadataRow>();
+
+  return Response.json({
+    documents: rows.results.map(rowToDocumentMetadata),
+    ok: true,
+  });
+}
+
 function validateDocumentMetadataBody(
   body: UpsertDocumentMetadataRequestBody,
 ): { ok: true; value: ValidDocumentMetadataBody } | { ok: false; message: string } {
