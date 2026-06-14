@@ -38,10 +38,13 @@ export function GoyoCloudAuthSection({
           setAccount(result.account);
           setStatus('Signed in via browser.');
           if (settings.sync.provider !== 'goyo-cloud') {
-            onChangeSettings({
+            const newSettings = {
               ...settings,
-              sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' },
-            });
+              sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' as const },
+            };
+            onChangeSettings(newSettings);
+            void window.writerDesktop.appSettings.save(newSettings);
+            void window.writerDesktop.sync.retryNow().catch(() => {});
           }
         }
       });
@@ -75,10 +78,13 @@ export function GoyoCloudAuthSection({
         setCode('');
         setStatus('Signed in to Goyo Cloud.');
         if (settings.sync.provider !== 'goyo-cloud') {
-          onChangeSettings({
+          const newSettings = {
             ...settings,
-            sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' },
-          });
+            sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' as const },
+          };
+          onChangeSettings(newSettings);
+          void window.writerDesktop.appSettings.save(newSettings);
+          void window.writerDesktop.sync.retryNow().catch(() => {});
         }
         return;
       }
