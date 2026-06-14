@@ -50,6 +50,9 @@ declare global {
         isDevelopment: () => Promise<boolean>;
         resetLocalData: () => Promise<void>;
       };
+      version: {
+        getVersion: () => Promise<string>;
+      };
       books: {
         list: () => Promise<BookMetadata[]>;
         saveMetadata: (book: BookMetadata) => Promise<void>;

@@ -59,6 +59,9 @@ const desktopApi = {
     isDevelopment: () => ipcRenderer.invoke('dev:isDevelopment') as Promise<boolean>,
     resetLocalData: () => ipcRenderer.invoke('dev:resetLocalData') as Promise<void>,
   },
+  version: {
+    getVersion: () => ipcRenderer.invoke('app:getVersion') as Promise<string>,
+  },
   books: {
     list: () => ipcRenderer.invoke('books:list') as Promise<BookMetadata[]>,
     saveMetadata: (book: BookMetadata) =>
