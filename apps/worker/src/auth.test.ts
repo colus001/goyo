@@ -33,6 +33,6 @@ describe('sync request auth', () => {
         }),
         { GOYO_SYNC_TOKEN: 'secret-token' },
       ),
-    ).toEqual({ ok: true });
+    ).toEqual({ context: { authMode: 'self-host-token', ownerId: 'self' }, ok: true });
   });
 });

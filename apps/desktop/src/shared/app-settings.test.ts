@@ -95,21 +95,53 @@ describe('normalizeAppSettings sync settings', () => {
   it('keeps a valid self-host sync endpoint', () => {
     expect(
       normalizeAppSettings({
-        sync: { enabled: true, serverUrl: 'https://sync.example.com/' },
+        sync: {
+          enabled: true,
+          provider: 'self-hosted',
+          selfHostedUrl: 'https://sync.example.com/',
+        },
       }).sync,
-    ).toEqual({ enabled: true, serverUrl: 'https://sync.example.com' });
+    ).toEqual({
+      enabled: true,
+      provider: 'self-hosted',
+      selfHostedUrl: 'https://sync.example.com',
+    });
+  });
+
+  it('keeps the Goyo Cloud sync provider without a custom endpoint', () => {
+    expect(
+      normalizeAppSettings({
+        sync: { enabled: true, provider: 'goyo-cloud' },
+      }).sync,
+    ).toEqual({ enabled: true, provider: 'goyo-cloud', selfHostedUrl: '' });
   });
 
   it('disables sync when the endpoint is missing or unsafe', () => {
-    expect(normalizeAppSettings({ sync: { enabled: true, serverUrl: '' } }).sync).toEqual(
-      DEFAULT_APP_SETTINGS.sync,
-    );
     expect(
-      normalizeAppSettings({ sync: { enabled: true, serverUrl: 'http://example.com' } }).sync,
+      normalizeAppSettings({ sync: { enabled: true, provider: 'self-hosted', selfHostedUrl: '' } })
+        .sync,
     ).toEqual(DEFAULT_APP_SETTINGS.sync);
     expect(
-      normalizeAppSettings({ sync: { enabled: true, serverUrl: 'http://localhost:8787' } }).sync,
-    ).toEqual({ enabled: true, serverUrl: 'http://localhost:8787' });
+      normalizeAppSettings({
+        sync: { enabled: true, provider: 'self-hosted', selfHostedUrl: 'http://example.com' },
+      }).sync,
+    ).toEqual(DEFAULT_APP_SETTINGS.sync);
+    expect(
+      normalizeAppSettings({
+        sync: { enabled: true, provider: 'self-hosted', selfHostedUrl: 'http://localhost:8787' },
+      }).sync,
+    ).toEqual({ enabled: true, provider: 'self-hosted', selfHostedUrl: 'http://localhost:8787' });
+  });
+
+  it('migrates legacy sync serverUrl to self-hosted mode', () => {
+    expect(
+      normalizeAppSettings({ sync: { enabled: true, serverUrl: 'https://legacy.example.com' } })
+        .sync,
+    ).toEqual({
+      enabled: true,
+      provider: 'self-hosted',
+      selfHostedUrl: 'https://legacy.example.com',
+    });
   });
 });
 

@@ -269,12 +269,13 @@ export function selectChapter(
 
 export function recordDocumentUpdate(
   documentId: string | undefined,
-  clientId: string,
+  clientId: string | null,
   update: Uint8Array,
   setSaveStatus: (saveStatus: SaveStatus) => void,
   snapshot?: Uint8Array,
 ) {
-  if (!documentId) {
+  if (!documentId || !clientId) {
+    setSaveStatus('Save failed');
     return;
   }
 

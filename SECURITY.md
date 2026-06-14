@@ -25,6 +25,7 @@ and coordinate a fix before public disclosure.
 
 - The deployed Worker sync endpoints are not a production-ready public API.
 - Self-hosted Worker sync uses bearer-token authentication, but hosted multi-user
-  accounts and per-user document ownership are not implemented yet.
+  accounts are not implemented yet. Self-hosted documents are scoped to the
+  single owner represented by that token.
 - Do not send sensitive writing content to a shared or hosted sync API until
   those protections are in place.

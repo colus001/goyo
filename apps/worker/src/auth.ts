@@ -4,10 +4,15 @@ export interface EnvWithSyncAuth {
   GOYO_SYNC_TOKEN?: string;
 }
 
+export interface SyncAuthContext {
+  authMode: 'self-host-token';
+  ownerId: string;
+}
+
 export function authorizeSyncRequest(
   request: Request,
   env: EnvWithSyncAuth,
-): { ok: true } | { ok: false; response: Response } {
+): { ok: true; context: SyncAuthContext } | { ok: false; response: Response } {
   if (!env.GOYO_SYNC_TOKEN) {
     return { ok: false, response: jsonError('Sync server auth is not configured.', 503) };
   }
@@ -19,5 +24,5 @@ export function authorizeSyncRequest(
     return { ok: false, response: jsonError('Unauthorized.', 401) };
   }
 
-  return { ok: true };
+  return { context: { authMode: 'self-host-token', ownerId: 'self' }, ok: true };
 }

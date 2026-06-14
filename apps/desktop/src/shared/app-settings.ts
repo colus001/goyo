@@ -28,8 +28,11 @@ export interface AppSettings {
 
 interface AppSyncSettings {
   enabled: boolean;
-  serverUrl: string;
+  provider: AppSyncProvider;
+  selfHostedUrl: string;
 }
+
+type AppSyncProvider = 'goyo-cloud' | 'local' | 'self-hosted';
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   customTheme: null,
@@ -37,7 +40,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   restoreLastWorkspaceOnLaunch: true,
   sync: {
     enabled: false,
-    serverUrl: '',
+    provider: 'local',
+    selfHostedUrl: '',
   },
   themeId: DEFAULT_APP_THEME_ID,
   uiFontId: DEFAULT_UI_FONT_ID,
@@ -82,13 +86,29 @@ function normalizeAppSyncSettings(settings: unknown): AppSyncSettings {
     return DEFAULT_APP_SETTINGS.sync;
   }
 
-  const partialSettings = settings as Partial<AppSyncSettings>;
-  const serverUrl = normalizeSyncServerUrl(partialSettings.serverUrl);
+  const partialSettings = settings as Partial<AppSyncSettings> & { serverUrl?: unknown };
+  const selfHostedUrl = normalizeSyncServerUrl(
+    partialSettings.selfHostedUrl ?? partialSettings.serverUrl,
+  );
+  const provider = normalizeSyncProvider(partialSettings.provider, selfHostedUrl);
 
   return {
-    enabled: partialSettings.enabled === true && serverUrl.length > 0,
-    serverUrl,
+    enabled: partialSettings.enabled === true && provider !== 'local',
+    provider,
+    selfHostedUrl,
   };
+}
+
+function normalizeSyncProvider(provider: unknown, selfHostedUrl: string): AppSyncProvider {
+  if (provider === 'goyo-cloud') {
+    return 'goyo-cloud';
+  }
+
+  if (provider === 'self-hosted') {
+    return selfHostedUrl.length > 0 ? 'self-hosted' : 'local';
+  }
+
+  return selfHostedUrl.length > 0 ? 'self-hosted' : 'local';
 }
 
 function normalizeSyncServerUrl(value: unknown): string {

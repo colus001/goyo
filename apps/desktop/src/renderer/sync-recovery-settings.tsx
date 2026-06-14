@@ -19,13 +19,13 @@ export function SyncRecoverySettings({
 }): ReactElement {
   return (
     <div className="space-y-3">
-      <SelfHostSyncSettings onChangeSettings={onChangeSettings} settings={settings} />
+      <SyncProviderSettings onChangeSettings={onChangeSettings} settings={settings} />
       <SyncRecoveryCard />
     </div>
   );
 }
 
-function SelfHostSyncSettings({
+function SyncProviderSettings({
   onChangeSettings,
   settings,
 }: {
@@ -59,30 +59,35 @@ function SelfHostSyncSettings({
 
   return (
     <div className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/45 p-4">
-      <p className="font-medium text-[var(--goyo-text)]">Self-host sync</p>
+      <p className="font-medium text-[var(--goyo-text)]">Remote sync</p>
       <p className="mt-1 text-[var(--goyo-text-muted)] text-sm leading-relaxed">
-        Connect this desktop app to your own Cloudflare Worker sync server. Keep sync disabled for
-        local-only writing.
+        Choose local-only writing, Goyo Cloud, or your own Cloudflare Worker. Goyo Cloud uses the
+        built-in goyo-api.seokjun.kim endpoint; self-hosted sync uses your Worker URL.
       </p>
-      <SyncEnableToggle onChangeSettings={onChangeSettings} settings={settings} />
-      <SyncConnectionFields
-        hasToken={hasToken}
-        onChangeSettings={onChangeSettings}
-        onChangeTokenDraft={setTokenDraft}
-        settings={settings}
-        tokenDraft={tokenDraft}
-      />
-      <SyncConnectionActions
-        hasToken={hasToken}
-        isSavingToken={isSavingToken}
-        isTestingConnection={isTestingConnection}
-        onClearToken={() => saveToken('')}
-        onSaveToken={() => saveToken(tokenDraft)}
-        onTestConnection={(isTesting) => setIsTestingConnection(isTesting)}
-        setConnectionStatus={setConnectionStatus}
-        settings={settings}
-        tokenDraft={tokenDraft}
-      />
+      <SyncModePicker onChangeSettings={onChangeSettings} settings={settings} />
+      {settings.sync.provider === 'self-hosted' ? (
+        <SyncConnectionFields
+          hasToken={hasToken}
+          onChangeSettings={onChangeSettings}
+          onChangeTokenDraft={setTokenDraft}
+          settings={settings}
+          tokenDraft={tokenDraft}
+        />
+      ) : null}
+      {settings.sync.provider === 'goyo-cloud' ? <GoyoCloudSummary /> : null}
+      {settings.sync.provider !== 'local' ? (
+        <SyncConnectionActions
+          hasToken={hasToken}
+          isSavingToken={isSavingToken}
+          isTestingConnection={isTestingConnection}
+          onClearToken={() => saveToken('')}
+          onSaveToken={() => saveToken(tokenDraft)}
+          onTestConnection={(isTesting) => setIsTestingConnection(isTesting)}
+          setConnectionStatus={setConnectionStatus}
+          settings={settings}
+          tokenDraft={tokenDraft}
+        />
+      ) : null}
       {connectionStatus ? (
         <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{connectionStatus}</p>
       ) : null}
@@ -90,7 +95,7 @@ function SelfHostSyncSettings({
   );
 }
 
-function SyncEnableToggle({
+function SyncModePicker({
   onChangeSettings,
   settings,
 }: {
@@ -98,25 +103,81 @@ function SyncEnableToggle({
   settings: AppSettings;
 }): ReactElement {
   return (
-    <label className="mt-4 flex cursor-pointer items-start justify-between gap-6 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-4">
-      <span>
-        <span className="block font-medium text-[var(--goyo-text)]">Enable remote sync</span>
-        <span className="mt-1 block text-[var(--goyo-text-muted)] text-sm leading-relaxed">
-          Local saves continue to work even when this is off or the server is unavailable.
-        </span>
-      </span>
-      <input
-        checked={settings.sync.enabled}
-        className="mt-1 size-4 accent-[var(--goyo-accent)]"
-        onChange={(event) =>
+    <div className="mt-4 grid gap-2 md:grid-cols-3">
+      <SyncModeOption
+        description="Keep every draft on this device unless you export or back it up."
+        isSelected={settings.sync.provider === 'local'}
+        label="Local only"
+        onSelect={() =>
           onChangeSettings({
             ...settings,
-            sync: { ...settings.sync, enabled: event.target.checked },
+            sync: { ...settings.sync, enabled: false, provider: 'local' },
           })
         }
-        type="checkbox"
       />
-    </label>
+      <SyncModeOption
+        description="Use the official goyo-api.seokjun.kim endpoint when hosted accounts are available."
+        isSelected={settings.sync.provider === 'goyo-cloud'}
+        label="Goyo Cloud"
+        onSelect={() =>
+          onChangeSettings({
+            ...settings,
+            sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' },
+          })
+        }
+      />
+      <SyncModeOption
+        description="Connect to a Cloudflare Worker you deploy and control."
+        isSelected={settings.sync.provider === 'self-hosted'}
+        label="Self-hosted Worker"
+        onSelect={() =>
+          onChangeSettings({
+            ...settings,
+            sync: { ...settings.sync, enabled: true, provider: 'self-hosted' },
+          })
+        }
+      />
+    </div>
+  );
+}
+
+function SyncModeOption({
+  description,
+  isSelected,
+  label,
+  onSelect,
+}: {
+  description: string;
+  isSelected: boolean;
+  label: string;
+  onSelect: () => void;
+}): ReactElement {
+  return (
+    <button
+      className={`rounded-xl border p-3 text-left outline-none transition ${
+        isSelected
+          ? 'border-[var(--goyo-accent)] bg-[var(--goyo-accent-soft)]'
+          : 'border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 hover:bg-[var(--goyo-raised)]'
+      }`}
+      onClick={onSelect}
+      type="button"
+    >
+      <span className="block font-medium text-[var(--goyo-text)] text-sm">{label}</span>
+      <span className="mt-1 block text-[var(--goyo-text-muted)] text-xs leading-relaxed">
+        {description}
+      </span>
+    </button>
+  );
+}
+
+function GoyoCloudSummary(): ReactElement {
+  return (
+    <div className="mt-3 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-3 text-sm">
+      <p className="font-medium text-[var(--goyo-text)]">Server: goyo-api.seokjun.kim</p>
+      <p className="mt-1 text-[var(--goyo-text-muted)] leading-relaxed">
+        Hosted accounts are still early. Use this mode only after you have a Goyo Cloud token.
+      </p>
+    </div>
   );
 }
 
@@ -138,11 +199,11 @@ function SyncConnectionFields({
       <SettingsInput
         label="Worker URL"
         onChange={(serverUrl) =>
-          onChangeSettings({ ...settings, sync: { ...settings.sync, serverUrl } })
+          onChangeSettings({ ...settings, sync: { ...settings.sync, selfHostedUrl: serverUrl } })
         }
         placeholder="https://your-worker.example.workers.dev"
         type="url"
-        value={settings.sync.serverUrl}
+        value={settings.sync.selfHostedUrl}
       />
       <SettingsInput
         label={`Bearer token ${hasToken ? '(saved)' : ''}`}
@@ -200,7 +261,9 @@ function SyncConnectionActions({
         Clear token
       </SettingsButton>
       <SettingsButton
-        disabled={isTestingConnection || !settings.sync.enabled}
+        disabled={
+          isTestingConnection || !settings.sync.enabled || settings.sync.provider === 'local'
+        }
         isPrimary
         onClick={testConnection}
       >

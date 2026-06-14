@@ -26,6 +26,9 @@ const desktopApi = {
     saveToken: (token: string) =>
       ipcRenderer.invoke('syncCredentials:saveToken', token) as Promise<void>,
   },
+  syncClient: {
+    getId: () => ipcRenderer.invoke('syncClient:getId') as Promise<string>,
+  },
   backup: {
     exportLocalData: () =>
       ipcRenderer.invoke('backup:exportLocalData') as Promise<{

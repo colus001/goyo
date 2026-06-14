@@ -26,9 +26,11 @@ import {
   type SyncConnectionSettings,
   testSyncConnection,
 } from './remote-sync';
+import { createSyncClientIdentityStore } from './sync-client-identity';
 import { createSyncCredentialsStore } from './sync-credentials';
 
 const isDevelopment = !app.isPackaged;
+const GOYO_CLOUD_SYNC_URL = 'https://goyo-api.seokjun.kim';
 
 function configureUserDataPath() {
   if (!isDevelopment) {
@@ -42,12 +44,19 @@ function configureUserDataPath() {
 function registerDocumentIpc() {
   const userDataPath = app.getPath('userData');
   const store = createDesktopLocalStore(userDataPath);
+  const syncClientIdentity = createSyncClientIdentityStore(userDataPath);
   const syncCredentials = createSyncCredentialsStore(userDataPath);
-  const getSyncConnection = (): SyncConnectionSettings => ({
-    enabled: store.getAppSettings().sync.enabled,
-    serverUrl: store.getAppSettings().sync.serverUrl,
-    token: syncCredentials.getToken(),
-  });
+  const getSyncConnection = (): SyncConnectionSettings => {
+    const syncSettings = store.getAppSettings().sync;
+
+    return {
+      clientId: syncClientIdentity.getOrCreateClientId(),
+      enabled: syncSettings.enabled && syncSettings.provider !== 'local',
+      serverUrl:
+        syncSettings.provider === 'goyo-cloud' ? GOYO_CLOUD_SYNC_URL : syncSettings.selfHostedUrl,
+      token: syncCredentials.getToken(),
+    };
+  };
 
   ipcMain.handle('appUiState:get', () => store.getAppUiState());
   ipcMain.handle('appUiState:save', (_event, state: AppUiState) => {
@@ -76,6 +85,7 @@ function registerDocumentIpc() {
       throw error;
     }
   });
+  ipcMain.handle('syncClient:getId', () => syncClientIdentity.getOrCreateClientId());
   ipcMain.handle('backup:exportLocalData', async () => {
     try {
       return await exportLocalBackup(store);

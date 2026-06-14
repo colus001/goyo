@@ -265,9 +265,9 @@
 
 - [x] Choose an authentication approach.
 - [x] Add user identity model.
-- [ ] Add document ownership checks.
-- [ ] Add device or sync client identity.
-- [ ] Add sync client registration if needed.
+- [x] Add document ownership checks.
+- [x] Add device or sync client identity.
+- [x] Add sync client registration if needed.
 - [x] Block unauthorized document metadata access.
 - [x] Block unauthorized document update access.
 - [ ] Verify multiple devices can sync documents for the same user.

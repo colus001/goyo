@@ -1,4 +1,6 @@
+import type { SyncAuthContext } from './auth';
 import type { EnvWithDocumentsDatabase } from './document-updates';
+import { documentBelongsToOwner } from './document-updates';
 import {
   decodeBase64,
   encodeBase64,
@@ -24,6 +26,7 @@ interface DocumentSnapshotRow {
 export async function createDocumentSnapshot(
   request: Request,
   env: EnvWithDocumentsDatabase,
+  auth: SyncAuthContext,
   documentId: string,
 ) {
   const body = await readJsonBody<CreateDocumentSnapshotRequestBody>(request);
@@ -39,15 +42,22 @@ export async function createDocumentSnapshot(
   }
 
   try {
+    const documentExists = await documentBelongsToOwner(env, auth, documentId);
+
+    if (!documentExists) {
+      return jsonError('Document metadata must exist before snapshots can be uploaded.', 409);
+    }
+
     const snapshot = decodeBase64(validation.value.snapshotBase64);
     const result = await env.DB.prepare(`
       INSERT OR IGNORE INTO document_snapshots (
-        id, document_id, last_update_id, snapshot_blob, created_at, received_at
+        id, owner_id, document_id, last_update_id, snapshot_blob, created_at, received_at
       )
-      VALUES (?, ?, ?, ?, ?, ?);
+      VALUES (?, ?, ?, ?, ?, ?, ?);
     `)
       .bind(
         validation.value.id,
+        auth.ownerId,
         documentId,
         validation.value.lastUpdateId,
         snapshot,
@@ -70,15 +80,19 @@ export async function createDocumentSnapshot(
   }
 }
 
-export async function getLatestDocumentSnapshot(env: EnvWithDocumentsDatabase, documentId: string) {
+export async function getLatestDocumentSnapshot(
+  env: EnvWithDocumentsDatabase,
+  auth: SyncAuthContext,
+  documentId: string,
+) {
   const snapshot = await env.DB.prepare(`
     SELECT id, last_update_id, snapshot_blob, created_at
     FROM document_snapshots
-    WHERE document_id = ?
+    WHERE owner_id = ? AND document_id = ?
     ORDER BY created_at DESC, id DESC
     LIMIT 1;
   `)
-    .bind(documentId)
+    .bind(auth.ownerId, documentId)
     .first<DocumentSnapshotRow>();
 
   return Response.json({

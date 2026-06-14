@@ -1,3 +1,4 @@
+import type { SyncAuthContext } from './auth';
 import type { EnvWithDocumentsDatabase } from './document-updates';
 import { getStorageErrorMessage, jsonError, readJsonBody } from './http';
 
@@ -40,6 +41,7 @@ interface ValidDocumentMetadataBody {
 export async function upsertDocumentMetadata(
   request: Request,
   env: EnvWithDocumentsDatabase,
+  auth: SyncAuthContext,
   documentId: string,
 ) {
   const body = await readJsonBody<UpsertDocumentMetadataRequestBody>(request);
@@ -57,20 +59,23 @@ export async function upsertDocumentMetadata(
   try {
     await env.DB.prepare(`
       INSERT INTO documents (
-        id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
+        id, owner_id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        owner_id = excluded.owner_id,
         book_id = excluded.book_id,
         chapter_id = excluded.chapter_id,
         title = excluded.title,
         kind = excluded.kind,
         sort_order = excluded.sort_order,
         updated_at = excluded.updated_at,
-        archived_at = excluded.archived_at;
+        archived_at = excluded.archived_at
+      WHERE documents.owner_id = excluded.owner_id;
     `)
       .bind(
         documentId,
+        auth.ownerId,
         validation.value.bookId,
         validation.value.chapterId,
         validation.value.title,
@@ -88,13 +93,17 @@ export async function upsertDocumentMetadata(
   }
 }
 
-export async function getDocumentMetadata(env: EnvWithDocumentsDatabase, documentId: string) {
+export async function getDocumentMetadata(
+  env: EnvWithDocumentsDatabase,
+  auth: SyncAuthContext,
+  documentId: string,
+) {
   const document = await env.DB.prepare(`
     SELECT id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
     FROM documents
-    WHERE id = ?;
+    WHERE id = ? AND owner_id = ?;
   `)
-    .bind(documentId)
+    .bind(documentId, auth.ownerId)
     .first<DocumentMetadataRow>();
 
   if (!document) {

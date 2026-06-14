@@ -43,10 +43,11 @@ import type {
   WritingWorkspaceState,
 } from './document-workspace-types';
 import { useRemoteSync } from './use-remote-sync';
+import { useLoadSyncClientId } from './use-sync-client-id';
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: This hook assembles the workspace API from local state and action wiring.
 export function useWritingWorkspace(): WritingWorkspaceState {
-  const [clientId] = useState(() => `client_${globalThis.crypto.randomUUID()}`);
+  const [clientId, setClientId] = useState<string | null>(null);
   const [documentSnapshots, setDocumentSnapshots] = useState<DocumentSnapshotMap>({});
   const [documentUpdates, setDocumentUpdates] = useState<DocumentUpdateMap>({});
   const [expandedChapterIds, setExpandedChapterIds] = useState<string[]>([]);
@@ -77,6 +78,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     setExpandedChapterIds,
     setHasLoadedWorkspace,
   );
+  useLoadSyncClientId(setClientId, setSaveStatus);
   useRemoteSync(setSyncStatus);
   usePersistAppUiState({
     expandedChapterIds,

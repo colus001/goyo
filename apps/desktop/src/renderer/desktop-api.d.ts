@@ -25,6 +25,9 @@ declare global {
         hasToken: () => Promise<boolean>;
         saveToken: (token: string) => Promise<void>;
       };
+      syncClient: {
+        getId: () => Promise<string>;
+      };
       backup: {
         exportLocalData: () => Promise<{
           exported: boolean;

@@ -9,6 +9,7 @@ import type { DesktopLocalStore } from './document-metadata-store';
 import { isSyncItemReadyForRetry } from './sync-retry';
 
 export interface SyncConnectionSettings {
+  clientId: string;
   enabled: boolean;
   serverUrl: string;
   token: string | null;
@@ -82,6 +83,8 @@ export async function pushPendingDocumentUpdates(
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
   }
 
+  await registerSyncClient(connection);
+
   for (const item of pendingItems) {
     if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
       skippedUpdateCount += 1;
@@ -122,6 +125,8 @@ export async function pullRemoteDocumentUpdates(
   if (!isSyncConnectionReady(connection)) {
     return { pulledUpdateCount, skippedDocumentCount };
   }
+
+  await registerSyncClient(connection);
 
   for (const document of store.listDocuments()) {
     try {
@@ -168,6 +173,8 @@ export async function pushPendingDocumentSnapshots(
     return { pushedSnapshotCount, skippedSnapshotCount: pendingItems.length };
   }
 
+  await registerSyncClient(connection);
+
   for (const item of pendingItems) {
     if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
       skippedSnapshotCount += 1;
@@ -206,6 +213,8 @@ export async function pullRemoteDocumentSnapshots(
   if (!isSyncConnectionReady(connection)) {
     return { pulledSnapshotCount, skippedDocumentCount };
   }
+
+  await registerSyncClient(connection);
 
   for (const document of store.listDocuments()) {
     try {
@@ -380,6 +389,17 @@ export async function testSyncConnection(
   }
 
   return fetchJson<{ ok: boolean }>(connection, '/v1/sync/status', { method: 'GET' });
+}
+
+async function registerSyncClient(connection: SyncConnectionSettings) {
+  await fetchJson(connection, `/v1/sync/clients/${encodeURIComponent(connection.clientId)}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      lastSeenAt: new Date().toISOString(),
+      name: 'Goyo Desktop',
+      platform: process.platform,
+    }),
+  });
 }
 
 function isSyncConnectionReady(
