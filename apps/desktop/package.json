@@ -8,6 +8,7 @@
     "email": "seokjun@seokjun.kim"
   },
   "homepage": "https://goyo.seokjun.kim",
+  "license": "MIT",
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
@@ -24,6 +25,7 @@
   "build": {
     "appId": "kim.seokjun.goyo",
     "executableName": "goyo",
+    "icon": "build/icon",
     "productName": "Goyo",
     "directories": {
       "output": "dist"
@@ -38,19 +40,44 @@
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "mac": {
       "category": "public.app-category.productivity",
+      "executableName": "Goyo",
+      "icon": "build/icon.icns",
       "identity": null,
       "target": [
         "dmg",
         "zip"
       ]
     },
+    "dmg": {
+      "contents": [
+        {
+          "x": 180,
+          "y": 170
+        },
+        {
+          "type": "link",
+          "path": "/Applications",
+          "x": 480,
+          "y": 170
+        }
+      ],
+      "icon": "build/icon.icns",
+      "iconSize": 104,
+      "title": "Goyo ${version}",
+      "window": {
+        "height": 380,
+        "width": 660
+      }
+    },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis"
       ]
     },
     "linux": {
       "category": "Office",
+      "icon": "build/icon.png",
       "maintainer": "Seokjun Kim <seokjun@seokjun.kim>",
       "target": [
         "AppImage",
