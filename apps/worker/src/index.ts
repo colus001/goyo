@@ -18,7 +18,12 @@ import {
   listDocumentUpdates,
   matchDocumentUpdatesRoute,
 } from './document-updates';
-import { matchDownloadRoute, serveDownload } from './downloads';
+import {
+  matchDownloadRoute,
+  matchReleaseRoute,
+  serveDownload,
+  serveReleaseFile,
+} from './downloads';
 import { corsPreflightResponse, withCors } from './http';
 import { matchSyncClientRoute, registerSyncClient } from './sync-clients';
 
@@ -51,7 +56,7 @@ export default {
       );
     }
 
-    const downloadResponse = await handleDownloadRequest(request, url, env);
+    const downloadResponse = await handleStaticFileRequest(request, url, env);
 
     if (downloadResponse) {
       return withCors(downloadResponse);
@@ -173,7 +178,7 @@ async function handleDocumentSnapshotRequest(
   return null;
 }
 
-async function handleDownloadRequest(
+async function handleStaticFileRequest(
   request: Request,
   url: URL,
   env: EnvWithR2,
@@ -184,7 +189,17 @@ async function handleDownloadRequest(
 
   const downloadTarget = matchDownloadRoute(url.pathname);
 
-  return downloadTarget ? serveDownload(downloadTarget, env.RELEASES) : null;
+  if (downloadTarget) {
+    return serveDownload(downloadTarget, env.RELEASES);
+  }
+
+  const releaseFileName = matchReleaseRoute(url.pathname);
+
+  if (releaseFileName) {
+    return serveReleaseFile(releaseFileName, env.RELEASES);
+  }
+
+  return null;
 }
 
 interface EnvWithR2 {

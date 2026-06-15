@@ -1,7 +1,7 @@
 {
   "name": "@writer/desktop",
   "private": true,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Distraction-free long-form writing desktop app.",
   "author": {
     "name": "Seokjun Kim",
@@ -14,10 +14,10 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "tsc -b && electron-vite build",
-    "dist": "pnpm build && electron-builder --publish never",
-    "dist:linux": "pnpm build && electron-builder --linux --publish never",
-    "dist:mac": "pnpm build && electron-builder --mac --publish never",
-    "dist:win": "pnpm build && electron-builder --win --publish never",
+    "dist": "pnpm build && electron-builder",
+    "dist:linux": "pnpm build && electron-builder --linux",
+    "dist:mac": "pnpm build && electron-builder --mac",
+    "dist:win": "pnpm build && electron-builder --win",
     "pack": "pnpm build && electron-builder --dir --publish never",
     "rebuild:native": "electron-rebuild -f -w better-sqlite3",
     "typecheck": "tsc -b"
@@ -39,6 +39,10 @@
       "**/*.node"
     ],
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "publish": {
+      "provider": "generic",
+      "url": "https://goyo-api.seokjun.kim/releases"
+    },
     "mac": {
       "category": "public.app-category.productivity",
       "entitlements": "build/entitlements.mac.plist",
@@ -103,6 +107,7 @@
     "@writer/shared": "workspace:*",
     "@writer/ui": "workspace:*",
     "better-sqlite3": "^12.10.0",
+    "electron-updater": "^6.8.9",
     "electron-vite": "^5.0.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",

@@ -133,6 +133,24 @@ declare global {
         }>;
         testConnection: () => Promise<{ ok: boolean }>;
       };
+      updater: {
+        checkForUpdates: () => Promise<void>;
+        getStatus: () => Promise<{
+          status: string;
+          updateVersion: string | null;
+          downloadProgress: number;
+          lastError: string | null;
+        }>;
+        onStatusChange: (
+          callback: (state: {
+            status: string;
+            updateVersion: string | null;
+            downloadProgress: number;
+            lastError: string | null;
+          }) => void,
+        ) => () => void;
+        quitAndInstall: () => Promise<void>;
+      };
       platform: string;
     };
   }

@@ -155,6 +155,12 @@ jobs:
                   npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.deb --file "$f" --remote
                   npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/v${VERSION}/${base}" --file "$f" --remote
                   ;;
+                *.blockmap)
+                  npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/v${VERSION}/${base}" --file "$f" --remote
+                  ;;
+                *.yml)
+                  npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/${base}" --file "$f" --remote
+                  ;;
               esac
             fi
           done

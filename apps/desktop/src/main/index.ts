@@ -13,6 +13,7 @@ import { APP_NAME } from '@writer/shared';
 import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
 import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
+import { initAutoUpdater, registerAutoUpdaterIpc } from './auto-updater';
 import { exportDocument } from './document-export';
 import { createDesktopLocalStore } from './document-metadata-store';
 import { cloudAuthLogout, cloudAuthStart, cloudAuthVerify } from './goyo-cloud-auth-client';
@@ -484,6 +485,8 @@ configureUserDataPath();
 void app.whenReady().then(() => {
   app.setName(APP_NAME);
   goyoCloudSessionStore = registerDocumentIpc();
+  registerAutoUpdaterIpc();
+  initAutoUpdater();
   createApplicationMenu();
   createWindow();
 

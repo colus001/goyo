@@ -2,6 +2,7 @@ import { useWritingWorkspace } from './document-session-state';
 import { LibraryScreen } from './library-screen';
 import { SettingsScreen } from './settings-modal';
 import { getThemeStyle } from './theme-style';
+import { UpdateNotification } from './update-notification';
 import { useGlobalSettingsShortcut } from './use-global-settings-shortcut';
 import { WritingWorkspaceScreen } from './writing-workspace-screen';
 
@@ -15,30 +16,21 @@ export function App() {
     return <LoadingScreen status={workspace.saveStatus} themeStyle={themeStyle} />;
   }
 
-  if (workspace.screen === 'settings') {
-    return (
-      <div style={themeStyle}>
+  return (
+    <div style={themeStyle}>
+      <UpdateNotification />
+      {workspace.screen === 'settings' ? (
         <SettingsScreen
           onClose={workspace.closeSettings}
           onSaveSettings={workspace.updateAppSettings}
           settings={workspace.appSettings}
           workspace={workspace}
         />
-      </div>
-    );
-  }
-
-  if (workspace.screen === 'library') {
-    return (
-      <div style={themeStyle}>
+      ) : workspace.screen === 'library' ? (
         <LibraryScreen onOpenSettings={workspace.showSettings} workspace={workspace} />
-      </div>
-    );
-  }
-
-  return (
-    <div style={themeStyle}>
-      <WritingWorkspaceScreen onOpenSettings={workspace.showSettings} workspace={workspace} />
+      ) : (
+        <WritingWorkspaceScreen onOpenSettings={workspace.showSettings} workspace={workspace} />
+      )}
     </div>
   );
 }

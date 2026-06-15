@@ -181,6 +181,41 @@ const desktopApi = {
       }>,
     testConnection: () => ipcRenderer.invoke('sync:testConnection') as Promise<{ ok: boolean }>,
   },
+  updater: {
+    checkForUpdates: () => ipcRenderer.invoke('updater:checkForUpdates') as Promise<void>,
+    getStatus: () =>
+      ipcRenderer.invoke('updater:getStatus') as Promise<{
+        status: string;
+        updateVersion: string | null;
+        downloadProgress: number;
+        lastError: string | null;
+      }>,
+    quitAndInstall: () => ipcRenderer.invoke('updater:quitAndInstall') as Promise<void>,
+    onStatusChange: (
+      callback: (state: {
+        status: string;
+        updateVersion: string | null;
+        downloadProgress: number;
+        lastError: string | null;
+      }) => void,
+    ) => {
+      const listener = (
+        _event: IpcRendererEvent,
+        state: {
+          status: string;
+          updateVersion: string | null;
+          downloadProgress: number;
+          lastError: string | null;
+        },
+      ) => {
+        callback(state);
+      };
+      ipcRenderer.on('updater:statusChange', listener);
+      return () => {
+        ipcRenderer.removeListener('updater:statusChange', listener);
+      };
+    },
+  },
   platform: process.platform,
 } as const;
 
