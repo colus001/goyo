@@ -101,17 +101,53 @@ export function SettingsSections({
 
 function AboutVersion(): ReactElement {
   const [version, setVersion] = useState<string | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
 
   useEffect(() => {
     void window.writerDesktop.version.getVersion().then(setVersion);
   }, []);
 
+  const handleCheckForUpdates = () => {
+    setUpdateStatus('Checking…');
+    void window.writerDesktop.updater
+      .checkForUpdates()
+      .then(() => {
+        void window.writerDesktop.updater.getStatus().then((status) => {
+          if (status.status === 'no-update') {
+            setUpdateStatus('Up to date');
+          } else if (status.status === 'available' || status.status === 'downloading') {
+            setUpdateStatus('Update available');
+          } else if (status.status === 'error') {
+            setUpdateStatus('Check failed');
+          } else {
+            setUpdateStatus(null);
+          }
+        });
+      })
+      .catch(() => {
+        setUpdateStatus('Check failed');
+      });
+  };
+
   return (
     <div className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-4">
-      <p className="font-medium text-[var(--goyo-text)]">{APP_NAME}</p>
-      <p className="mt-1 text-[var(--goyo-text-muted)] text-sm">
-        {version ? `v${version}` : 'Loading version…'}
-      </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="font-medium text-[var(--goyo-text)]">{APP_NAME}</p>
+          <p className="mt-1 text-[var(--goyo-text-muted)] text-sm">
+            {version ? `v${version}` : 'Loading version…'}
+            {updateStatus ? ` — ${updateStatus}` : ''}
+          </p>
+        </div>
+        <button
+          className="rounded-lg border border-[var(--goyo-border)] px-3 py-1.5 font-medium text-[var(--goyo-text-muted)] text-xs transition hover:bg-[var(--goyo-paper)] hover:text-[var(--goyo-text)]"
+          disabled={updateStatus === 'Checking…'}
+          onClick={handleCheckForUpdates}
+          type="button"
+        >
+          {updateStatus === 'Checking…' ? 'Checking…' : 'Check for updates'}
+        </button>
+      </div>
     </div>
   );
 }
