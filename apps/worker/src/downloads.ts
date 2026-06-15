@@ -1,6 +1,7 @@
 const GITHUB_LATEST_RELEASE_URL = 'https://api.github.com/repos/colus001/goyo/releases/latest';
 const RELEASE_CACHE_SECONDS = 300;
 const REDIRECT_CACHE_SECONDS = 300;
+const YML_CACHE_SECONDS = 600;
 
 const downloadTargets = {
   'linux-appimage': {
@@ -55,6 +56,82 @@ export function matchDownloadRoute(pathname: string): DownloadTarget | null {
   return isDownloadTarget(target) ? target : null;
 }
 
+export function matchReleaseRoute(pathname: string): string | null {
+  const match = /^\/releases\/([^/]+)$/.exec(pathname);
+
+  if (!match) {
+    return null;
+  }
+
+  const filename = match[1];
+
+  if (filename.length === 0 || filename.includes('..')) {
+    return null;
+  }
+
+  return filename;
+}
+
+export async function serveReleaseFile(
+  filename: string,
+  releasesBucket: R2Bucket | undefined,
+): Promise<Response> {
+  const fromR2 = await tryServeReleaseFromR2(filename, releasesBucket);
+
+  if (fromR2) {
+    return fromR2;
+  }
+
+  const assetUrl = await findAssetUrlByName(filename);
+
+  if (assetUrl) {
+    return new Response(null, {
+      headers: {
+        'Cache-Control': `public, max-age=${REDIRECT_CACHE_SECONDS}, s-maxage=${REDIRECT_CACHE_SECONDS}`,
+        Location: assetUrl,
+      },
+      status: 302,
+    });
+  }
+
+  return new Response(null, { status: 404 });
+}
+
+async function tryServeReleaseFromR2(
+  filename: string,
+  releasesBucket: R2Bucket | undefined,
+): Promise<Response | null> {
+  if (!releasesBucket) {
+    return null;
+  }
+
+  const r2Key = `${R2_KEY_PREFIX}/${filename}`;
+  const r2Object = await releasesBucket.get(r2Key);
+
+  if (!r2Object) {
+    return null;
+  }
+
+  const isYml = filename.endsWith('.yml');
+  const contentType =
+    r2Object.httpMetadata?.contentType ?? (isYml ? 'text/yaml' : 'application/octet-stream');
+  const cacheSeconds = isYml ? YML_CACHE_SECONDS : REDIRECT_CACHE_SECONDS;
+
+  const headers: Record<string, string> = {
+    'Cache-Control': `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
+    'Content-Type': contentType,
+  };
+
+  if (!isYml) {
+    headers['Content-Disposition'] = `attachment; filename="${filename}"`;
+  }
+
+  return new Response(r2Object.body, {
+    headers,
+    status: 200,
+  });
+}
+
 export async function serveDownload(
   target: DownloadTarget,
   releasesBucket: R2Bucket | undefined,
@@ -105,6 +182,17 @@ async function redirectToLatestRelease(target: DownloadTarget): Promise<Response
 
 function isDownloadTarget(value: string): value is DownloadTarget {
   return value in downloadTargets;
+}
+
+async function findAssetUrlByName(filename: string): Promise<string | null> {
+  try {
+    const release = await fetchLatestRelease();
+    const asset = release.assets.find((candidate) => candidate.name === filename);
+
+    return asset?.browser_download_url ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchLatestRelease(): Promise<GitHubRelease> {
