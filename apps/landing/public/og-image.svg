@@ -1,19 +1,79 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Goyo - A quiet writing space for long work">
-  <rect width="1200" height="630" fill="#f3eadc" />
-  <circle cx="965" cy="100" r="210" fill="#c9d2bd" opacity="0.65" />
-  <circle cx="160" cy="520" r="250" fill="#d58b61" opacity="0.34" />
-  <rect x="84" y="78" width="1032" height="474" rx="42" fill="#fff8ec" stroke="#241b13" stroke-opacity="0.12" stroke-width="2" />
-  <rect x="132" y="130" width="236" height="370" rx="30" fill="#ebe0d0" stroke="#241b13" stroke-opacity="0.1" />
-  <rect x="414" y="130" width="654" height="370" rx="30" fill="#fffaf2" stroke="#241b13" stroke-opacity="0.1" />
-  <text x="132" y="100" fill="#1e1a15" font-family="Georgia, serif" font-size="42" font-weight="700">Goyo</text>
-  <text x="456" y="236" fill="#1e1a15" font-family="Georgia, serif" font-size="66" font-weight="700">A quiet writing space</text>
-  <text x="456" y="310" fill="#1e1a15" font-family="Georgia, serif" font-size="66" font-weight="700">for long work.</text>
-  <text x="456" y="384" fill="#5d5147" font-family="Arial, sans-serif" font-size="28">Free by default. Local-first. Affordable cloud sync.</text>
-  <rect x="160" y="174" width="168" height="54" rx="18" fill="#fbf6ed" />
-  <rect x="160" y="256" width="168" height="38" rx="15" fill="#d9c9b4" />
-  <rect x="160" y="318" width="168" height="54" rx="18" fill="#fbf6ed" />
-  <rect x="456" y="432" width="164" height="52" rx="26" fill="#b84c2f" />
-  <text x="486" y="466" fill="#fff8ec" font-family="Arial, sans-serif" font-size="18" font-weight="700">Download</text>
-  <rect x="640" y="432" width="210" height="52" rx="26" fill="#263d38" />
-  <text x="671" y="466" fill="#fff8ec" font-family="Arial, sans-serif" font-size="18" font-weight="700">Mobile coming soon</text>
+  <defs>
+    <clipPath id="card-clip">
+      <rect x="60" y="60" width="1080" height="510" rx="28" />
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="630" fill="#F7F7F5" />
+
+  <g clip-path="url(#card-clip)">
+    <rect x="60" y="60" width="1080" height="510" fill="#FBFAF7" />
+
+    <rect x="60" y="60" width="1080" height="44" fill="#FBFAF7" />
+    <circle cx="100" cy="82" r="8" fill="#FF5F57" />
+    <circle cx="124" cy="82" r="8" fill="#FEBC2E" />
+    <circle cx="148" cy="82" r="8" fill="#28C840" />
+    <rect x="980" y="74" width="120" height="18" rx="9" fill="#FFFFFF" stroke="#D5D5D3" />
+    <text x="1040" y="86" fill="#6F6E6B" font-family="Inter, sans-serif" font-size="10" font-weight="500" text-anchor="middle" letter-spacing="1.4">SAVED LOCALLY</text>
+    <line x1="60" y1="104" x2="1140" y2="104" stroke="#D5D5D3" stroke-width="1" />
+
+    <rect x="60" y="104" width="240" height="466" fill="#FBFAF7" />
+    <line x1="300" y1="104" x2="300" y2="570" stroke="#D5D5D3" stroke-width="1" />
+
+    <text x="84" y="138" fill="#A3A3A1" font-family="Inter, sans-serif" font-size="10" font-weight="600" letter-spacing="2">BOOKS</text>
+    <circle cx="92" cy="170" r="5" fill="#4F6F64" />
+    <text x="106" y="174" fill="#25231F" font-family="Inter, sans-serif" font-size="14" font-weight="600">The Orchard Book</text>
+    <circle cx="92" cy="200" r="5" fill="#A3A3A1" />
+    <text x="106" y="204" fill="#6F6E6B" font-family="Inter, sans-serif" font-size="14" font-weight="500">Quick Drafts</text>
+
+    <line x1="84" y1="232" x2="276" y2="232" stroke="#D5D5D3" stroke-width="1" />
+    <circle cx="92" cy="258" r="5" fill="#4F6F64" />
+    <text x="106" y="262" fill="#25231F" font-family="Inter, sans-serif" font-size="13" font-weight="600">The Orchard Book</text>
+
+    <text x="84" y="298" fill="#A09A91" font-family="Inter, sans-serif" font-size="9" font-weight="600" letter-spacing="1.6">DOCUMENTS</text>
+    <rect x="84" y="308" width="200" height="26" rx="6" fill="transparent" />
+    <text x="92" y="326" fill="#6F6E6B" font-family="Inter, sans-serif" font-size="12" font-weight="500">Prologue</text>
+
+    <rect x="84" y="340" width="200" height="26" rx="6" fill="#FFFFFF" />
+    <rect x="84" y="340" width="2" height="26" rx="1" fill="#30302D" />
+    <text x="92" y="358" fill="#25231F" font-family="Inter, sans-serif" font-size="12" font-weight="500">Morning train</text>
+    <rect x="184" y="346" width="14" height="14" rx="3" fill="#FFFFFF" stroke="#D5D5D3" />
+    <path d="M188 353 L191 350 L194 353" stroke="#A3A3A1" stroke-width="1.4" fill="none" stroke-linecap="round" />
+    <path d="M188 357 L191 360 L194 357" stroke="#A3A3A1" stroke-width="1.4" fill="none" stroke-linecap="round" />
+
+    <text x="92" y="386" fill="#6F6E6B" font-family="Inter, sans-serif" font-size="12" font-weight="500">Letter from Sora</text>
+
+    <text x="84" y="424" fill="#25231F" font-family="Inter, sans-serif" font-size="12" font-weight="700">Chapter 01</text>
+    <path d="M260 419 L264 423 L260 427" stroke="#A3A3A1" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="92" y="446" fill="#6F6E6B" font-family="Inter, sans-serif" font-size="11" font-weight="500">The orchard path</text>
+    <text x="92" y="468" fill="#6F6E6B" font-family="Inter, sans-serif" font-size="11" font-weight="500">First night</text>
+
+    <text x="84" y="500" fill="#6F6E6B" font-family="Inter, sans-serif" font-size="12" font-weight="700">Chapter 02</text>
+    <path d="M260 495 L264 499 L260 503" stroke="#A3A3A1" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+
+    <rect x="300" y="104" width="840" height="466" fill="#FFFFFF" />
+    <text x="360" y="148" fill="#A3A3A1" font-family="Inter, sans-serif" font-size="11" font-weight="600" letter-spacing="2">FOCUSED MODE</text>
+    <text x="1080" y="148" fill="#A3A3A1" font-family="Inter, sans-serif" font-size="11" font-weight="600" letter-spacing="2" text-anchor="end">1,284 WORDS</text>
+
+    <text x="360" y="222" fill="#25231F" font-family="'Source Serif 4', Georgia, serif" font-size="56" font-weight="700" letter-spacing="-2.5">Morning train</text>
+
+    <g fill="#5F5349" font-family="'Source Serif 4', Georgia, serif" font-size="20" font-weight="400">
+      <text x="360" y="284">Draft safely. Move slowly. Keep the structure quiet until the sentence</text>
+      <text x="360" y="316">needs a place to live.</text>
+      <text x="360" y="372">Books can hold chapters, scenes, essays, notes, and the fragments that are</text>
+      <text x="360" y="404">not yet ready to be named.</text>
+      <text x="360" y="460">The window fogged at the edges. She pressed her palm flat against the glass</text>
+      <text x="360" y="492">and counted the stations in reverse.</text>
+    </g>
+
+    <rect x="360" y="528" width="180" height="28" rx="14" fill="#EFE5D6" />
+    <text x="450" y="546" fill="#6B5B4A" font-family="Inter, sans-serif" font-size="11" font-weight="600" text-anchor="middle">AUTOSAVED</text>
+    <rect x="556" y="528" width="180" height="28" rx="14" fill="#EFE5D6" />
+    <text x="646" y="546" fill="#6B5B4A" font-family="Inter, sans-serif" font-size="11" font-weight="600" text-anchor="middle">CRDT-READY</text>
+    <rect x="752" y="528" width="180" height="28" rx="14" fill="#EFE5D6" />
+    <text x="842" y="546" fill="#6B5B4A" font-family="Inter, sans-serif" font-size="11" font-weight="600" text-anchor="middle">OFFLINE SAFE</text>
+  </g>
+
+  <rect x="60" y="60" width="1080" height="510" rx="28" fill="none" stroke="#D5D5D3" stroke-width="1" />
 </svg>
