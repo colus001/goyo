@@ -86,6 +86,7 @@ export function WritingShell(props: WritingShellProps): ReactElement {
         onExportChapter={normalizedProps.onExportChapter}
         onExportDocument={normalizedProps.onExportDocument}
         onOpenSettings={normalizedProps.onOpenSettings}
+        status={normalizedProps.status}
         onToggleSidebar={toggleSidebar}
         wordCountLabel={normalizedProps.wordCountLabel}
       />

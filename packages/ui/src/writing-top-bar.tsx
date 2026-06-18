@@ -23,6 +23,7 @@ export function WritingTopBar({
   onExportChapter,
   onExportDocument,
   onOpenSettings,
+  status,
   onToggleSidebar,
   wordCountLabel,
 }: {
@@ -36,6 +37,7 @@ export function WritingTopBar({
   onExportChapter?: (format: 'html' | 'markdown' | 'text') => void;
   onExportDocument?: (format: 'html' | 'markdown' | 'text') => void;
   onOpenSettings?: () => void;
+  status?: string;
   onToggleSidebar: () => void;
   wordCountLabel?: string;
 }): ReactElement {
@@ -61,8 +63,9 @@ export function WritingTopBar({
         </div>
       </div>
       <div className="flex items-center gap-1.5">
+        {status ? <StatusPill status={status} /> : null}
         {wordCountLabel ? (
-          <p className="mr-2 hidden whitespace-nowrap font-medium text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.13em] sm:block">
+          <p className="mr-2 hidden whitespace-nowrap font-medium text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.13em] md:block">
             {wordCountLabel}
           </p>
         ) : null}
@@ -77,6 +80,14 @@ export function WritingTopBar({
         <CreateMenuButton onCreateChapter={onCreateChapter} onCreateDocument={onCreateDocument} />
       </div>
     </header>
+  );
+}
+
+function StatusPill({ status }: { status: string }): ReactElement {
+  return (
+    <p className="mr-1 hidden max-w-44 truncate rounded-full border border-[var(--goyo-border)] bg-[var(--goyo-app)] px-2.5 py-1 font-medium text-[0.66rem] uppercase tracking-[0.13em] text-[var(--goyo-text-faint)] lg:block">
+      {status}
+    </p>
   );
 }
 
