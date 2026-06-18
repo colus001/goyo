@@ -56,49 +56,11 @@ export function Hero(): ReactElement {
         </div>
 
         <div className="relative mt-14 w-full max-w-6xl">
-          <FloatingHeroNote
-            body="Local drafts stay available before anything syncs."
-            className="-top-6 left-4 hidden md:block"
-            kicker="Local first"
-            title="Write offline"
-          />
-          <FloatingHeroNote
-            body="Books, chapters, and loose drafts share one quiet workspace."
-            className="right-4 -bottom-6 hidden lg:block"
-            kicker="Manuscript ready"
-            title="Structure stays calm"
-          />
           <div className="goyo-parallax-fast relative mx-auto rounded-[24px] border border-[var(--goyo-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(247,247,245,0.2))] p-2 shadow-[0_42px_120px_-54px_rgba(31,29,25,0.55)] sm:p-3">
             <RealWritingShellPreview className="h-[34rem] max-sm:h-[29rem]" />
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-function FloatingHeroNote({
-  body,
-  className,
-  kicker,
-  title,
-}: {
-  body: string;
-  className: string;
-  kicker: string;
-  title: string;
-}): ReactElement {
-  return (
-    <aside
-      className={`pointer-events-none absolute z-20 max-w-[16rem] rounded-2xl border border-[var(--goyo-border)] bg-[color-mix(in_srgb,var(--goyo-paper)_94%,transparent)] px-4 py-3 text-left shadow-[0_18px_42px_-28px_rgba(31,29,25,0.35)] backdrop-blur-md ${className}`}
-    >
-      <p className="font-medium text-[0.62rem] uppercase tracking-[0.18em] text-[var(--goyo-text-faint)]">
-        {kicker}
-      </p>
-      <p className="mt-1 text-[0.84rem] font-semibold tracking-[-0.02em] text-[var(--goyo-text)]">
-        {title}
-      </p>
-      <p className="mt-1.5 text-[0.74rem] leading-relaxed text-[var(--goyo-text-muted)]">{body}</p>
-    </aside>
   );
 }
