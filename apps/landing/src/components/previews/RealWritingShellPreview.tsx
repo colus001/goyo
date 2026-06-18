@@ -122,7 +122,6 @@ export function RealWritingShellPreview({
         onSidebarCollapsedChange={noop}
         onStartQuickDraft={noop}
         onUpdateBookAccentColor={noop}
-        status={preview.status}
         wordCountLabel={preview.wordCountLabel}
       >
         <PreviewWritingSurface
@@ -151,7 +150,6 @@ function createLibraryPreviewState() {
     documents: [],
     expandedChapterIds: [],
     surfaceContent: null,
-    status: 'Local session',
     wordCountLabel: undefined,
   };
 }
@@ -174,7 +172,6 @@ function createDraftPreviewState() {
         'Later, this can become a scene, a note, or nothing at all. For now it only has to stay safe.',
       ],
     },
-    status: 'Saved locally',
     wordCountLabel: '42 words',
   };
 }
@@ -197,7 +194,6 @@ function createStructurePreviewState() {
         'I kept the notebook open on my knees, not writing yet, only listening for the first sentence that sounded less borrowed than the others.',
       ],
     },
-    status: 'Saved locally',
     wordCountLabel: '68 words',
   };
 }
@@ -205,7 +201,6 @@ function createStructurePreviewState() {
 function createSyncPreviewState() {
   return {
     ...createStructurePreviewState(),
-    status: 'Saved locally · Sync ready',
   };
 }
 
