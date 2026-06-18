@@ -99,8 +99,8 @@ export function EpisodeSurface({
   const hasTitle = activeDocument.title.trim().length > 0;
 
   return (
-    <article className="mx-auto flex min-h-full w-full max-w-[52rem] flex-col bg-[var(--goyo-paper)] px-12 pt-12 pb-24 [font-family:var(--goyo-writing-font-family)]">
-      <header className="mb-9 border-[var(--goyo-border)] border-b pb-6">
+    <article className="goyo-episode-surface mx-auto flex min-h-full w-full flex-col bg-[var(--goyo-paper)] [font-family:var(--goyo-writing-font-family)]">
+      <header className="goyo-manuscript-column mb-14 w-full">
         <DocumentTitleInput
           autoFocus={!hasTitle}
           document={activeDocument}
@@ -160,7 +160,7 @@ function DocumentTitleInput({
   return (
     <input
       aria-label={`${formatDocumentKind(document.kind)} title`}
-      className="w-full bg-transparent font-semibold text-[var(--goyo-text)] text-[2rem] leading-tight tracking-[-0.04em] outline-none placeholder:text-[var(--goyo-text-faint)] [font-family:var(--goyo-writing-font-family)]"
+      className="goyo-document-title w-full bg-transparent font-bold text-[var(--goyo-text)] leading-tight tracking-[-0.055em] outline-none placeholder:text-[var(--goyo-text-faint)] [font-family:var(--goyo-writing-font-family)]"
       onBlur={commitTitle}
       onChange={(event) => setTitle(event.target.value)}
       onKeyDown={(event) => {
