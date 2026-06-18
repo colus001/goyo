@@ -1,0 +1,18 @@
+@supports (animation-timeline: view()) {
+  .goyo-product-stage {
+    animation: goyo-stage-settle linear both;
+    animation-range: entry 5% cover 22%;
+    animation-timeline: view();
+  }
+}
+
+@keyframes goyo-stage-settle {
+  from {
+    opacity: 0.78;
+    transform: translateY(32px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
