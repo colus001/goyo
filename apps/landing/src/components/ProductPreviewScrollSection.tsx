@@ -13,8 +13,8 @@ const WALKTHROUGH_STEPS = [
   {
     id: 'draft',
     eyebrow: '02 / Draft',
-    title: 'The editor knows where attention should go.',
-    body: 'New untitled episodes start in the title field. Titled episodes open directly into the body, with the cursor placed at the end so you can keep writing.',
+    title: 'The sidebar gets out of the way when you draft.',
+    body: 'Collapse the manuscript list when the page needs more room. New untitled episodes still start in the title field; titled episodes open directly into the body so you can keep writing.',
   },
   {
     id: 'structure',

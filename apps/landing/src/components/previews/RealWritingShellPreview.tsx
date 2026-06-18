@@ -102,6 +102,7 @@ export function RealWritingShellPreview({
         chapters={preview.chapters}
         documents={preview.documents}
         expandedChapterIds={preview.expandedChapterIds}
+        isSidebarCollapsed={preview.isSidebarCollapsed}
         key={previewStep}
         onCreateBook={noop}
         onCreateChapter={noop}
@@ -149,6 +150,7 @@ function createLibraryPreviewState() {
     chapters: [],
     documents: [],
     expandedChapterIds: [],
+    isSidebarCollapsed: false,
     surfaceContent: null,
     wordCountLabel: undefined,
   };
@@ -165,6 +167,7 @@ function createDraftPreviewState() {
     chapters: QUICK_DRAFT_CHAPTERS,
     documents: QUICK_DRAFT_DOCUMENTS,
     expandedChapterIds: ['inbox'],
+    isSidebarCollapsed: true,
     surfaceContent: {
       title: 'Untitled episode',
       paragraphs: [
@@ -187,6 +190,7 @@ function createStructurePreviewState() {
     chapters: ORCHARD_CHAPTERS,
     documents: ORCHARD_DOCUMENTS,
     expandedChapterIds: ['chapter-1', 'chapter-2'],
+    isSidebarCollapsed: false,
     surfaceContent: {
       title: 'Morning train',
       paragraphs: [
@@ -201,6 +205,7 @@ function createStructurePreviewState() {
 function createSyncPreviewState() {
   return {
     ...createStructurePreviewState(),
+    isSidebarCollapsed: true,
   };
 }
 
