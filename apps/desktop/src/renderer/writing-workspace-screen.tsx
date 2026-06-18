@@ -5,7 +5,14 @@ import {
 } from '@writer/core';
 import type { WritingEditorRef } from '@writer/editor';
 import { NewChapterModal, WritingShell } from '@writer/ui';
-import { type RefObject, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+  useCallback,
+  useRef,
+  useState,
+} from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { BookEmptyState, EpisodeSurface } from './writing-surfaces';
 import { exportActiveChapter, exportActiveDocument } from './writing-workspace-export-actions';
@@ -122,7 +129,6 @@ function getWritingShellProps(
     onSidebarCollapsedChange: workspace.setSidebarCollapsed,
     onStartQuickDraft: workspace.startQuickDraft,
     onUpdateBookAccentColor: workspace.updateBookAccentColor,
-    status: formatWorkspaceStatus(workspace),
     wordCountLabel,
   };
 }
@@ -137,30 +143,36 @@ function WritingWorkspaceContent({
   activeDocument?: DocumentMetadata;
   editorRef: RefObject<WritingEditorRef | null>;
   onCreateChapter?: () => void;
-  onWordCountStateChange: (state: WordCountState) => void;
+  onWordCountStateChange: Dispatch<SetStateAction<WordCountState>>;
   workspace: WritingWorkspaceState;
 }) {
+  const activeDocumentId = activeDocument?.id;
+  const handleWordCountChange = useCallback(
+    (wordCount: number) => {
+      if (!activeDocumentId) {
+        return;
+      }
+
+      onWordCountStateChange((current) =>
+        current.documentId === activeDocumentId && current.wordCount === wordCount
+          ? current
+          : { documentId: activeDocumentId, wordCount },
+      );
+    },
+    [activeDocumentId, onWordCountStateChange],
+  );
+
   if (activeDocument) {
     return (
       <EpisodeSurface
         editorRef={editorRef}
-        onWordCountChange={(wordCount) =>
-          onWordCountStateChange({ documentId: activeDocument.id, wordCount })
-        }
+        onWordCountChange={handleWordCountChange}
         workspace={workspace}
       />
     );
   }
 
   return <BookEmptyState onCreateChapter={onCreateChapter} workspace={workspace} />;
-}
-
-function formatWorkspaceStatus(workspace: WritingWorkspaceState) {
-  if (workspace.syncStatus === 'Sync idle') {
-    return workspace.saveStatus;
-  }
-
-  return `${workspace.saveStatus} · ${workspace.syncStatus}`;
 }
 
 function getVisibleChapters(workspace: WritingWorkspaceState) {
