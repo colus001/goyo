@@ -62,7 +62,7 @@ export function WritingTopBar({
       </div>
       <div className="flex items-center gap-1.5">
         {wordCountLabel ? (
-          <p className="mr-2 hidden whitespace-nowrap font-medium text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.13em] sm:block">
+          <p className="mr-2 hidden whitespace-nowrap font-medium text-[var(--goyo-text-faint)] text-[0.68rem] uppercase tracking-[0.13em] md:block">
             {wordCountLabel}
           </p>
         ) : null}

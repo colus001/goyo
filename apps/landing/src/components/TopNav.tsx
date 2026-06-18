@@ -16,11 +16,11 @@ export function TopNav(): ReactElement {
           </span>
         </a>
         <nav className="hidden items-center gap-7 text-[0.85rem] text-[var(--goyo-text-muted)] md:flex">
-          <a className="transition hover:text-[var(--goyo-text)]" href="#surfaces">
-            Surfaces
+          <a className="transition hover:text-[var(--goyo-text)]" href="#how-it-works">
+            How it works
           </a>
-          <a className="transition hover:text-[var(--goyo-text)]" href="#structure">
-            Structure
+          <a className="transition hover:text-[var(--goyo-text)]" href="#draft">
+            Draft
           </a>
           <a className="transition hover:text-[var(--goyo-text)]" href="#sync">
             Sync

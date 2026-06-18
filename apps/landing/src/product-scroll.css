@@ -1,18 +1,176 @@
-@supports (animation-timeline: view()) {
+.goyo-product-walkthrough {
+  background:
+    radial-gradient(
+      circle at 18% 26%,
+      color-mix(in srgb, #d8d0bf 20%, transparent),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 82% 18%,
+      color-mix(in srgb, #edf0ec 52%, transparent),
+      transparent 24rem
+    ),
+    linear-gradient(180deg, var(--goyo-paper), #f7f5ef 52%, var(--goyo-paper));
+}
+
+.goyo-product-theater {
+  position: relative;
+}
+
+.goyo-product-stage {
+  isolation: isolate;
+}
+
+.goyo-stage-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.goyo-product-frame {
+  position: relative;
+  border-radius: 30px;
+  padding: 0.65rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(235, 230, 218, 0.34)),
+    color-mix(in srgb, var(--goyo-paper) 78%, transparent);
+  box-shadow:
+    0 52px 140px -76px rgba(31, 29, 25, 0.72),
+    0 20px 60px -48px rgba(31, 29, 25, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.goyo-product-frame::before {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--goyo-accent) 13%, transparent),
+    transparent 40%,
+    color-mix(in srgb, #b7ad98 22%, transparent)
+  );
+  content: "";
+}
+
+.goyo-copy-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.goyo-copy-panel {
+  scroll-margin-top: 7rem;
+}
+
+.goyo-copy-panel h3 {
+  color: color-mix(in srgb, var(--goyo-text) 90%, #6f675c);
+}
+
+.goyo-copy-panel p:last-child {
+  color: color-mix(in srgb, var(--goyo-text-muted) 84%, var(--goyo-text));
+}
+
+@media (min-width: 1024px) {
+  .goyo-scene-track {
+    pointer-events: none;
+  }
+
+  .goyo-scene-marker {
+    display: block;
+    height: 82vh;
+    scroll-margin-top: 7rem;
+  }
+
   .goyo-product-stage {
-    animation: goyo-stage-settle linear both;
-    animation-range: entry 5% cover 22%;
-    animation-timeline: view();
+    position: sticky;
+    top: 6rem;
+    min-height: calc(100vh - 7rem);
+    display: grid;
+    align-items: center;
+  }
+
+  .goyo-product-frame {
+    transition: transform 520ms ease;
+  }
+
+  .goyo-product-stage[data-step="0"] .goyo-product-frame {
+    transform: translateY(0.8rem) scale(0.99);
+  }
+
+  .goyo-product-stage[data-step="1"] .goyo-product-frame {
+    transform: translateY(0) scale(1);
+  }
+
+  .goyo-product-stage[data-step="2"] .goyo-product-frame {
+    transform: translateX(-0.6rem) scale(0.992);
+  }
+
+  .goyo-product-stage[data-step="3"] .goyo-product-frame {
+    transform: translateY(-0.7rem) scale(0.986);
+  }
+
+  .goyo-stage-grid {
+    grid-template-columns: minmax(0, 1.74fr) minmax(17rem, 0.36fr);
+    align-items: center;
+    gap: clamp(2rem, 4vw, 4rem);
+  }
+
+  .goyo-copy-stack {
+    position: relative;
+    min-height: 23rem;
+  }
+
+  .goyo-copy-stack::before {
+    position: absolute;
+    top: -1.5rem;
+    bottom: -1.5rem;
+    left: -1.35rem;
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--goyo-accent) 18%, transparent) 18%,
+      color-mix(in srgb, var(--goyo-accent) 18%, transparent) 82%,
+      transparent
+    );
+    content: "";
+  }
+
+  .goyo-copy-panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(1.2rem);
+    transition:
+      opacity 420ms ease,
+      transform 420ms ease;
+  }
+
+  .goyo-copy-panel::before {
+    position: absolute;
+    top: 50%;
+    left: -1.68rem;
+    width: 0.72rem;
+    height: 0.72rem;
+    border: 1px solid color-mix(in srgb, var(--goyo-accent) 34%, transparent);
+    border-radius: 999px;
+    background: var(--goyo-paper);
+    box-shadow: 0 0 0 0.45rem color-mix(in srgb, var(--goyo-paper) 82%, transparent);
+    content: "";
+    transform: translateY(-50%);
+  }
+
+  .goyo-copy-panel.is-active {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes goyo-stage-settle {
-  from {
-    opacity: 0.78;
-    transform: translateY(32px) scale(0.965);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+@media (max-width: 1023px) {
+  .goyo-scene-track {
+    display: none;
   }
 }

@@ -68,7 +68,7 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
     return (
       // biome-ignore lint/a11y/noStaticElementInteractions: Empty writing space should focus the Tiptap editor like a native editor surface.
       <div
-        className="max-w-[48rem] flex-1 cursor-text"
+        className="goyo-manuscript-column goyo-writing-editor w-full flex-1 cursor-text"
         onMouseDown={focusEditor}
         style={{ fontFamily: 'var(--goyo-writing-font-family)' }}
       >
@@ -104,7 +104,7 @@ function useWritingTiptapEditor(content: Y.XmlFragment, yDocument: Y.Doc) {
         attributes: {
           'aria-label': 'Writing editor',
           class:
-            'min-h-full cursor-text outline-none text-[1.25rem] text-[var(--goyo-text)] leading-[1.85] selection:bg-[var(--goyo-accent-soft)]',
+            'min-h-full cursor-text outline-none text-[var(--goyo-text-muted)] selection:bg-[var(--goyo-accent-soft)]',
           style: 'font-family: var(--goyo-writing-font-family);',
         },
       },

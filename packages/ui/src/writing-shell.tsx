@@ -55,7 +55,6 @@ export interface WritingShellProps {
   onSidebarCollapsedChange?: (isCollapsed: boolean) => void;
   onStartQuickDraft?: () => void;
   onUpdateBookAccentColor?: (bookId: string, accentColor: string) => void;
-  status?: string;
   wordCountLabel?: string;
 }
 
@@ -102,7 +101,6 @@ interface NormalizedWritingShellProps extends WritingShellProps {
   bookTitle: string;
   chapters: NonNullable<WritingShellProps['chapters']>;
   documents: NonNullable<WritingShellProps['documents']>;
-  status: string;
 }
 
 function normalizeWritingShellProps(props: WritingShellProps): NormalizedWritingShellProps {
@@ -112,7 +110,6 @@ function normalizeWritingShellProps(props: WritingShellProps): NormalizedWriting
     books: props.books ?? [],
     chapters: props.chapters ?? [],
     documents: props.documents ?? [],
-    status: props.status ?? 'Local session',
   };
 }
 
