@@ -1,6 +1,39 @@
 @import "tailwindcss";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/source-serif-4/400.css";
+@import "@fontsource/source-serif-4/600.css";
+@import "@fontsource/source-serif-4/700.css";
+@import "./product-scroll.css";
+
+@source "../../../packages/ui/src";
 
 :root {
+  --goyo-ui-font-family:
+    "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --goyo-writing-font-family:
+    "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+
+  --goyo-accent: #30302d;
+  --goyo-accent-hover: #2e2e2a;
+  --goyo-accent-soft: #dededd;
+  --goyo-active-row: #eaeaea;
+  --goyo-app: #f7f7f5;
+  --goyo-border: #d5d5d3;
+  --goyo-border-strong: #c5c4c2;
+  --goyo-danger: #b75a52;
+  --goyo-panel: #fbfaf7;
+  --goyo-paper: #ffffff;
+  --goyo-raised: #fefefe;
+  --goyo-text: #25231f;
+  --goyo-text-faint: #a3a3a1;
+  --goyo-text-muted: #6f6e6b;
+
+  color-scheme: light;
+  color: var(--goyo-text);
+  font-family: var(--goyo-ui-font-family);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -9,4 +42,208 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+html,
+body {
+  background-color: var(--goyo-app);
+  color: var(--goyo-text);
+}
+
+body {
+  margin: 0;
+}
+
+.goyo-prose {
+  font-family: var(--goyo-writing-font-family);
+}
+
+.landing-writing-shell-preview > main {
+  height: 100%;
+}
+
+.landing-writing-shell-preview {
+  position: relative;
+}
+
+.landing-writing-shell-preview::before {
+  position: absolute;
+  top: 1.08rem;
+  left: 1.25rem;
+  z-index: 20;
+  width: 0.78rem;
+  height: 0.78rem;
+  border-radius: 999px;
+  background: #ff5f57;
+  box-shadow:
+    1.45rem 0 0 #febc2e,
+    2.9rem 0 0 #28c840;
+  content: "";
+}
+
+.landing-writing-shell-preview button,
+.landing-writing-shell-preview a,
+.landing-writing-shell-preview input {
+  pointer-events: none;
+}
+
+@supports (animation-timeline: view()) {
+  .goyo-reveal {
+    animation: goyo-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+  }
+
+  .goyo-reveal-lag-1 {
+    animation-range: entry 4% cover 40%;
+  }
+
+  .goyo-reveal-lag-2 {
+    animation-range: entry 8% cover 45%;
+  }
+
+  .goyo-reveal-lag-3 {
+    animation-range: entry 12% cover 50%;
+  }
+
+  .goyo-reveal-x {
+    animation: goyo-rise-x linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 40%;
+  }
+
+  .goyo-reveal-x-lag-1 {
+    animation-range: entry 6% cover 45%;
+  }
+
+  .goyo-reveal-x-lag-2 {
+    animation-range: entry 12% cover 50%;
+  }
+
+  .goyo-reveal-x-lag-3 {
+    animation-range: entry 18% cover 55%;
+  }
+
+  .goyo-parallax-slow {
+    animation: goyo-drift-up linear both;
+    animation-timeline: view();
+  }
+
+  .goyo-parallax-fast {
+    animation: goyo-drift-up-more linear both;
+    animation-timeline: view();
+  }
+
+  .goyo-fade-in-1 {
+    animation: goyo-pulse linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 25%;
+  }
+
+  .goyo-fade-in-2 {
+    animation-range: cover 22% cover 50%;
+  }
+
+  .goyo-fade-in-3 {
+    animation-range: cover 47% cover 75%;
+  }
+
+  .goyo-fade-in-4 {
+    animation-range: cover 72% cover 100%;
+  }
+
+  .goyo-fade-in-mid {
+    animation-range: cover 30% cover 70%;
+  }
+
+  .goyo-fade-in-late {
+    animation-range: cover 50% cover 90%;
+  }
+
+  .goyo-fade-in-early {
+    animation-range: cover 5% cover 45%;
+  }
+}
+
+@supports (animation-timeline: scroll(root)) {
+  .goyo-scroll-progress {
+    transform-origin: left center;
+    animation: goyo-progress linear both;
+    animation-timeline: scroll(root);
+  }
+}
+
+@keyframes goyo-rise {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes goyo-rise-x {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes goyo-drift-up {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-80px);
+  }
+}
+
+@keyframes goyo-drift-up-more {
+  from {
+    transform: translateY(40px);
+  }
+  to {
+    transform: translateY(-120px);
+  }
+}
+
+@keyframes goyo-pulse {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  20%,
+  80% {
+    opacity: 1;
+  }
+}
+
+@keyframes goyo-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: required to override animations and transitions */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override animations and transitions */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override transitions */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override html scroll-behavior */
+    scroll-behavior: auto !important;
+  }
 }

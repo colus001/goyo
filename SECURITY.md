@@ -15,7 +15,7 @@ preview builds.
 
 Please report security issues privately instead of opening a public issue.
 
-Email: seokjun@seokjun.kim
+Email: mail@seokjun.kim
 
 Include enough detail to reproduce the issue, but do not include private writing
 content or credentials. I will acknowledge valid reports as soon as practical

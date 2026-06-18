@@ -5,7 +5,7 @@
   "description": "Distraction-free long-form writing desktop app.",
   "author": {
     "name": "Seokjun Kim",
-    "email": "seokjun@seokjun.kim"
+    "email": "mail@seokjun.kim"
   },
   "homepage": "https://goyo.seokjun.kim",
   "license": "MIT",
@@ -86,7 +86,7 @@
     "linux": {
       "category": "Office",
       "icon": "build/icon.png",
-      "maintainer": "Seokjun Kim <seokjun@seokjun.kim>",
+      "maintainer": "Seokjun Kim <mail@seokjun.kim>",
       "target": [
         "AppImage",
         "deb"
