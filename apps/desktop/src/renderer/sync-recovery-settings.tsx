@@ -2,6 +2,7 @@
 import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 import type { AppSettings } from '../shared/app-settings';
+import { AppButton } from './app-button';
 import { GoyoCloudAuthSection } from './goyo-cloud-auth-settings';
 
 interface SyncStatusSummary {
@@ -59,9 +60,6 @@ function SyncProviderSettings({
         />
       ) : null}
       <GoyoCloudAuthSection onChangeSettings={onChangeSettings} settings={settings} />
-      {settings.sync.provider === 'goyo-cloud'
-        ? testConnectionButton(isTestingConnection, setIsTestingConnection, setConnectionStatus)
-        : null}
       {settings.sync.provider === 'self-hosted' ? (
         <SyncConnectionActions
           hasToken={hasToken}
@@ -102,8 +100,7 @@ function testConnectionButton(
 ): ReactElement {
   return (
     <div className="mt-4">
-      <button
-        className="rounded-full bg-[var(--goyo-accent)] px-4 py-2 font-medium text-[var(--goyo-accent-text)] text-sm hover:opacity-90 disabled:opacity-50"
+      <AppButton
         disabled={isTestingConnection}
         onClick={() => {
           setIsTestingConnection(true);
@@ -115,10 +112,10 @@ function testConnectionButton(
             );
           });
         }}
-        type="button"
+        variant="primary"
       >
         {isTestingConnection ? 'Testing…' : 'Test connection'}
-      </button>
+      </AppButton>
     </div>
   );
 }
@@ -359,13 +356,9 @@ function SyncRecoveryHeader({ onRefresh }: { onRefresh: () => void }): ReactElem
           local checkpoints and restore points remain available in Recovery.
         </p>
       </div>
-      <button
-        className="rounded-full border border-[var(--goyo-border)] px-3 py-1.5 text-[var(--goyo-text-muted)] text-sm hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
-        onClick={onRefresh}
-        type="button"
-      >
+      <AppButton onClick={onRefresh} size="sm" variant="secondary">
         Refresh
-      </button>
+      </AppButton>
     </div>
   );
 }
@@ -457,14 +450,10 @@ function SettingsButton({
   isPrimary?: boolean;
   onClick: () => void;
 }): ReactElement {
-  const className = isPrimary
-    ? 'rounded-full bg-[var(--goyo-accent)] px-4 py-2 font-medium text-sm text-white hover:bg-[var(--goyo-accent-hover)] disabled:opacity-45'
-    : 'rounded-full border border-[var(--goyo-border)] px-4 py-2 font-medium text-[var(--goyo-text-muted)] text-sm hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)] disabled:opacity-45';
-
   return (
-    <button className={className} disabled={disabled} onClick={onClick} type="button">
+    <AppButton disabled={disabled} onClick={onClick} variant={isPrimary ? 'primary' : 'secondary'}>
       {children}
-    </button>
+    </AppButton>
   );
 }
 

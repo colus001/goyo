@@ -113,15 +113,7 @@ function AboutVersion(): ReactElement {
       .checkForUpdates()
       .then(() => {
         void window.writerDesktop.updater.getStatus().then((status) => {
-          if (status.status === 'no-update') {
-            setUpdateStatus('Up to date');
-          } else if (status.status === 'available' || status.status === 'downloading') {
-            setUpdateStatus('Update available');
-          } else if (status.status === 'error') {
-            setUpdateStatus('Check failed');
-          } else {
-            setUpdateStatus(null);
-          }
+          setUpdateStatus(getUpdateStatusLabel(status.status));
         });
       })
       .catch(() => {
@@ -150,6 +142,26 @@ function AboutVersion(): ReactElement {
       </div>
     </div>
   );
+}
+
+function getUpdateStatusLabel(status: string): string | null {
+  if (status === 'no-update') {
+    return 'Up to date';
+  }
+
+  if (status === 'available') {
+    return 'Ready to update';
+  }
+
+  if (status === 'downloading') {
+    return 'Downloading update';
+  }
+
+  if (status === 'error') {
+    return 'Check failed';
+  }
+
+  return null;
 }
 
 function LanguageAndFontPicker({

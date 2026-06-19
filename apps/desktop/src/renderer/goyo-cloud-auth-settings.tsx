@@ -1,5 +1,6 @@
 import { type ReactElement, useEffect, useState } from 'react';
 import type { AppSettings } from '../shared/app-settings';
+import { AppButton } from './app-button';
 
 interface GoyoCloudAccount {
   email: string;
@@ -163,14 +164,9 @@ function SignedInView({
         Hosted session active. Sync will use your Goyo Cloud account.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          className="rounded-full border border-[var(--goyo-border)] px-3 py-1.5 text-[var(--goyo-text)] text-sm hover:bg-[var(--goyo-accent-soft)]"
-          disabled={isLoggingOut}
-          onClick={onLogout}
-          type="button"
-        >
+        <AppButton disabled={isLoggingOut} onClick={onLogout} size="sm" variant="secondary">
           {isLoggingOut ? 'Signing out…' : 'Sign out'}
-        </button>
+        </AppButton>
         <a
           className="rounded-full border border-[var(--goyo-border)] px-3 py-1.5 text-[var(--goyo-text-muted)] text-sm hover:bg-[var(--goyo-accent-soft)]"
           href="https://goyo-cloud.seokjun.kim/account"
@@ -225,14 +221,9 @@ function SignInView({
           type="email"
           value={email}
         />
-        <button
-          className="rounded-xl bg-[var(--goyo-accent)] px-3 py-2 font-medium text-[var(--goyo-accent-text)] text-sm hover:opacity-90 disabled:opacity-50"
-          disabled={isSending || !email}
-          onClick={onSendCode}
-          type="button"
-        >
+        <AppButton disabled={isSending || !email} onClick={onSendCode} variant="primary">
           {isSending ? 'Sending…' : 'Send code'}
-        </button>
+        </AppButton>
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.6fr)]">
         <input
@@ -246,14 +237,9 @@ function SignInView({
           placeholder="6-digit code"
           value={code}
         />
-        <button
-          className="rounded-xl bg-[var(--goyo-accent)] px-3 py-2 font-medium text-[var(--goyo-accent-text)] text-sm hover:opacity-90 disabled:opacity-50"
-          disabled={isVerifying || code.length !== 6}
-          onClick={onVerify}
-          type="button"
-        >
+        <AppButton disabled={isVerifying || code.length !== 6} onClick={onVerify} variant="primary">
           {isVerifying ? 'Verifying…' : 'Verify code'}
-        </button>
+        </AppButton>
       </div>
       <div className="mt-4 flex items-center gap-3 text-[var(--goyo-text-muted)] text-xs">
         <div className="flex-1 border-t border-[var(--goyo-border)]" />
@@ -261,14 +247,14 @@ function SignInView({
         <div className="flex-1 border-t border-[var(--goyo-border)]" />
       </div>
       <div className="mt-3">
-        <button
-          className="w-full rounded-xl bg-[var(--goyo-raised)] border border-[var(--goyo-border)] px-3 py-2 font-medium text-[var(--goyo-text)] text-sm hover:bg-[var(--goyo-accent-soft)] disabled:opacity-50"
+        <AppButton
+          className="w-full"
           disabled={isOpeningBrowser}
           onClick={onStartBrowser}
-          type="button"
+          variant="secondary"
         >
           {isOpeningBrowser ? 'Opening browser…' : 'Sign in with browser'}
-        </button>
+        </AppButton>
       </div>
       {status ? <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{status}</p> : null}
     </div>
