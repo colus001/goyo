@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { downloadLinks } from '../lib/data';
 
 export function Footer(): ReactElement {
   return (
@@ -17,11 +18,21 @@ export function Footer(): ReactElement {
             </span>
           </a>
           <p className="mt-3 max-w-md text-[0.82rem] leading-relaxed text-[var(--goyo-text-muted)]">
-            Built for writers who care about keeping their words safe. Local-first by default, with
-            an affordable cloud plan when you want it.
+            Built for writers who want room for fragments, chapters, notes, and long drafts without
+            giving up local control.
           </p>
         </div>
         <div className="flex flex-col gap-2 text-[0.78rem] text-[var(--goyo-text-muted)] md:items-end">
+          <p>
+            <a
+              className="transition hover:text-[var(--goyo-text)]"
+              href={downloadLinks.repository}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Open source on GitHub
+            </a>
+          </p>
           <p>Built with Yjs, Tiptap, and Cloudflare.</p>
           <p>© {new Date().getFullYear()} Goyo. Free local writing for everyone.</p>
         </div>

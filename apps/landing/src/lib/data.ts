@@ -2,6 +2,7 @@ export const downloadLinks = {
   linuxAppImage: 'https://goyo-api.seokjun.kim/downloads/linux-appimage',
   linuxDeb: 'https://goyo-api.seokjun.kim/downloads/linux-deb',
   mac: 'https://goyo-api.seokjun.kim/downloads/mac',
+  repository: 'https://github.com/colus001/goyo',
   releases: 'https://github.com/colus001/goyo/releases/latest',
   windows: 'https://goyo-api.seokjun.kim/downloads/windows',
 } as const;
@@ -9,19 +10,19 @@ export const downloadLinks = {
 export const roadmap = [
   {
     phase: 'Now',
-    title: 'Desktop writing',
+    title: 'Quiet desktop drafting',
     items:
-      'Books, chapters, episodes, Quick Drafts, focused mode, local autosave, six themes, custom writing fonts.',
+      'Books, chapters, episodes, Quick Drafts, focused mode, local autosave, six themes, and custom writing fonts.',
   },
   {
     phase: 'Next',
-    title: 'Affordable cloud sync',
+    title: 'Safer cloud backup',
     items:
-      'Backup, multi-device access, search, settings polish, stronger recovery, export foundations.',
+      'Affordable sync, multi-device access, search, settings polish, stronger recovery, and export foundations.',
   },
   {
     phase: 'Later',
-    title: 'Mobile and browser',
+    title: 'Writing wherever you are',
     items:
       'Mobile writing mode, browser web app reusing the same core, realtime collaboration, richer version history.',
   },
