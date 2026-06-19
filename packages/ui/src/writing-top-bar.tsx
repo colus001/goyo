@@ -24,6 +24,7 @@ export function WritingTopBar({
   onExportDocument,
   onOpenSettings,
   onToggleSidebar,
+  updateControl,
   wordCountLabel,
 }: {
   activeDocument?: DocumentItem;
@@ -37,6 +38,7 @@ export function WritingTopBar({
   onExportDocument?: (format: 'html' | 'markdown' | 'text') => void;
   onOpenSettings?: () => void;
   onToggleSidebar: () => void;
+  updateControl?: ReactNode;
   wordCountLabel?: string;
 }): ReactElement {
   const currentTitle = activeDocument?.title || activeMoveTarget?.title || bookTitle;
@@ -66,6 +68,7 @@ export function WritingTopBar({
             {wordCountLabel}
           </p>
         ) : null}
+        {updateControl ? <div className="[-webkit-app-region:no-drag]">{updateControl}</div> : null}
         <WritingExportMenu
           canExportDocument={Boolean(activeDocument)}
           onExportChapter={onExportChapter}
