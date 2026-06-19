@@ -17,12 +17,12 @@ export function RoadmapSection(): ReactElement {
               Roadmap
             </p>
             <h2 className="goyo-prose mt-3 max-w-xl text-[2.1rem] leading-tight tracking-[-0.05em] text-[var(--goyo-text)] sm:text-[2.6rem]">
-              Desktop first. Cloud next. Mobile soon.
+              Desktop calm first. Sync and mobile after.
             </h2>
           </div>
           <p className="max-w-md text-[0.95rem] leading-relaxed text-[var(--goyo-text-muted)]">
-            The product is growing from a reliable desktop writing surface toward safe sync,
-            recovery, exports, and mobile access.
+            Goyo starts with a reliable place to write, then grows toward backup, recovery, exports,
+            and mobile access without making cloud storage the price of entry.
           </p>
         </div>
         <div className="grid gap-5 md:grid-cols-3">

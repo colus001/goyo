@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
 
 const ITEMS = [
-  { caption: 'writes stay on disk first', title: 'Local-first by default' },
-  { caption: 'merges, never last-write-wins', title: 'Yjs CRDT safe' },
-  { caption: 'pick the paper that fits the hour', title: 'Six built-in themes' },
+  { caption: 'your words stay on disk first', title: 'Local-first by default' },
+  { caption: 'capture fragments before they have a home', title: 'Start messy, organize later' },
+  { caption: 'paper, sidebar, and themes stay quiet', title: 'A calmer writing surface' },
 ];
 
 export function FeatureStrip(): ReactElement {

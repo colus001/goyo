@@ -7,26 +7,26 @@ const WALKTHROUGH_STEPS = [
   {
     id: 'surfaces',
     eyebrow: '01 / Start',
-    title: 'Start inside a book, or capture a loose draft.',
-    body: 'Open a manuscript from the library, create a new book, or start writing immediately. Bookless writing goes into Quick Drafts so nothing gets lost while you decide where it belongs.',
+    title: 'Capture the line before it disappears.',
+    body: 'Open a manuscript when you know where the idea belongs, or start writing immediately. Loose thoughts go into Quick Drafts, so the first sentence does not have to wait for a perfect project structure.',
   },
   {
     id: 'draft',
     eyebrow: '02 / Draft',
-    title: 'The sidebar gets out of the way when you draft.',
-    body: 'Collapse the manuscript list when the page needs more room. New untitled episodes still start in the title field; titled episodes open directly into the body so you can keep writing.',
+    title: 'Draft without fighting the interface.',
+    body: 'Collapse the manuscript list when the page needs more room. Untitled pieces begin gently in the title field; titled pieces open into the body so your hands can stay with the sentence.',
   },
   {
     id: 'structure',
     eyebrow: '03 / Structure',
-    title: 'Books hold chapters, chapters hold episodes.',
-    body: 'A document can live inside a chapter or directly under the book. Reorder chapters and episodes without forcing every idea into the same hierarchy.',
+    title: 'Shape chapters when the shape is ready.',
+    body: 'Books can hold chapters, episodes, notes, and chapterless fragments. Move pieces up or down without forcing every scene, aside, or essay note into the same mold.',
   },
   {
     id: 'sync',
     eyebrow: '04 / Sync',
-    title: 'Local save first. Sync without overwrites later.',
-    body: 'Drafts are preserved locally before cloud sync. Document content is designed around CRDT updates, so another device can merge changes instead of replacing your words.',
+    title: 'Sync without gambling with your words.',
+    body: 'Drafts are preserved locally before cloud sync. Document content is designed around CRDT updates, so another device can merge changes instead of replacing the paragraph you just wrote.',
   },
 ];
 
@@ -45,15 +45,14 @@ export function ProductPreviewScrollSection(): ReactElement {
       <div className="relative mx-auto max-w-7xl">
         <div className="mx-auto max-w-3xl text-center">
           <p className="goyo-reveal font-medium text-[0.7rem] uppercase tracking-[0.22em] text-[var(--goyo-text-faint)]">
-            How Goyo works
+            Writer-first workflow
           </p>
           <h2 className="goyo-reveal goyo-reveal-lag-1 goyo-prose mt-3 text-[2.35rem] leading-tight tracking-[-0.055em] text-[var(--goyo-text)] sm:text-[3rem]">
-            From first thought to saved draft.
+            From first thought to a draft you can trust.
           </h2>
           <p className="goyo-reveal goyo-reveal-lag-2 mt-5 text-[1rem] leading-[1.75] text-[var(--goyo-text-muted)]">
-            Goyo is built around four writing states: choose where the work belongs, draft without
-            friction, organize without forcing structure, and sync without throwing away local
-            edits.
+            Goyo is built around the way long projects actually happen: fragments arrive early,
+            structure comes later, and safe storage matters before polish does.
           </p>
         </div>
 

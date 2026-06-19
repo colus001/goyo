@@ -14,7 +14,7 @@ export function Hero(): ReactElement {
       <div className="relative mx-auto flex max-w-7xl flex-col items-center px-5 pt-16 pb-10 text-center sm:px-8 sm:pt-20 lg:px-12 lg:pt-24">
         <div className="flex max-w-4xl flex-col items-center">
           <div className="goyo-reveal mb-7 flex flex-wrap justify-center gap-2">
-            {['Free local writing', 'Affordable cloud sync', 'Mobile coming soon'].map((badge) => (
+            {['Free local writing', 'Open source', 'Cloud sync coming soon'].map((badge) => (
               <span
                 className="rounded-full border border-[var(--goyo-border)] bg-[var(--goyo-paper)] px-2.5 py-1 font-medium text-[0.66rem] uppercase tracking-[0.16em] text-[var(--goyo-text-muted)]"
                 key={badge}
@@ -24,14 +24,14 @@ export function Hero(): ReactElement {
             ))}
           </div>
           <p className="goyo-reveal goyo-reveal-lag-1 mb-5 font-medium text-[0.7rem] uppercase tracking-[0.22em] text-[var(--goyo-text-faint)]">
-            Local-first writing for essays and fiction
+            Local-first writing for long work
           </p>
           <h1 className="goyo-reveal goyo-reveal-lag-1 goyo-prose max-w-4xl text-balance font-semibold text-[3rem] leading-[0.98] tracking-[-0.065em] text-[var(--goyo-text)] sm:text-[4rem] lg:text-[5.4rem]">
-            A quiet desktop for the work that takes time.
+            For drafts that need silence, structure, and somewhere safe to grow.
           </h1>
           <p className="goyo-reveal goyo-reveal-lag-2 mt-6 max-w-2xl text-[1.02rem] leading-[1.7] text-[var(--goyo-text-muted)] sm:text-[1.08rem]">
-            Write chapters, scenes, notes, essays, and loose drafts in a calm desktop app built to
-            protect your words before anything touches the cloud.
+            Capture the line before it disappears, let a messy chapter stay messy, and organize the
+            work only when the shape is ready. Your words are saved locally first.
           </p>
           <div className="goyo-reveal goyo-reveal-lag-2 mt-8 flex flex-col gap-2.5 sm:flex-row sm:gap-3">
             <a
@@ -45,13 +45,13 @@ export function Hero(): ReactElement {
             </a>
             <a
               className="inline-flex items-center justify-center rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-paper)] px-5 py-3 font-medium text-[0.92rem] text-[var(--goyo-text)] transition hover:bg-[var(--goyo-raised)]"
-              href="#roadmap"
+              href="#how-it-works"
             >
-              See the roadmap
+              See how it works
             </a>
           </div>
           <p className="goyo-reveal goyo-reveal-lag-3 mt-5 text-[0.78rem] text-[var(--goyo-text-faint)]">
-            Apple Silicon · Windows x64 · Linux AppImage · Linux .deb
+            No account required for local writing · Apple Silicon · Windows x64 · Linux
           </p>
         </div>
 

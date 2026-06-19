@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { downloadLinks } from '../lib/data';
 
 export function TopNav(): ReactElement {
   return (
@@ -19,14 +20,19 @@ export function TopNav(): ReactElement {
           <a className="transition hover:text-[var(--goyo-text)]" href="#how-it-works">
             How it works
           </a>
-          <a className="transition hover:text-[var(--goyo-text)]" href="#draft">
-            Draft
-          </a>
-          <a className="transition hover:text-[var(--goyo-text)]" href="#sync">
-            Sync
+          <a className="transition hover:text-[var(--goyo-text)]" href="#download">
+            Download
           </a>
           <a className="transition hover:text-[var(--goyo-text)]" href="#roadmap">
             Roadmap
+          </a>
+          <a
+            className="transition hover:text-[var(--goyo-text)]"
+            href={downloadLinks.repository}
+            rel="noreferrer"
+            target="_blank"
+          >
+            GitHub
           </a>
         </nav>
         <a
