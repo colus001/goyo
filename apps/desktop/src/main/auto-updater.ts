@@ -28,12 +28,40 @@ let updateState: UpdateState = {
   downloadProgress: 0,
   lastError: null,
 };
+let shouldInstallAfterDownload = false;
 
 export function registerAutoUpdaterIpc() {
   ipcMain.handle('updater:checkForUpdates', async () => {
     try {
       await autoUpdater.checkForUpdates();
     } catch (error) {
+      setUpdateState({
+        ...updateState,
+        status: 'error',
+        updateVersion: updateState.updateVersion,
+        lastError: getErrorMessage(error),
+      });
+      sendStatusToRenderer();
+    }
+  });
+
+  ipcMain.handle('updater:downloadUpdate', async () => {
+    if (updateState.status === 'downloading' || updateState.status === 'downloaded') {
+      return;
+    }
+
+    try {
+      shouldInstallAfterDownload = true;
+      setUpdateState({
+        ...updateState,
+        status: 'downloading',
+        downloadProgress: 0,
+        lastError: null,
+      });
+      sendStatusToRenderer();
+      await autoUpdater.downloadUpdate();
+    } catch (error) {
+      shouldInstallAfterDownload = false;
       setUpdateState({
         ...updateState,
         status: 'error',
@@ -105,9 +133,14 @@ function registerAutoUpdaterEvents() {
       lastError: null,
     });
     sendStatusToRenderer();
+
+    if (shouldInstallAfterDownload) {
+      autoUpdater.quitAndInstall();
+    }
   });
 
   autoUpdater.on('error', (error) => {
+    shouldInstallAfterDownload = false;
     setUpdateState({
       ...updateState,
       status: 'error',
@@ -125,15 +158,6 @@ function onUpdateAvailable(info: { version: string }) {
     lastError: null,
   });
   sendStatusToRenderer();
-
-  autoUpdater.downloadUpdate().catch((error) => {
-    setUpdateState({
-      ...updateState,
-      status: 'error',
-      lastError: getErrorMessage(error),
-    });
-    sendStatusToRenderer();
-  });
 }
 
 function onDownloadProgress(progress: { percent: number }) {

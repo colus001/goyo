@@ -135,6 +135,7 @@ declare global {
       };
       updater: {
         checkForUpdates: () => Promise<void>;
+        downloadUpdate: () => Promise<void>;
         getStatus: () => Promise<{
           status: string;
           updateVersion: string | null;

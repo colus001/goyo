@@ -2,7 +2,6 @@ import { useWritingWorkspace } from './document-session-state';
 import { LibraryScreen } from './library-screen';
 import { SettingsScreen } from './settings-modal';
 import { getThemeStyle } from './theme-style';
-import { UpdateNotification } from './update-notification';
 import { useGlobalSettingsShortcut } from './use-global-settings-shortcut';
 import { WritingWorkspaceScreen } from './writing-workspace-screen';
 
@@ -18,7 +17,6 @@ export function App() {
 
   return (
     <div style={themeStyle}>
-      <UpdateNotification />
       {workspace.screen === 'settings' ? (
         <SettingsScreen
           onClose={workspace.closeSettings}

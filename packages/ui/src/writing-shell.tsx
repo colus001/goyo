@@ -55,6 +55,7 @@ export interface WritingShellProps {
   onSidebarCollapsedChange?: (isCollapsed: boolean) => void;
   onStartQuickDraft?: () => void;
   onUpdateBookAccentColor?: (bookId: string, accentColor: string) => void;
+  updateControl?: ReactNode;
   wordCountLabel?: string;
 }
 
@@ -86,6 +87,7 @@ export function WritingShell(props: WritingShellProps): ReactElement {
         onExportDocument={normalizedProps.onExportDocument}
         onOpenSettings={normalizedProps.onOpenSettings}
         onToggleSidebar={toggleSidebar}
+        updateControl={normalizedProps.updateControl}
         wordCountLabel={normalizedProps.wordCountLabel}
       />
       <WritingShellBody

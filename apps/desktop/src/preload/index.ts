@@ -183,6 +183,7 @@ const desktopApi = {
   },
   updater: {
     checkForUpdates: () => ipcRenderer.invoke('updater:checkForUpdates') as Promise<void>,
+    downloadUpdate: () => ipcRenderer.invoke('updater:downloadUpdate') as Promise<void>,
     getStatus: () =>
       ipcRenderer.invoke('updater:getStatus') as Promise<{
         status: string;

@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { AppButton } from './app-button';
 
 export function SettingsHeader({
   hasChanges,
@@ -23,21 +24,12 @@ export function SettingsHeader({
         </h1>
       </div>
       <div className="flex gap-2">
-        <button
-          className="rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95"
-          onClick={onCancel}
-          type="button"
-        >
+        <AppButton onClick={onCancel} variant="secondary">
           Cancel
-        </button>
-        <button
-          className="rounded-full bg-[var(--goyo-accent)] px-4 py-2 font-medium text-white outline-none transition hover:bg-[var(--goyo-accent-hover)] disabled:opacity-45"
-          disabled={!hasChanges}
-          onClick={onSave}
-          type="button"
-        >
+        </AppButton>
+        <AppButton disabled={!hasChanges} onClick={onSave} variant="primary">
           Save
-        </button>
+        </AppButton>
       </div>
     </div>
   );
@@ -71,20 +63,12 @@ export function DiscardSettingsDialog({
           Your settings changes have not been saved. You can keep editing or discard them.
         </p>
         <div className="mt-6 flex justify-end gap-2">
-          <button
-            className="rounded-full bg-[var(--goyo-accent-soft)] px-4 py-2 font-medium text-[var(--goyo-text)] outline-none transition hover:brightness-95"
-            onClick={onCancel}
-            type="button"
-          >
+          <AppButton onClick={onCancel} variant="secondary">
             Keep editing
-          </button>
-          <button
-            className="rounded-full bg-[var(--goyo-danger)] px-4 py-2 font-medium text-white outline-none transition hover:brightness-95"
-            onClick={onDiscard}
-            type="button"
-          >
+          </AppButton>
+          <AppButton onClick={onDiscard} variant="danger">
             Discard
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>

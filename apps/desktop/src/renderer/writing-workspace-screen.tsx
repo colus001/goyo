@@ -14,6 +14,7 @@ import {
   useState,
 } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
+import { UpdateNotification } from './update-notification';
 import { BookEmptyState, EpisodeSurface } from './writing-surfaces';
 import { exportActiveChapter, exportActiveDocument } from './writing-workspace-export-actions';
 import { useWorkspaceKeyboardShortcuts } from './writing-workspace-shortcuts';
@@ -129,6 +130,9 @@ function getWritingShellProps(
     onSidebarCollapsedChange: workspace.setSidebarCollapsed,
     onStartQuickDraft: workspace.startQuickDraft,
     onUpdateBookAccentColor: workspace.updateBookAccentColor,
+    updateControl: workspace.isSidebarCollapsed ? undefined : (
+      <UpdateNotification isSidebarCollapsed={workspace.isSidebarCollapsed} />
+    ),
     wordCountLabel,
   };
 }
