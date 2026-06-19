@@ -6,6 +6,7 @@ import { Hero } from './components/Hero';
 import { ProductPreviewScrollSection } from './components/ProductPreviewScrollSection';
 import { RoadmapSection } from './components/RoadmapSection';
 import { TopNav } from './components/TopNav';
+import { WriterFitSection } from './components/WriterFitSection';
 
 function App(): ReactElement {
   return (
@@ -17,6 +18,7 @@ function App(): ReactElement {
       <TopNav />
       <Hero />
       <FeatureStrip />
+      <WriterFitSection />
       <ProductPreviewScrollSection />
       <DownloadSection />
       <RoadmapSection />

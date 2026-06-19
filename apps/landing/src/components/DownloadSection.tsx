@@ -19,11 +19,11 @@ export function DownloadSection(): ReactElement {
                 Download
               </p>
               <h2 className="goyo-prose text-[2.1rem] leading-tight tracking-[-0.05em] text-[var(--goyo-text)] sm:text-[2.5rem]">
-                Start writing for free.
+                Start writing without opening an account.
               </h2>
               <p className="text-[0.95rem] leading-relaxed text-[var(--goyo-text-muted)]">
-                The desktop app is free for local writing. Cloud sync will be an affordable optional
-                plan for writers who want safe backup and access across devices.
+                Download the desktop app, keep your work on your machine, and add sync later when
+                you want backup and access across devices.
               </p>
               <div>
                 <p className="mb-2 font-medium text-[0.66rem] uppercase tracking-[0.14em] text-[var(--goyo-text-faint)]">
@@ -75,6 +75,15 @@ export function DownloadSection(): ReactElement {
               >
                 <Download aria-hidden="true" size={13} strokeWidth={2.2} />
                 View all releases
+              </a>
+              <a
+                className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 font-medium text-[0.78rem] text-[var(--goyo-text-muted)] transition hover:bg-[var(--goyo-paper)] hover:text-[var(--goyo-text)]"
+                href={downloadLinks.repository}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <Globe aria-hidden="true" size={13} strokeWidth={2.2} />
+                View source on GitHub
               </a>
             </div>
           </div>
