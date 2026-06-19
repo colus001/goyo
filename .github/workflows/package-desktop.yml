@@ -73,6 +73,7 @@ jobs:
         with:
           name: desktop-${{ matrix.os }}
           if-no-files-found: error
+          retention-days: 1
           path: |
             apps/desktop/dist/*.AppImage
             apps/desktop/dist/*.blockmap
