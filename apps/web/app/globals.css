@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  --goyo-accent-soft: rgba(217, 190, 127, 0.22);
+  --goyo-text-muted: #20251f;
+  --goyo-ui-font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  --goyo-writing-font-family: Georgia, "Times New Roman", serif;
   color: #eef0e8;
   background: #151816;
   font-synthesis: none;

@@ -27,6 +27,9 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const isLocalDev =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   const onStart = () => {
     if (!email) return;
@@ -34,14 +37,8 @@ function LoginForm() {
     setStatus(null);
     void authStart(email).then((result) => {
       setIsSending(false);
-      if (result.ok) {
-        const params = new URLSearchParams();
-        params.set('email', email);
-        const source = searchParams.get('source');
-        const clientId = searchParams.get('clientId');
-        if (source) params.set('source', source);
-        if (clientId) params.set('clientId', clientId);
-        router.push(`/verify?${params.toString()}`);
+      if (result.ok || isLocalDev) {
+        router.push(`/verify?${createVerifyParams(email, searchParams).toString()}`);
         return;
       }
       setStatus(result.error ?? 'Could not send login code.');
@@ -64,6 +61,11 @@ function LoginForm() {
           Enter your email. If you are new we will create your Goyo Cloud account after
           verification.
         </h2>
+        {isLocalDev ? (
+          <p className="mt-4 rounded-2xl border border-[#d9be7f]/20 bg-[#d9be7f]/10 px-4 py-3 text-[#d9be7f] text-sm">
+            Local dev: use code <span className="font-mono">000000</span> on the next screen.
+          </p>
+        ) : null}
         <form
           className="mt-6 max-w-md"
           onSubmit={(event) => {
@@ -93,4 +95,16 @@ function LoginForm() {
       </Panel>
     </div>
   );
+}
+
+function createVerifyParams(email: string, searchParams: URLSearchParams): URLSearchParams {
+  const params = new URLSearchParams();
+  params.set('email', email);
+  const source = searchParams.get('source');
+  const clientId = searchParams.get('clientId');
+  const returnTo = searchParams.get('returnTo');
+  if (source) params.set('source', source);
+  if (clientId) params.set('clientId', clientId);
+  if (returnTo) params.set('returnTo', returnTo);
+  return params;
 }

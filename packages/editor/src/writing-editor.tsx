@@ -7,6 +7,7 @@ import * as Y from 'yjs';
 import { tiptapJsonToMarkdown } from './document-export';
 
 const SNAPSHOT_UPDATE_INTERVAL = 50;
+const REMOTE_UPDATE_ORIGIN = 'remote-sync';
 
 export interface WritingEditorProps {
   documentId: string;
@@ -18,6 +19,7 @@ export interface WritingEditorProps {
 }
 
 export interface WritingEditorRef {
+  applyUpdate: (update: Uint8Array) => void;
   focus: () => void;
   getHtml: () => string;
   getMarkdown: () => string;
@@ -44,6 +46,7 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
     useImperativeHandle(
       ref,
       () => ({
+        applyUpdate: (update) => Y.applyUpdate(yDocument, update, REMOTE_UPDATE_ORIGIN),
         focus: () => editor?.chain().focus('end').run(),
         getHtml: () => editor?.getHTML() ?? '',
         getMarkdown: () => (editor ? tiptapJsonToMarkdown(editor.getJSON()) : ''),
@@ -138,7 +141,11 @@ function useDocumentUpdateEmitter(
       return;
     }
 
-    const emitDocumentUpdate = (update: Uint8Array) => {
+    const emitDocumentUpdate = (update: Uint8Array, origin: unknown) => {
+      if (origin === REMOTE_UPDATE_ORIGIN) {
+        return;
+      }
+
       updateCountRef.current += 1;
       const snapshot =
         updateCountRef.current % SNAPSHOT_UPDATE_INTERVAL === 0

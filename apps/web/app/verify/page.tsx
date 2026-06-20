@@ -30,9 +30,13 @@ function VerifyForm() {
   const email = searchParams.get('email') ?? '';
   const isDesktopFlow = searchParams.get('source') === 'desktop';
   const clientId = searchParams.get('clientId');
+  const returnTo = getSafeReturnTo(searchParams.get('returnTo'));
   const [code, setCode] = useState('');
   const [status, setStatus] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const isLocalDev =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   useEffect(() => {
     if (!email) {
@@ -43,7 +47,7 @@ function VerifyForm() {
   const onVerify = () => {
     if (code.length !== 6) return;
     setIsVerifying(true);
-    setStatus(null);
+    setStatus(isDesktopFlow ? 'Verifying and returning to Goyo Desktop…' : null);
     void authVerify({
       clientId: clientId ?? undefined,
       code,
@@ -57,12 +61,13 @@ function VerifyForm() {
           params.set('token', result.token);
           params.set('userId', result.user.id);
           params.set('email', result.user.email);
+          setStatus('Verified. Opening Goyo Desktop…');
           window.location.href = `goyo://auth/callback?${params.toString()}`;
           return;
         }
         if (result.user) {
           setUser(result.user);
-          router.push('/account');
+          router.push(returnTo ?? '/account');
           return;
         }
       }
@@ -79,14 +84,23 @@ function VerifyForm() {
           Verification
         </p>
         <h1 className="mt-5 text-balance font-serif text-5xl leading-[0.95] tracking-[-0.055em] text-[#f3f0df] sm:text-6xl lg:text-7xl">
-          Enter the code we sent to your email.
+          {isDesktopFlow
+            ? 'Enter the code to finish Desktop sign-in.'
+            : 'Enter the code we sent to your email.'}
         </h1>
       </header>
       <Panel>
         <p className="text-[#8f978b] text-sm">
-          Code sent to <span className="text-[#f3f0df]">{email}</span>. New emails automatically
-          create an account.
+          Code sent to <span className="text-[#f3f0df]">{email}</span>.
+          {isDesktopFlow
+            ? ' This page will return you to Goyo Desktop after verification.'
+            : ' New emails automatically create an account.'}
         </p>
+        {isLocalDev ? (
+          <p className="mt-3 rounded-2xl border border-[#d9be7f]/20 bg-[#d9be7f]/10 px-4 py-3 text-[#d9be7f] text-sm">
+            Local dev code: <span className="font-mono">000000</span>
+          </p>
+        ) : null}
         <form
           className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end"
           onSubmit={(event) => {
@@ -120,4 +134,9 @@ function VerifyForm() {
       </Panel>
     </div>
   );
+}
+
+function getSafeReturnTo(value: string | null): string | null {
+  if (!value?.startsWith('/') || value.startsWith('//')) return null;
+  return value;
 }
