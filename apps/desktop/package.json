@@ -43,6 +43,14 @@
       "provider": "generic",
       "url": "https://goyo-api.seokjun.kim/releases"
     },
+    "protocols": [
+      {
+        "name": "Goyo",
+        "schemes": [
+          "goyo"
+        ]
+      }
+    ],
     "mac": {
       "category": "public.app-category.productivity",
       "entitlements": "build/entitlements.mac.plist",

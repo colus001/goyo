@@ -46,8 +46,19 @@ const desktopApi = {
     getStatus: () =>
       ipcRenderer.invoke('goyoCloud:getStatus') as Promise<{
         account: { email: string; id: string } | null;
+        error?: string;
         hasSession: boolean;
+        status: 'expired' | 'signed-in' | 'signed-out' | 'unable-to-connect';
       }>,
+    getConfig: () =>
+      ipcRenderer.invoke('goyoCloud:getConfig') as Promise<{
+        apiUrl: string;
+        deepLinkProtocolCommand: { args: string[]; executable: string } | null;
+        deepLinkProtocolRegistered: boolean;
+        deepLinkProtocolScheme: string;
+        userDataPath: string;
+        webUrl: string;
+      } | null>,
     logout: () => ipcRenderer.invoke('goyoCloud:logout') as Promise<{ ok: boolean }>,
     onDeepLinkToken: (
       callback: (data: { email: string | null; userId: string | null }) => void,
@@ -63,6 +74,7 @@ const desktopApi = {
         ipcRenderer.removeListener('goyoCloud:deepLinkToken', listener);
       };
     },
+    openAccount: () => ipcRenderer.invoke('goyoCloud:openAccount') as Promise<{ ok: boolean }>,
   },
   backup: {
     exportLocalData: () =>

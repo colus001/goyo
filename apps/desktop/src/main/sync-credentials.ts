@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { safeStorage } from 'electron';
 
-const SYNC_TOKEN_FILE_NAME = 'sync-token.dat';
+const LEGACY_SYNC_TOKEN_FILE_NAME = 'sync-token.dat';
+const SYNC_TOKEN_FILE_NAME = 'sync-token.json';
 
 export interface SyncCredentialsStore {
   getToken(): string | null;
@@ -11,15 +11,14 @@ export interface SyncCredentialsStore {
 
 export function createSyncCredentialsStore(userDataPath: string): SyncCredentialsStore {
   const tokenPath = join(userDataPath, SYNC_TOKEN_FILE_NAME);
+  const legacyTokenPath = join(userDataPath, LEGACY_SYNC_TOKEN_FILE_NAME);
 
   return {
     getToken() {
-      if (!existsSync(tokenPath) || !safeStorage.isEncryptionAvailable()) {
-        return null;
-      }
-
       try {
-        return safeStorage.decryptString(readFileSync(tokenPath));
+        if (!existsSync(tokenPath)) return null;
+        const raw = JSON.parse(readFileSync(tokenPath, 'utf8')) as { token?: unknown };
+        return typeof raw.token === 'string' && raw.token.trim().length > 0 ? raw.token : null;
       } catch {
         return null;
       }
@@ -27,15 +26,13 @@ export function createSyncCredentialsStore(userDataPath: string): SyncCredential
     saveToken(token) {
       if (token.trim().length === 0) {
         rmSync(tokenPath, { force: true });
+        rmSync(legacyTokenPath, { force: true });
         return;
       }
 
-      if (!safeStorage.isEncryptionAvailable()) {
-        throw new Error('Secure credential storage is not available on this device.');
-      }
-
       mkdirSync(dirname(tokenPath), { recursive: true });
-      writeFileSync(tokenPath, safeStorage.encryptString(token.trim()));
+      writeFileSync(tokenPath, JSON.stringify({ token: token.trim() }), 'utf8');
+      rmSync(legacyTokenPath, { force: true });
     },
   };
 }
