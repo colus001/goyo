@@ -36,18 +36,22 @@ interface StoredEntitlement {
 }
 
 export function createAuthTestEnv(input: {
+  appEnv?: string;
+  authDevLoginCode?: string;
   authSecret?: string;
   emailFrom?: string;
   hasEmailSender?: boolean;
 }): EnvWithCloudAuth {
   return {
+    APP_ENV: input.appEnv,
+    AUTH_DEV_LOGIN_CODE: input.authDevLoginCode,
     AUTH_EMAIL_FROM: input.emailFrom ?? 'Goyo <no-reply@goyo.seokjun.kim>',
     DB: new InMemoryAuthDatabase() as unknown as D1Database,
     EMAIL:
       input.hasEmailSender !== false
         ? (new MockEmailSender() as unknown as EmailSender)
         : undefined,
-    GOYO_AUTH_SECRET: input.authSecret ?? 'test-auth-secret',
+    GOYO_AUTH_SECRET: input.authSecret,
   };
 }
 

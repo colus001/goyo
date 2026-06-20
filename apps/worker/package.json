@@ -5,7 +5,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "pnpm run dev:migrate && wrangler dev --var APP_ENV:development --var AUTH_DEV_LOGIN_CODE:000000",
+    "dev:migrate": "wrangler d1 migrations apply writer-sync --local",
     "deploy": "wrangler d1 migrations apply writer-sync --remote && wrangler deploy",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit"

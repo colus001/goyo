@@ -1,4 +1,7 @@
+// biome-ignore lint/nursery/noExcessiveLinesPerFile: Auth endpoint handlers are intentionally kept together around one route group.
 import type {
+  AuthDesktopHandoffRequest,
+  AuthDesktopHandoffResponse,
   AuthMeResponse,
   AuthStartRequest,
   AuthStartResponse,
@@ -17,8 +20,9 @@ import {
 } from './cloud-auth';
 import { getDefaultAccountStatus } from './cloud-auth-account';
 import { clearAuthCookie, createAuthCookie, getBearerOrCookieToken } from './cloud-auth-cookie';
+import { getLocalDevLoginCode } from './cloud-auth-dev';
 import { sendLoginCodeEmail } from './cloud-auth-email';
-import type { EnvWithCloudAuth } from './cloud-auth-env';
+import { type EnvWithCloudAuth, getCloudAuthSecret, getLocalDevAuthSecret } from './cloud-auth-env';
 import {
   consumeLoginCode,
   createSession,
@@ -36,7 +40,7 @@ import {
   touchSessionByTokenHash,
   type UserRow,
 } from './cloud-auth-storage';
-import { jsonError, readJsonBody } from './http';
+import { getStorageErrorMessage, jsonError, readJsonBody } from './http';
 
 export type { EnvWithCloudAuth } from './cloud-auth-env';
 
@@ -55,6 +59,10 @@ export async function handleCloudAuthRequest(
 
   if (url.pathname === '/v1/auth/me' && request.method === 'GET') {
     return getCloudAuthMe(request, env);
+  }
+
+  if (url.pathname === '/v1/auth/desktop-handoff' && request.method === 'POST') {
+    return createDesktopHandoff(request, env);
   }
 
   if (url.pathname === '/v1/auth/logout' && request.method === 'POST') {
@@ -77,7 +85,10 @@ async function startCloudAuth(request: Request, env: EnvWithCloudAuth): Promise<
     return jsonError('Email address is invalid.', 400);
   }
 
-  if (!env.GOYO_AUTH_SECRET || !env.EMAIL) {
+  const devLoginCode = getLocalDevLoginCode(env);
+  const authSecret = devLoginCode ? getLocalDevAuthSecret() : getCloudAuthSecret(env);
+
+  if (!authSecret || (!env.EMAIL && !devLoginCode)) {
     return jsonError('Goyo Cloud auth is not configured.', 503);
   }
 
@@ -88,8 +99,8 @@ async function startCloudAuth(request: Request, env: EnvWithCloudAuth): Promise<
     return Response.json({ ok: true } satisfies AuthStartResponse);
   }
 
-  const code = createLoginCode();
-  const codeHash = await hashAuthSecret(env.GOYO_AUTH_SECRET, getLoginCodeHashValue(email, code));
+  const code = devLoginCode ?? createLoginCode();
+  const codeHash = await hashAuthSecret(authSecret, getLoginCodeHashValue(email, code));
 
   await insertLoginCode(env, {
     codeHash,
@@ -97,7 +108,10 @@ async function startCloudAuth(request: Request, env: EnvWithCloudAuth): Promise<
     email,
     expiresAt: getLoginCodeExpiresAt(now),
   });
-  await sendLoginCodeEmail(env, email, code);
+
+  if (!devLoginCode) {
+    await sendLoginCodeEmail(env, email, code);
+  }
 
   return Response.json({ ok: true } satisfies AuthStartResponse);
 }
@@ -109,10 +123,35 @@ async function verifyCloudAuth(request: Request, env: EnvWithCloudAuth): Promise
     return verification.response;
   }
 
-  const session = await createVerifiedSession(env, verification.value);
+  const session = await createVerifiedSessionResponse(env, verification.value);
+
+  if (!session.ok) {
+    return session.response;
+  }
+
+  return createVerifiedAuthResponse(verification.value.sessionKind, session.value);
+}
+
+type VerifiedSession = Awaited<ReturnType<typeof createVerifiedSession>>;
+
+async function createVerifiedSessionResponse(
+  env: EnvWithCloudAuth,
+  input: ValidAuthVerifyRequest,
+): Promise<{ ok: true; value: VerifiedSession } | { ok: false; response: Response }> {
+  try {
+    return { ok: true, value: await createVerifiedSession(env, input) };
+  } catch (error) {
+    return { ok: false, response: jsonError(getStorageErrorMessage(error), 409) };
+  }
+}
+
+function createVerifiedAuthResponse(
+  sessionKind: ValidAuthVerifyRequest['sessionKind'],
+  session: VerifiedSession,
+) {
   const response = Response.json(session.responseBody);
 
-  if (verification.value.sessionKind === 'web') {
+  if (sessionKind === 'web') {
     response.headers.append('set-cookie', createAuthCookie(session.token));
   }
 
@@ -153,6 +192,45 @@ async function logoutCloudAuth(request: Request, env: EnvWithCloudAuth): Promise
   return response;
 }
 
+async function createDesktopHandoff(request: Request, env: EnvWithCloudAuth): Promise<Response> {
+  const session = await getSessionFromRequest(request, env);
+
+  if (!session) {
+    return jsonError('Unauthorized.', 401);
+  }
+
+  const body = await readJsonBody<AuthDesktopHandoffRequest>(request);
+
+  if (!body.ok) {
+    return jsonError('Request body must be valid JSON.', 400);
+  }
+
+  if (body.value.clientId !== undefined && typeof body.value.clientId !== 'string') {
+    return jsonError('Client id must be a string when provided.', 400);
+  }
+
+  const now = new Date().toISOString();
+  const token = createSessionToken();
+  const sessionSecret = getCloudAuthSecret(env);
+  const tokenHash = await hashAuthSecret(sessionSecret ?? '', token);
+
+  await createSession(env, {
+    clientId: body.value.clientId ?? null,
+    now,
+    sessionKind: 'desktop',
+    tokenHash,
+    userId: session.user_id,
+  });
+  await ensureDefaultEntitlement(env, session.user_id, now);
+
+  return Response.json({
+    account: getDefaultAccountStatus(),
+    ok: true,
+    token,
+    user: { email: session.email, id: session.user_id },
+  } satisfies AuthDesktopHandoffResponse);
+}
+
 async function getSessionFromRequest(
   request: Request,
   env: EnvWithCloudAuth,
@@ -179,7 +257,15 @@ async function readAndValidateVerification(
     return { ok: false, response: jsonError(validation.message, 400) };
   }
 
-  if (!env.GOYO_AUTH_SECRET) {
+  const devLoginCode = getLocalDevLoginCode(env);
+
+  if (devLoginCode && validation.code === devLoginCode) {
+    return { ok: true, value: { ...validation, loginCodeId: null } };
+  }
+
+  const authSecret = devLoginCode ? getLocalDevAuthSecret() : getCloudAuthSecret(env);
+
+  if (!authSecret) {
     return { ok: false, response: jsonError('Goyo Cloud auth is not configured.', 503) };
   }
 
@@ -194,7 +280,7 @@ async function readAndValidateVerification(
   }
 
   const codeHash = await hashAuthSecret(
-    env.GOYO_AUTH_SECRET,
+    authSecret,
     getLoginCodeHashValue(validation.email, validation.code),
   );
 
@@ -208,10 +294,13 @@ async function readAndValidateVerification(
 
 async function createVerifiedSession(env: EnvWithCloudAuth, input: ValidAuthVerifyRequest) {
   const now = new Date().toISOString();
-  await consumeLoginCode(env, input.loginCodeId, now);
+  if (input.loginCodeId) {
+    await consumeLoginCode(env, input.loginCodeId, now);
+  }
   const user = await getOrCreateUser(env, input.email, now);
   const token = createSessionToken();
-  const tokenHash = await hashAuthSecret(env.GOYO_AUTH_SECRET ?? '', token);
+  const sessionSecret = input.loginCodeId ? getCloudAuthSecret(env) : getLocalDevAuthSecret();
+  const tokenHash = await hashAuthSecret(sessionSecret ?? '', token);
 
   await createSession(env, {
     clientId: input.clientId,
@@ -237,7 +326,7 @@ interface ValidAuthVerifyRequest {
   clientId: string | null;
   code: string;
   email: string;
-  loginCodeId: string;
+  loginCodeId: string | null;
   ok: true;
   sessionKind: 'desktop' | 'web';
 }

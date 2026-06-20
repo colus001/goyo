@@ -42,6 +42,17 @@ export interface AuthVerifyResponse {
   user: AuthUser;
 }
 
+export interface AuthDesktopHandoffRequest {
+  clientId?: SyncClientId;
+}
+
+export interface AuthDesktopHandoffResponse {
+  account: AuthAccountStatus;
+  ok: true;
+  token: string;
+  user: AuthUser;
+}
+
 export interface AuthMeResponse {
   account: AuthAccountStatus;
   ok: true;
