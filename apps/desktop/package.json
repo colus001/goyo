@@ -12,7 +12,8 @@
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "pnpm run dev:protocol && electron-vite dev",
+    "dev:protocol": "node scripts/register-dev-protocol.cjs",
     "build": "tsc -b && electron-vite build",
     "dist": "pnpm build && electron-builder",
     "dist:linux": "pnpm build && electron-builder --linux",

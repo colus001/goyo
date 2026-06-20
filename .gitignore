@@ -9,3 +9,4 @@ out/
 *.local
 .next
 .open-next
+apps/desktop/dev/
