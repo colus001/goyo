@@ -224,6 +224,11 @@
 - [x] Evaluated PDF export: prefer reusing HTML export with an Electron print-to-PDF path once export styling is stabilized.
 - [x] Evaluated DOCX export: defer implementation until a `docx` package integration can map document/chapter structure explicitly.
 - [x] Evaluated EPUB export: defer until book-level export is stable because EPUB needs XHTML packaging, metadata, and spine generation.
+- [x] Confirmed `apps/web` is configured for the `goyo-cloud.seokjun.kim` custom domain and the deployed web app responds on `/login`, `/account`, and `/documents`.
+- [x] Added future-ready `account_entitlements` storage for billing and sync entitlement metadata without enforcing plan limits.
+- [x] Added Desktop Goyo Cloud sign-in, logout, account link, provider selection, and separate credential storage for hosted sessions versus self-hosted Worker bearer tokens.
+- [x] Added Desktop Goyo Cloud session status checks for signed-in, signed-out, expired-session, and unable-to-connect states using the hosted auth session endpoint.
+- [x] Added a Cloud editor preview for existing synced documents using the shared Yjs/Tiptap editor, web sync client registration, update upload, snapshot upload, and polling-based remote update pull.
 
 ## Milestone 9: Recovery And Version Safety
 
@@ -278,12 +283,12 @@
 ### 13A: Product Scope And Deployment Shape
 
 - [x] Add `apps/web` as the Goyo Cloud product web app, separate from the public `apps/landing` marketing site.
-- [ ] Deploy the Goyo Cloud web app at `goyo-cloud.seokjun.kim`.
+- [x] Deploy the Goyo Cloud web app at `goyo-cloud.seokjun.kim`.
 - [x] Keep `apps/landing` focused on marketing, downloads, and public product information without account or billing state.
 - [x] Keep Goyo Cloud signup open; do not add invite-only or closed beta gating.
 - [x] Defer payment implementation until the auth/account foundation is working.
 - [x] Add a billing placeholder in `apps/web` without implementing payment yet.
-- [ ] Add billing and entitlement data structures only where they help future payment integration.
+- [x] Add billing and entitlement data structures only where they help future payment integration.
 - [x] Do not enforce sync usage limits in this milestone so login and sync can be tested freely.
 
 ### 13B: Web App Foundation
@@ -344,13 +349,13 @@
 
 ### 13H: Desktop Goyo Cloud Login And Status
 
-- [ ] Add Desktop Goyo Cloud login UI that uses the same Worker auth flow and stores the hosted session separately from self-hosted tokens.
-- [ ] Add Desktop logout and account status display for Goyo Cloud.
-- [ ] Add a Desktop "Manage account" link that opens `https://goyo-cloud.seokjun.kim/account`.
-- [ ] Split Desktop credential storage between self-hosted sync tokens and Goyo Cloud hosted sessions.
-- [ ] Hide manual token entry for the Goyo Cloud provider.
-- [ ] Keep manual token entry only for the self-hosted Worker provider.
-- [ ] Show whether Goyo Cloud is signed in, signed out, expired, or unable to connect.
+- [x] Add Desktop Goyo Cloud login UI that uses the same Worker auth flow and stores the hosted session separately from self-hosted tokens.
+- [x] Add Desktop logout and account status display for Goyo Cloud.
+- [x] Add a Desktop "Manage account" link that opens `https://goyo-cloud.seokjun.kim/account`.
+- [x] Split Desktop credential storage between self-hosted sync tokens and Goyo Cloud hosted sessions.
+- [x] Hide manual token entry for the Goyo Cloud provider.
+- [x] Keep manual token entry only for the self-hosted Worker provider.
+- [x] Show whether Goyo Cloud is signed in, signed out, expired, or unable to connect.
 
 ### 13I: Verification
 
@@ -362,17 +367,21 @@
 - [x] Verify sync remains available for all signed-in Goyo Cloud users while payment enforcement is disabled.
 - [x] Verify local writing remains safe when Goyo Cloud login or session refresh fails.
 
-### 13J: Web Document Viewer
+### 13J: Web Document Viewer And Cloud Editor
 
 - [x] Add Worker `GET /v1/documents` endpoint to list all synced documents for the authenticated user.
 - [x] Add web document list page at `/documents` showing title, kind, and last-updated date.
-- [x] Add web document detail read-only view with Yjs snapshot content rendering.
+- [x] Add web document detail view with Yjs snapshot content rendering.
 - [x] Require web session (cookie) auth for document API calls; redirect unauthenticated access.
 - [x] Add Documents navigation link to the CloudShell nav bar visible when signed in.
 - [x] Add `@writer/editor` dependency to `apps/web` for Yjs snapshot content extraction.
-- [x] Keep browser writing/editor functionality out of the read-only viewer.
+- [x] Add editable Cloud editor preview for existing synced documents without adding full browser book/chapter workspace management yet.
+- [x] Register a stable web sync client before uploading Cloud editor Yjs updates.
+- [x] Push Cloud editor body updates and periodic snapshots to the Worker using existing sync endpoints.
+- [x] Pull remote Yjs updates into the Cloud editor with polling so Desktop and Web can be tested as separate clients.
 - [ ] Verify document list renders synced documents from a real desktop sync.
 - [ ] Verify document detail decodes Yjs snapshot content correctly.
+- [ ] Verify Desktop and Cloud editor concurrent body edits merge without overwriting either side.
 
 ## Milestone 14: Future Browser Writing App
 
