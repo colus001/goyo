@@ -26,6 +26,19 @@ export interface SyncStatusSummary {
   needsAttention: boolean;
   oldestFailedAt: string | null;
   pendingItemCount: number;
+  recentFailures: SyncFailureSummary[];
+}
+
+interface SyncFailureSummary {
+  attempts: number;
+  documentId: string;
+  id: string;
+  kind: string;
+  lastAttemptAt: string | null;
+  lastEndpoint: string | null;
+  lastError: string | null;
+  lastHttpStatus: number | null;
+  recordId: string;
 }
 
 interface PushOptions {
@@ -45,6 +58,12 @@ interface PushPendingSnapshotsResult {
 interface PullRemoteSnapshotsResult {
   pulledSnapshotCount: number;
   skippedDocumentCount: number;
+}
+
+interface SyncFailureDetails {
+  lastEndpoint: string | null;
+  lastError: string | null;
+  lastHttpStatus: number | null;
 }
 
 interface RemoteDocumentUpdatesResponse {
@@ -88,11 +107,13 @@ export async function pushPendingDocumentUpdates(
   }
 
   ensureLocalRecordsQueuedForRemoteSync(store);
-  await registerSyncClient(connection);
-
   const pendingItems = store
     .listPendingSyncItems()
     .filter((item) => item.kind === 'document-update');
+
+  if (!(await registerSyncClientOrMarkPending(store, connection, pendingItems))) {
+    return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
+  }
 
   for (const item of pendingItems) {
     if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
@@ -115,8 +136,12 @@ export async function pushPendingDocumentUpdates(
       await pushDocumentUpdate(connection, update);
       store.markSyncItemCompleted(item.id, new Date().toISOString());
       pushedUpdateCount += 1;
-    } catch {
-      store.markSyncItemAttempted(item.id, new Date().toISOString());
+    } catch (error) {
+      store.markSyncItemAttempted(
+        item.id,
+        new Date().toISOString(),
+        createSyncFailureDetails(error),
+      );
       skippedUpdateCount += 1;
     }
   }
@@ -188,11 +213,13 @@ export async function pushPendingDocumentSnapshots(
   }
 
   ensureLocalRecordsQueuedForRemoteSync(store);
-  await registerSyncClient(connection);
-
   const pendingItems = store
     .listPendingSyncItems()
     .filter((item) => item.kind === 'document-snapshot');
+
+  if (!(await registerSyncClientOrMarkPending(store, connection, pendingItems))) {
+    return { pushedSnapshotCount, skippedSnapshotCount: pendingItems.length };
+  }
 
   for (const item of pendingItems) {
     if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
@@ -213,8 +240,12 @@ export async function pushPendingDocumentSnapshots(
       await pushDocumentSnapshot(connection, snapshot);
       store.markSyncItemCompleted(item.id, new Date().toISOString());
       pushedSnapshotCount += 1;
-    } catch {
-      store.markSyncItemAttempted(item.id, new Date().toISOString());
+    } catch (error) {
+      store.markSyncItemAttempted(
+        item.id,
+        new Date().toISOString(),
+        createSyncFailureDetails(error),
+      );
       skippedSnapshotCount += 1;
     }
   }
@@ -304,7 +335,34 @@ export function getSyncStatusSummary(store: DesktopLocalStore): SyncStatusSummar
     needsAttention: failedItems.length > 0,
     oldestFailedAt: oldestFailedAt ?? null,
     pendingItemCount: pendingItems.length,
+    recentFailures: store.listRecentFailedSyncItems(10),
   };
+}
+
+function markSyncItemsAttempted(
+  store: DesktopLocalStore,
+  items: Array<{ id: string }>,
+  failure: SyncFailureDetails,
+) {
+  const attemptedAt = new Date().toISOString();
+
+  for (const item of items) {
+    store.markSyncItemAttempted(item.id, attemptedAt, failure);
+  }
+}
+
+async function registerSyncClientOrMarkPending(
+  store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
+  items: Array<{ id: string }>,
+): Promise<boolean> {
+  try {
+    await registerSyncClient(connection);
+    return true;
+  } catch (error) {
+    markSyncItemsAttempted(store, items, createSyncFailureDetails(error));
+    return false;
+  }
 }
 
 export function ensureLocalRecordsQueuedForRemoteSync(store: DesktopLocalStore): number {
@@ -464,8 +522,66 @@ async function fetchJson<T = unknown>(
   });
 
   if (!response.ok) {
-    throw new Error(`Remote sync request failed with ${response.status}.`);
+    throw new RemoteSyncRequestError({
+      endpoint: getSyncEndpoint(url),
+      message: await getSyncErrorMessage(response),
+      status: response.status,
+    });
   }
 
   return (await response.json()) as T;
+}
+
+class RemoteSyncRequestError extends Error {
+  readonly endpoint: string;
+  readonly status: number;
+
+  constructor({
+    endpoint,
+    message,
+    status,
+  }: { endpoint: string; message: string; status: number }) {
+    super(message);
+    this.name = 'RemoteSyncRequestError';
+    this.endpoint = endpoint;
+    this.status = status;
+  }
+}
+
+function createSyncFailureDetails(error: unknown): SyncFailureDetails {
+  if (error instanceof RemoteSyncRequestError) {
+    return {
+      lastEndpoint: error.endpoint,
+      lastError: error.message,
+      lastHttpStatus: error.status,
+    };
+  }
+
+  return {
+    lastEndpoint: null,
+    lastError: error instanceof Error ? error.message : 'Unknown sync error',
+    lastHttpStatus: null,
+  };
+}
+
+async function getSyncErrorMessage(response: Response): Promise<string> {
+  const fallback = `Remote sync request failed with ${response.status}.`;
+
+  try {
+    const body = (await response.json()) as { error?: unknown };
+
+    return typeof body.error === 'string' && body.error.length > 0 ? body.error : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function getSyncEndpoint(url: string | URL): string {
+  try {
+    const parsedUrl = new URL(String(url));
+
+    return `${parsedUrl.pathname}${parsedUrl.search}`;
+  } catch {
+    return String(url);
+  }
 }

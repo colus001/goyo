@@ -119,6 +119,17 @@ declare global {
           needsAttention: boolean;
           oldestFailedAt: string | null;
           pendingItemCount: number;
+          recentFailures: Array<{
+            attempts: number;
+            documentId: string;
+            id: string;
+            kind: string;
+            lastAttemptAt: string | null;
+            lastEndpoint: string | null;
+            lastError: string | null;
+            lastHttpStatus: number | null;
+            recordId: string;
+          }>;
         }>;
         pullRemoteUpdates: () => Promise<{
           pulledUpdateCount: number;

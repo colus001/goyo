@@ -7,7 +7,21 @@ import type {
 } from '@writer/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DesktopLocalStore } from './document-metadata-store';
-import { ensureLocalRecordsQueuedForRemoteSync, pullRemoteDocumentUpdates } from './remote-sync';
+import {
+  ensureLocalRecordsQueuedForRemoteSync,
+  pullRemoteDocumentUpdates,
+  pushPendingDocumentUpdates,
+} from './remote-sync';
+
+type FailureAttempt = {
+  attemptedAt: string;
+  failure?: {
+    lastEndpoint: string | null;
+    lastError: string | null;
+    lastHttpStatus: number | null;
+  };
+  syncItemId: string;
+};
 
 describe('remote sync queue backfill', () => {
   it('queues local updates and snapshots that were created before remote sync was enabled', () => {
@@ -110,6 +124,51 @@ describe('remote document update pull', () => {
   });
 });
 
+describe('remote document update push diagnostics', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('records HTTP status, endpoint, and server message when a queued update fails', async () => {
+    const attempts: FailureAttempt[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: unknown, init?: RequestInit) => {
+        const url = String(input);
+
+        if (init?.method === 'PUT' && url.endsWith('/v1/sync/clients/client_desktop')) {
+          return Response.json({ ok: true });
+        }
+
+        if (init?.method === 'PUT' && url.endsWith('/v1/documents/doc_1')) {
+          return Response.json({ error: 'Document metadata rejected.' }, { status: 409 });
+        }
+
+        throw new Error(`Unexpected request: ${url}`);
+      }),
+    );
+
+    const result = await pushPendingDocumentUpdates(createPushStore({ attempts }), {
+      clientId: 'client_desktop',
+      enabled: true,
+      serverUrl: 'https://sync.example.com',
+      token: 'token_1',
+    });
+
+    expect(result).toEqual({ pushedUpdateCount: 0, skippedUpdateCount: 1 });
+    expect(attempts).toEqual([
+      expect.objectContaining({
+        failure: {
+          lastEndpoint: '/v1/documents/doc_1',
+          lastError: 'Document metadata rejected.',
+          lastHttpStatus: 409,
+        },
+        syncItemId: 'sync_update_a',
+      }),
+    ]);
+  });
+});
+
 function stubRemoteUpdateFetch(
   updates: Array<{ clientId: string; createdAt: string; id: string; updateBase64: string }>,
 ) {
@@ -167,6 +226,27 @@ function createPullStore({
       },
     ],
     listDocuments: () => [createDocument()],
+  } as unknown as DesktopLocalStore;
+}
+
+function createPushStore({ attempts }: { attempts: FailureAttempt[] }): DesktopLocalStore {
+  const update = createUpdate('update_a');
+  const queueItem = createQueueItem('sync_update_a', 'document-update', update.id);
+
+  return {
+    listAllDocuments: () => [createDocument()],
+    listAllDocumentSnapshots: () => [],
+    listAllDocumentUpdates: () => [update],
+    listAllSyncItems: () => [queueItem],
+    listDocumentUpdates: () => [update],
+    listPendingSyncItems: () => [queueItem],
+    markSyncItemAttempted: (
+      syncItemId: string,
+      attemptedAt: string,
+      failure: FailureAttempt['failure'],
+    ) => {
+      attempts.push({ attemptedAt, failure, syncItemId });
+    },
   } as unknown as DesktopLocalStore;
 }
 
