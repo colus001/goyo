@@ -139,15 +139,16 @@ export async function pullRemoteDocumentUpdates(
 
   for (const document of store.listDocuments()) {
     try {
-      const updates = store.listDocumentUpdates(document.id);
-      const latestUpdate = updates.at(-1);
-      const remoteUpdates = await fetchRemoteDocumentUpdates(
-        connection,
-        document.id,
-        latestUpdate?.id ?? null,
+      const localUpdateIds = new Set(
+        store.listDocumentUpdates(document.id).map((update) => update.id),
       );
+      const remoteUpdates = await fetchRemoteDocumentUpdates(connection, document.id, null);
 
       for (const update of remoteUpdates.updates) {
+        if (localUpdateIds.has(update.id)) {
+          continue;
+        }
+
         store.appendDocumentUpdate({
           clientId: update.clientId,
           createdAt: update.createdAt,
@@ -155,6 +156,7 @@ export async function pullRemoteDocumentUpdates(
           id: update.id,
           update: Buffer.from(update.updateBase64, 'base64'),
         });
+        localUpdateIds.add(update.id);
         pulledUpdateCount += 1;
       }
     } catch {

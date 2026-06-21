@@ -1,7 +1,13 @@
-import type { DocumentSnapshotRecord, DocumentUpdateRecord, SyncQueueItem } from '@writer/core';
-import { describe, expect, it } from 'vitest';
+import { Buffer } from 'node:buffer';
+import type {
+  DocumentMetadata,
+  DocumentSnapshotRecord,
+  DocumentUpdateRecord,
+  SyncQueueItem,
+} from '@writer/core';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DesktopLocalStore } from './document-metadata-store';
-import { ensureLocalRecordsQueuedForRemoteSync } from './remote-sync';
+import { ensureLocalRecordsQueuedForRemoteSync, pullRemoteDocumentUpdates } from './remote-sync';
 
 describe('remote sync queue backfill', () => {
   it('queues local updates and snapshots that were created before remote sync was enabled', () => {
@@ -43,6 +49,88 @@ describe('remote sync queue backfill', () => {
   });
 });
 
+describe('remote document update pull', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('requests the full remote update list so older remote edits are not skipped', async () => {
+    const appendedUpdates: DocumentUpdateRecord[] = [];
+    const fetchMock = stubRemoteUpdateFetch([
+      {
+        clientId: 'client_web',
+        createdAt: '2026-06-12T09:59:00.000Z',
+        id: 'update_remote_older_than_local',
+        updateBase64: Buffer.from([2]).toString('base64'),
+      },
+    ]);
+
+    const result = await pullRemoteDocumentUpdates(createPullStore({ appendedUpdates }), {
+      clientId: 'client_desktop',
+      enabled: true,
+      serverUrl: 'https://sync.example.com',
+      token: 'token_1',
+    });
+
+    expect(result).toEqual({ pulledUpdateCount: 1, skippedDocumentCount: 0 });
+    const updateListRequest = fetchMock.mock.calls.find(([, init]) => init?.method === 'GET');
+    expect(updateListRequest).toBeDefined();
+    expect(String(updateListRequest?.[0])).toBe(
+      'https://sync.example.com/v1/documents/doc_1/updates',
+    );
+    expect(appendedUpdates).toEqual([
+      expect.objectContaining({
+        clientId: 'client_web',
+        documentId: 'doc_1',
+        id: 'update_remote_older_than_local',
+      }),
+    ]);
+  });
+
+  it('does not count or append remote updates that already exist locally', async () => {
+    const appendedUpdates: DocumentUpdateRecord[] = [];
+    stubRemoteUpdateFetch([
+      {
+        clientId: 'client_desktop',
+        createdAt: '2026-06-12T10:00:00.000Z',
+        id: 'update_local_newer_than_remote',
+        updateBase64: Buffer.from([1]).toString('base64'),
+      },
+    ]);
+
+    const result = await pullRemoteDocumentUpdates(createPullStore({ appendedUpdates }), {
+      clientId: 'client_desktop',
+      enabled: true,
+      serverUrl: 'https://sync.example.com',
+      token: 'token_1',
+    });
+
+    expect(result).toEqual({ pulledUpdateCount: 0, skippedDocumentCount: 0 });
+    expect(appendedUpdates).toEqual([]);
+  });
+});
+
+function stubRemoteUpdateFetch(
+  updates: Array<{ clientId: string; createdAt: string; id: string; updateBase64: string }>,
+) {
+  const fetchMock = vi.fn(async (input: unknown, init?: RequestInit) => {
+    const url = String(input);
+
+    if (init?.method === 'PUT' && url.endsWith('/v1/sync/clients/client_desktop')) {
+      return Response.json({ ok: true });
+    }
+
+    if (init?.method === 'GET' && url.endsWith('/v1/documents/doc_1/updates')) {
+      return Response.json({ documentId: 'doc_1', updates });
+    }
+
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  vi.stubGlobal('fetch', fetchMock);
+
+  return fetchMock;
+}
+
 function createBackfillStore({
   enqueuedItems,
   existingQueueItems,
@@ -60,6 +148,40 @@ function createBackfillStore({
     listAllDocumentUpdates: () => updates,
     listAllSyncItems: () => existingQueueItems,
   } as unknown as DesktopLocalStore;
+}
+
+function createPullStore({
+  appendedUpdates,
+}: {
+  appendedUpdates: DocumentUpdateRecord[];
+}): DesktopLocalStore {
+  return {
+    appendDocumentUpdate: (update: DocumentUpdateRecord) => appendedUpdates.push(update),
+    listDocumentUpdates: () => [
+      {
+        clientId: 'client_desktop',
+        createdAt: '2026-06-12T10:00:00.000Z',
+        documentId: 'doc_1',
+        id: 'update_local_newer_than_remote',
+        update: new Uint8Array([1]),
+      },
+    ],
+    listDocuments: () => [createDocument()],
+  } as unknown as DesktopLocalStore;
+}
+
+function createDocument(): DocumentMetadata {
+  return {
+    archivedAt: null,
+    bookId: 'book_1',
+    chapterId: null,
+    createdAt: '2026-06-12T09:00:00.000Z',
+    id: 'doc_1',
+    kind: 'episode',
+    order: 0,
+    title: 'Document',
+    updatedAt: '2026-06-12T10:00:00.000Z',
+  };
 }
 
 function createUpdate(id: string): DocumentUpdateRecord {

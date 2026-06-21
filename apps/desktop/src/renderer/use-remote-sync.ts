@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import type { SyncStatus } from './document-workspace-types';
 
+const REMOTE_SYNC_INTERVAL_MS = 4000;
+
 export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
   useEffect(() => {
     let isSyncing = false;
@@ -44,10 +46,12 @@ export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
     }
 
     void syncDocuments();
+    const intervalId = globalThis.setInterval(syncDocuments, REMOTE_SYNC_INTERVAL_MS);
     globalThis.addEventListener('online', handleOnline);
     globalThis.addEventListener('offline', handleOffline);
 
     return () => {
+      globalThis.clearInterval(intervalId);
       globalThis.removeEventListener('online', handleOnline);
       globalThis.removeEventListener('offline', handleOffline);
     };
