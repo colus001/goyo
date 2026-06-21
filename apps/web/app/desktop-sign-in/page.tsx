@@ -6,16 +6,16 @@ import { Suspense, useEffect, useState } from 'react';
 import { authMe, createDesktopHandoffSession } from '@/lib/api';
 
 function Panel({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-[2rem] border border-[#f3f0df]/10 bg-[#20251f]/72 p-6 shadow-[0_28px_100px_rgba(0,0,0,0.28)] backdrop-blur">
-      {children}
-    </div>
-  );
+  return <div className="goyo-cloud-panel p-6 sm:p-8">{children}</div>;
 }
 
 export default function DesktopSignInPage(): ReactElement {
   return (
-    <Suspense fallback={<div className="text-[#b8b9ac] text-sm">Preparing Desktop sign-in…</div>}>
+    <Suspense
+      fallback={
+        <div className="text-[var(--goyo-text-muted)] text-sm">Preparing Desktop sign-in…</div>
+      }
+    >
       <DesktopSignIn />
     </Suspense>
   );
@@ -71,18 +71,16 @@ function DesktopSignIn(): ReactElement {
   }, [callbackScheme, clientId, router]);
 
   return (
-    <div>
+    <div className="goyo-reveal">
       <header className="mb-10 max-w-4xl">
-        <p className="font-semibold text-[#d9be7f] text-sm uppercase tracking-[0.28em]">
-          Desktop handoff
-        </p>
-        <h1 className="mt-5 text-balance font-serif text-5xl leading-[0.95] tracking-[-0.055em] text-[#f3f0df] sm:text-6xl lg:text-7xl">
+        <p className="goyo-cloud-kicker">Desktop handoff</p>
+        <h1 className="goyo-cloud-headline mt-5 text-balance text-5xl leading-[0.95] sm:text-6xl lg:text-7xl">
           Connecting Goyo Desktop.
         </h1>
       </header>
       <Panel>
-        <p className="text-[#b8b9ac] text-sm">{status}</p>
-        <p className="mt-4 text-[#8f978b] text-xs">
+        <p className="text-[var(--goyo-text-muted)] text-sm">{status}</p>
+        <p className="mt-4 text-[var(--goyo-text-faint)] text-xs">
           If you are not signed in on the web, you will be asked to sign in first.
         </p>
       </Panel>

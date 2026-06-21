@@ -2,8 +2,7 @@
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "workspaces": {
     "apps/web": {
-      "ignoreDependencies": ["tailwindcss"],
-      "project": ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}"]
+      "project": ["app/**/*.{css,ts,tsx}", "src/**/*.{ts,tsx}"]
     },
     "apps/desktop": {
       "entry": [

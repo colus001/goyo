@@ -4,11 +4,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { serverAuthMe, serverFetchDocuments } from '@/lib/server-api';
 
 function Panel({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-[2rem] border border-[#f3f0df]/10 bg-[#20251f]/72 p-6 shadow-[0_28px_100px_rgba(0,0,0,0.28)] backdrop-blur">
-      {children}
-    </div>
-  );
+  return <div className="goyo-cloud-panel p-6 sm:p-8">{children}</div>;
 }
 
 export default async function DocumentsPage(): Promise<ReactElement> {
@@ -22,14 +18,12 @@ export default async function DocumentsPage(): Promise<ReactElement> {
 
   if (!documentsResult.ok) {
     return (
-      <div>
+      <div className="goyo-reveal">
         <header className="mb-10 max-w-4xl">
-          <p className="font-semibold text-[#d9be7f] text-sm uppercase tracking-[0.28em]">
-            Documents
-          </p>
+          <p className="goyo-cloud-kicker">Documents</p>
         </header>
         <Panel>
-          <p className="text-[#c98b7a] text-sm">
+          <p className="text-[var(--goyo-danger)] text-sm">
             {documentsResult.error ?? 'Could not load documents.'}
           </p>
         </Panel>
@@ -40,19 +34,21 @@ export default async function DocumentsPage(): Promise<ReactElement> {
   const documents = documentsResult.value?.documents ?? [];
 
   return (
-    <div>
+    <div className="goyo-reveal">
       <header className="mb-10 max-w-4xl">
-        <p className="font-semibold text-[#d9be7f] text-sm uppercase tracking-[0.28em]">
-          Documents
-        </p>
-        <h1 className="mt-5 text-balance font-serif text-5xl leading-[0.95] tracking-[-0.055em] text-[#f3f0df] sm:text-6xl lg:text-7xl">
+        <p className="goyo-cloud-kicker">Documents</p>
+        <h1 className="goyo-cloud-headline mt-5 text-balance text-5xl leading-[0.95] sm:text-6xl lg:text-7xl">
           Your writing
         </h1>
+        <p className="mt-5 max-w-2xl text-[1.02rem] leading-7 text-[var(--goyo-text-muted)]">
+          A quiet web shelf for synced work from Goyo Desktop. Open a document when you need to
+          inspect or continue a draft away from the desk.
+        </p>
       </header>
 
       {documents.length === 0 ? (
         <Panel>
-          <p className="text-[#b8b9ac] text-sm">
+          <p className="text-[var(--goyo-text-muted)] text-sm leading-6">
             No synced documents yet. Start writing in the Goyo desktop app and enable sync to see
             your work here.
           </p>
@@ -61,14 +57,14 @@ export default async function DocumentsPage(): Promise<ReactElement> {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {documents.map((doc) => (
             <Link
-              className="rounded-[2rem] border border-[#f3f0df]/10 bg-[#20251f]/72 p-6 text-left shadow-[0_28px_100px_rgba(0,0,0,0.28)] backdrop-blur transition hover:border-[#d9be7f]/30 hover:bg-[#272d26]/72"
+              className="goyo-cloud-panel p-6 text-left transition hover:-translate-y-0.5 hover:border-[var(--goyo-border-strong)] hover:bg-[var(--goyo-paper)]"
               href={`/documents/${encodeURIComponent(doc.id)}`}
               key={doc.id}
             >
-              <p className="font-serif text-lg leading-snug tracking-[-0.03em] text-[#f3f0df]">
+              <p className="goyo-prose font-semibold text-[1.35rem] leading-snug tracking-[-0.04em] text-[var(--goyo-text)]">
                 {doc.title || 'Untitled'}
               </p>
-              <p className="mt-2 text-[#9fa99b] text-xs">
+              <p className="mt-3 text-[var(--goyo-text-faint)] text-xs">
                 {doc.kind}
                 {doc.updatedAt ? ` · ${new Date(doc.updatedAt).toLocaleDateString()}` : ''}
               </p>

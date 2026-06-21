@@ -1,25 +1,38 @@
 @import "tailwindcss";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/source-serif-4/400.css";
+@import "@fontsource/source-serif-4/600.css";
+@import "@fontsource/source-serif-4/700.css";
 @source "../../../packages/editor/src";
 
 :root {
+  --goyo-ui-font-family:
+    "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --goyo-writing-font-family:
+    "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+
   --goyo-accent: #30302d;
-  --goyo-accent-hover: #1f1f1d;
-  --goyo-accent-soft: rgba(217, 190, 127, 0.22);
-  --goyo-active-row: #ececea;
+  --goyo-accent-hover: #2e2e2a;
+  --goyo-accent-soft: #dededd;
+  --goyo-active-row: #eaeaea;
   --goyo-app: #f7f7f5;
-  --goyo-border: #deded8;
-  --goyo-border-strong: #c8c8c0;
-  --goyo-danger: #b85b4f;
+  --goyo-border: #d5d5d3;
+  --goyo-border-strong: #c5c4c2;
+  --goyo-danger: #b75a52;
   --goyo-panel: #fbfaf7;
   --goyo-paper: #ffffff;
-  --goyo-raised: #f4f4f1;
-  --goyo-text: #252525;
-  --goyo-text-faint: #9a9a92;
-  --goyo-text-muted: #66665f;
-  --goyo-ui-font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  --goyo-writing-font-family: Georgia, "Times New Roman", serif;
-  color: #eef0e8;
-  background: #151816;
+  --goyo-raised: #fefefe;
+  --goyo-text: #25231f;
+  --goyo-text-faint: #a3a3a1;
+  --goyo-text-muted: #6f6e6b;
+
+  color-scheme: light;
+  color: var(--goyo-text);
+  background: var(--goyo-app);
+  font-family: var(--goyo-ui-font-family);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -30,6 +43,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  background-color: var(--goyo-app);
+  color: var(--goyo-text);
 }
 
 button,
@@ -48,6 +63,91 @@ button:not(:disabled) {
 
 button:disabled {
   cursor: default;
+}
+
+.goyo-prose {
+  font-family: var(--goyo-writing-font-family);
+}
+
+.goyo-cloud-shell {
+  background:
+    radial-gradient(
+      circle at 90% 8%,
+      color-mix(in srgb, var(--goyo-accent-soft) 58%, transparent) 0 9rem,
+      transparent 23rem
+    ),
+    radial-gradient(
+      circle at 8% 24%,
+      color-mix(in srgb, var(--goyo-text-faint) 18%, transparent) 0 7rem,
+      transparent 24rem
+    ),
+    var(--goyo-app);
+}
+
+.goyo-cloud-panel {
+  border: 1px solid var(--goyo-border);
+  border-radius: 2rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(251, 250, 247, 0.94)), var(--goyo-panel);
+  box-shadow: 0 28px 100px -68px rgba(31, 29, 25, 0.48);
+}
+
+.goyo-cloud-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--goyo-accent);
+  color: white;
+  font-weight: 500;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+
+.goyo-cloud-button:hover:not(:disabled) {
+  background: var(--goyo-accent-hover);
+  transform: translateY(-1px);
+}
+
+.goyo-cloud-button:disabled {
+  opacity: 0.48;
+}
+
+.goyo-cloud-input {
+  width: 100%;
+  border: 1px solid var(--goyo-border);
+  border-radius: 1rem;
+  background: var(--goyo-paper);
+  color: var(--goyo-text);
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.goyo-cloud-input::placeholder {
+  color: var(--goyo-text-faint);
+}
+
+.goyo-cloud-input:focus {
+  border-color: var(--goyo-border-strong);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--goyo-accent-soft) 72%, transparent);
+}
+
+.goyo-cloud-kicker {
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--goyo-text-faint);
+}
+
+.goyo-cloud-headline {
+  font-family: var(--goyo-writing-font-family);
+  color: var(--goyo-text);
+  letter-spacing: -0.06em;
 }
 
 .ProseMirror {
@@ -102,6 +202,34 @@ button:disabled {
 
 .ProseMirror:focus {
   outline: none;
+}
+
+@keyframes goyo-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.goyo-reveal {
+  animation: goyo-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: required to override animations and transitions */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override animations and transitions */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override transitions */
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (max-width: 640px) {
