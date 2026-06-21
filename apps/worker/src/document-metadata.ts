@@ -62,16 +62,14 @@ export async function upsertDocumentMetadata(
         id, owner_id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        owner_id = excluded.owner_id,
+      ON CONFLICT(owner_id, id) DO UPDATE SET
         book_id = excluded.book_id,
         chapter_id = excluded.chapter_id,
         title = excluded.title,
         kind = excluded.kind,
         sort_order = excluded.sort_order,
         updated_at = excluded.updated_at,
-        archived_at = excluded.archived_at
-      WHERE documents.owner_id = excluded.owner_id;
+        archived_at = excluded.archived_at;
     `)
       .bind(
         documentId,

@@ -36,12 +36,10 @@ export async function registerSyncClient(
     await env.DB.prepare(`
       INSERT INTO sync_clients (id, owner_id, name, platform, created_at, registered_at, last_seen_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        owner_id = excluded.owner_id,
+      ON CONFLICT(owner_id, id) DO UPDATE SET
         name = excluded.name,
         platform = excluded.platform,
-        last_seen_at = excluded.last_seen_at
-      WHERE sync_clients.owner_id = excluded.owner_id;
+        last_seen_at = excluded.last_seen_at;
     `)
       .bind(
         clientId,
