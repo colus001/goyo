@@ -1,8 +1,21 @@
 @import "tailwindcss";
+@source "../../../packages/editor/src";
 
 :root {
+  --goyo-accent: #30302d;
+  --goyo-accent-hover: #1f1f1d;
   --goyo-accent-soft: rgba(217, 190, 127, 0.22);
-  --goyo-text-muted: #20251f;
+  --goyo-active-row: #ececea;
+  --goyo-app: #f7f7f5;
+  --goyo-border: #deded8;
+  --goyo-border-strong: #c8c8c0;
+  --goyo-danger: #b85b4f;
+  --goyo-panel: #fbfaf7;
+  --goyo-paper: #ffffff;
+  --goyo-raised: #f4f4f1;
+  --goyo-text: #252525;
+  --goyo-text-faint: #9a9a92;
+  --goyo-text-muted: #66665f;
   --goyo-ui-font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   --goyo-writing-font-family: Georgia, "Times New Roman", serif;
   color: #eef0e8;
@@ -22,4 +35,85 @@ body {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+.ProseMirror {
+  cursor: text;
+  font-family: var(--goyo-writing-font-family);
+}
+
+.goyo-episode-surface {
+  padding: clamp(4rem, 7vw, 6rem) clamp(2rem, 8vw, 8.5rem) 8rem;
+}
+
+.goyo-manuscript-column {
+  max-width: min(48rem, 100%);
+  margin-inline: auto;
+}
+
+.goyo-document-title {
+  font-size: clamp(2.15rem, 3vw, 3.05rem);
+}
+
+.goyo-writing-editor .ProseMirror {
+  color: var(--goyo-text-muted);
+  font-size: clamp(1.18rem, 1.35vw, 1.55rem);
+  letter-spacing: -0.012em;
+  line-height: 1.9;
+}
+
+.ProseMirror p {
+  margin: 0 0 1.4em;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  color: #242421;
+  font-family: var(--goyo-writing-font-family);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.18;
+  margin: 1.65em 0 0.65em;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0 0 1.15em;
+  padding-left: 1.55em;
+}
+
+.ProseMirror li {
+  margin: 0.35em 0;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .goyo-episode-surface {
+    padding: 2.5rem 1.5rem 5rem;
+  }
+
+  .goyo-document-title {
+    font-size: 1.9rem;
+  }
+
+  .goyo-writing-editor .ProseMirror {
+    font-size: 1.08rem;
+  }
 }

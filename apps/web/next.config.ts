@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
     ];
   },
   output: 'standalone',
+  transpilePackages: ['@writer/editor'],
 };
 
 export default nextConfig;
