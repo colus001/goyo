@@ -17,6 +17,9 @@ describe('sync storage ownership', () => {
 
   it("does not expose one owner's metadata or updates to another owner", () =>
     expectCrossOwnerAccessBlocked());
+
+  it('allows different owners to use the same local document id independently', () =>
+    expectSameDocumentIdAcrossOwners());
 });
 
 async function expectSameOwnerMultiClientSync() {
@@ -76,7 +79,43 @@ async function expectCrossOwnerAccessBlocked() {
   expect(crossOwnerUploadResponse.status).toBe(409);
 }
 
-async function putDocument(env: { DB: D1Database }, auth: SyncAuthContext, documentId: string) {
+async function expectSameDocumentIdAcrossOwners() {
+  const env = createTestEnv();
+
+  await putDocument(env, ownerA, 'doc-1', 'Owner A document');
+  await putDocument(env, ownerB, 'doc-1', 'Owner B document');
+  await registerClient(env, ownerA, 'client-a');
+  await registerClient(env, ownerB, 'client-b');
+
+  const ownerAUpdateResponse = await createUpdate(env, ownerA, 'client-a', 'update-1', 'AQID');
+  const ownerBUpdateResponse = await createUpdate(env, ownerB, 'client-b', 'update-1', 'BAUG');
+  const ownerAMetadataResponse = await getDocumentMetadata(env, ownerA, 'doc-1');
+  const ownerBMetadataResponse = await getDocumentMetadata(env, ownerB, 'doc-1');
+  const ownerAUpdatesResponse = await listDocumentUpdates(env, ownerA, 'doc-1', null);
+  const ownerBUpdatesResponse = await listDocumentUpdates(env, ownerB, 'doc-1', null);
+
+  expect(ownerAUpdateResponse.status).toBe(201);
+  expect(ownerBUpdateResponse.status).toBe(201);
+  await expect(ownerAMetadataResponse.json()).resolves.toMatchObject({
+    document: { id: 'doc-1', title: 'Owner A document' },
+  });
+  await expect(ownerBMetadataResponse.json()).resolves.toMatchObject({
+    document: { id: 'doc-1', title: 'Owner B document' },
+  });
+  await expect(ownerAUpdatesResponse.json()).resolves.toMatchObject({
+    updates: [{ clientId: 'client-a', id: 'update-1', updateBase64: 'AQID' }],
+  });
+  await expect(ownerBUpdatesResponse.json()).resolves.toMatchObject({
+    updates: [{ clientId: 'client-b', id: 'update-1', updateBase64: 'BAUG' }],
+  });
+}
+
+async function putDocument(
+  env: { DB: D1Database },
+  auth: SyncAuthContext,
+  documentId: string,
+  title = 'Chapterless episode',
+) {
   return upsertDocumentMetadata(
     jsonRequest({
       archivedAt: null,
@@ -85,7 +124,7 @@ async function putDocument(env: { DB: D1Database }, auth: SyncAuthContext, docum
       createdAt: '2026-06-14T12:00:00.000Z',
       kind: 'episode',
       order: 0,
-      title: 'Chapterless episode',
+      title,
       updatedAt: '2026-06-14T12:00:00.000Z',
     }),
     env,

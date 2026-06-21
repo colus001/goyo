@@ -114,20 +114,17 @@ class InMemoryD1Statement {
       updated_at,
       archived_at,
     ] = this.parameters;
-    const existingDocument = this.database.documents.get(String(id));
+    const ownerId = String(owner_id);
+    const documentId = String(id);
 
-    if (existingDocument && existingDocument.owner_id !== owner_id) {
-      return d1Result(0);
-    }
-
-    this.database.documents.set(String(id), {
+    this.database.documents.set(scopedKey(ownerId, documentId), {
       archived_at: nullableString(archived_at),
       book_id: String(book_id),
       chapter_id: nullableString(chapter_id),
       created_at: String(created_at),
-      id: String(id),
+      id: documentId,
       kind: asDocumentKind(kind),
-      owner_id: String(owner_id),
+      owner_id: ownerId,
       sort_order: Number(sort_order),
       title: String(title),
       updated_at: String(updated_at),
@@ -138,30 +135,32 @@ class InMemoryD1Statement {
 
   private upsertSyncClient() {
     const [id, owner_id] = this.parameters;
-    const existingClient = this.database.syncClients.get(String(id));
+    const ownerId = String(owner_id);
+    const clientId = String(id);
 
-    if (existingClient && existingClient.owner_id !== owner_id) {
-      return d1Result(0);
-    }
-
-    this.database.syncClients.set(String(id), { id: String(id), owner_id: String(owner_id) });
+    this.database.syncClients.set(scopedKey(ownerId, clientId), {
+      id: clientId,
+      owner_id: ownerId,
+    });
 
     return d1Result(1);
   }
 
   private insertDocumentUpdate() {
     const [id, owner_id, document_id, client_id, update_blob, created_at] = this.parameters;
+    const ownerId = String(owner_id);
+    const updateId = String(id);
 
-    if (this.database.updates.has(String(id))) {
+    if (this.database.updates.has(scopedKey(ownerId, updateId))) {
       return d1Result(0);
     }
 
-    this.database.updates.set(String(id), {
+    this.database.updates.set(scopedKey(ownerId, updateId), {
       client_id: String(client_id),
       created_at: String(created_at),
       document_id: String(document_id),
-      id: String(id),
-      owner_id: String(owner_id),
+      id: updateId,
+      owner_id: ownerId,
       update_blob: update_blob as ArrayBuffer,
     });
 
@@ -170,16 +169,16 @@ class InMemoryD1Statement {
 
   private selectDocumentMetadata() {
     const [id, owner_id] = this.parameters;
-    const document = this.database.documents.get(String(id));
+    const document = this.database.documents.get(scopedKey(String(owner_id), String(id)));
 
-    return document?.owner_id === owner_id ? document : null;
+    return document ?? null;
   }
 
   private selectDocumentOwner() {
     const [id, owner_id] = this.parameters;
-    const document = this.database.documents.get(String(id));
+    const document = this.database.documents.get(scopedKey(String(owner_id), String(id)));
 
-    if (!document || document.owner_id !== owner_id) {
+    if (!document) {
       return null;
     }
 
@@ -188,9 +187,9 @@ class InMemoryD1Statement {
 
   private selectSyncClient() {
     const [id, owner_id] = this.parameters;
-    const client = this.database.syncClients.get(String(id));
+    const client = this.database.syncClients.get(scopedKey(String(owner_id), String(id)));
 
-    if (!client || client.owner_id !== owner_id) {
+    if (!client) {
       return null;
     }
 
@@ -202,13 +201,19 @@ class InMemoryD1Statement {
     const ownerId = String(this.parameters[usesCheckpoint ? 3 : 0]);
     const documentId = String(this.parameters[usesCheckpoint ? 4 : 1]);
     const afterUpdateId = usesCheckpoint ? String(this.parameters[2]) : null;
-    const checkpoint = afterUpdateId ? this.database.updates.get(afterUpdateId) : null;
+    const checkpoint = afterUpdateId
+      ? this.database.updates.get(scopedKey(ownerId, afterUpdateId))
+      : null;
 
     return Array.from(this.database.updates.values())
       .filter((update) => update.owner_id === ownerId && update.document_id === documentId)
       .filter((update) => !checkpoint || isAfterCheckpoint(update, checkpoint))
       .sort(compareUpdates);
   }
+}
+
+function scopedKey(ownerId: string, id: string) {
+  return `${ownerId}:${id}`;
 }
 
 function isAfterCheckpoint(update: StoredUpdate, checkpoint: StoredUpdate) {
