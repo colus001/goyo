@@ -57,7 +57,7 @@ export function GoyoCloudAuthSection({
         if (result.account) {
           setAccount(result.account);
           setStatus('Signed in via browser.');
-          if (settings.sync.provider !== 'goyo-cloud') {
+          if (settings.sync.provider !== 'goyo-cloud' || !settings.sync.enabled) {
             const newSettings = {
               ...settings,
               sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' as const },
@@ -98,7 +98,7 @@ export function GoyoCloudAuthSection({
         setEmail('');
         setCode('');
         setStatus('Signed in to Goyo Cloud.');
-        if (settings.sync.provider !== 'goyo-cloud') {
+        if (settings.sync.provider !== 'goyo-cloud' || !settings.sync.enabled) {
           const newSettings = {
             ...settings,
             sync: { ...settings.sync, enabled: true, provider: 'goyo-cloud' as const },

@@ -121,6 +121,7 @@ export interface DesktopLocalStore extends LocalDocumentStore {
   listAllDocumentSnapshots(): DocumentSnapshotRecord[];
   listAllDocumentUpdates(): DocumentUpdateRecord[];
   listAllRecoveryPoints(): RecoveryPoint[];
+  listAllSyncItems(): SyncQueueItem[];
   listBooks(): BookMetadata[];
   listChapters(): ChapterMetadata[];
   listArchivedDocuments(): DocumentMetadata[];
@@ -442,6 +443,11 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     WHERE completed_at IS NULL
     ORDER BY created_at ASC, id ASC;
   `);
+  const listAllSyncItemsStatement = database.prepare(`
+    SELECT id, document_id, kind, record_id, created_at, attempts, last_attempt_at
+    FROM sync_queue
+    ORDER BY created_at ASC, id ASC;
+  `);
   const markSyncItemCompletedStatement = database.prepare(`
     UPDATE sync_queue
     SET completed_at = @completedAt
@@ -537,6 +543,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     listAllRecoveryPoints() {
       return listAllRecoveryPointsStatement.all().map(rowToRecoveryPoint);
+    },
+    listAllSyncItems() {
+      return listAllSyncItemsStatement.all().map(rowToSyncQueueItem);
     },
     listArchivedDocuments() {
       return listArchivedDocumentsStatement.all().map(rowToDocumentMetadata);
