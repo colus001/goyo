@@ -1,3 +1,4 @@
+// biome-ignore lint/nursery/noExcessiveLinesPerFile: Auth route behavior is kept together for shared setup helpers.
 import { describe, expect, it } from 'vitest';
 import { handleCloudAuthRequest } from './cloud-auth-routes';
 import { createAuthTestEnv, type MockEmailSender } from './cloud-auth-test-helpers';
@@ -18,6 +19,12 @@ describe('Goyo Cloud auth endpoints', () => {
 
   it('returns a null token and sets a cookie for web session verification', () =>
     expectWebVerificationSetsCookie());
+
+  it('creates a desktop token from an existing web session cookie', () =>
+    expectDesktopHandoffCreatesToken());
+
+  it('rejects desktop handoff without a web session cookie', () =>
+    expectDesktopHandoffRejectsUnauthenticated());
 
   it('rejects verification with an invalid code', () => expectInvalidCodeRejected());
 
@@ -61,7 +68,7 @@ async function expectValidEmailSendsCode() {
 }
 
 async function expectAuthNotConfigured503() {
-  const env = createAuthTestEnv({ authSecret: undefined, hasEmailSender: false });
+  const env = createAuthTestEnv({ hasEmailSender: false });
   const response = await handleCloudAuthRequest(
     jsonRequest({ email: 'writer@example.com' }),
     env,
@@ -117,6 +124,42 @@ async function expectWebVerificationSetsCookie() {
   const setCookie = response?.headers.get('set-cookie');
   expect(setCookie).toContain('goyo_session=');
   expect(setCookie).toContain('HttpOnly');
+}
+
+async function expectDesktopHandoffCreatesToken() {
+  const env = createAuthTestEnv({ authSecret: AUTH_SECRET });
+  const cookie = await signInWebAndGetCookie(env, 'web@example.com');
+  const response = await handleCloudAuthRequest(
+    new Request('https://api.example.com/v1/auth/desktop-handoff', {
+      body: JSON.stringify({ clientId: 'client_1' }),
+      headers: { 'content-type': 'application/json', cookie },
+      method: 'POST',
+    }),
+    env,
+    new URL('https://api.example.com/v1/auth/desktop-handoff'),
+  );
+
+  expect(response?.status).toBe(200);
+  await expect(response?.json()).resolves.toMatchObject({
+    ok: true,
+    token: expect.any(String),
+    user: { email: 'web@example.com', id: expect.any(String) },
+  });
+}
+
+async function expectDesktopHandoffRejectsUnauthenticated() {
+  const env = createAuthTestEnv({ authSecret: AUTH_SECRET });
+  const response = await handleCloudAuthRequest(
+    new Request('https://api.example.com/v1/auth/desktop-handoff', {
+      body: JSON.stringify({ clientId: 'client_1' }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    }),
+    env,
+    new URL('https://api.example.com/v1/auth/desktop-handoff'),
+  );
+
+  expect(response?.status).toBe(401);
 }
 
 async function expectInvalidCodeRejected() {
@@ -246,6 +289,16 @@ async function signIn(env: ReturnType<typeof createAuthTestEnv>, email: string) 
   );
   const body = (await response?.json()) as Record<string, unknown>;
   return body.token as string;
+}
+
+async function signInWebAndGetCookie(env: ReturnType<typeof createAuthTestEnv>, email: string) {
+  const code = await startAndGetCode(env, email);
+  const response = await handleCloudAuthRequest(
+    jsonRequest({ code, email, sessionKind: 'web' }),
+    env,
+    new URL('https://api.example.com/v1/auth/verify'),
+  );
+  return response?.headers.get('set-cookie')?.split(';')[0] ?? '';
 }
 
 function expireAllCodes(env: ReturnType<typeof createAuthTestEnv>) {

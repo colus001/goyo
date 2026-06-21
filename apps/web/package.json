@@ -1,7 +1,7 @@
 {
   "name": "@writer/web",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -13,6 +13,8 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv src/lib/cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/source-serif-4": "^5.2.9",
     "@opennextjs/cloudflare": "latest",
     "@writer/editor": "workspace:*",
     "next": "latest",

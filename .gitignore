@@ -9,3 +9,5 @@ out/
 *.local
 .next
 .open-next
+.playwright-mcp/
+apps/desktop/dev/

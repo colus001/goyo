@@ -23,22 +23,29 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<CloudUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
+  children: ReactNode;
+  initialUser: CloudUser | null;
+}) {
+  const [user, setUser] = useState<CloudUser | null>(initialUser);
+  const isLoading = false;
 
   useEffect(() => {
+    if (initialUser) return;
+
     void authMe()
       .then((result) => {
         if (result.ok && result.user) {
           setUser(result.user);
         }
-        setIsLoading(false);
       })
       .catch(() => {
-        setIsLoading(false);
+        setUser(null);
       });
-  }, []);
+  }, [initialUser]);
 
   const logout = useCallback(() => {
     void authLogout().then(() => setUser(null));

@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
+    "dev": "tsc --noEmit --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

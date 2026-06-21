@@ -1,5 +1,6 @@
 // biome-ignore lint/nursery/noExcessiveLinesPerFile: Remote sync request, retry, and status helpers are kept together around one API boundary for now.
 import {
+  createMissingSyncQueueItems,
   createRecoveryPoint,
   type DocumentMetadata,
   type DocumentSnapshotRecord,
@@ -72,18 +73,26 @@ export async function pushPendingDocumentUpdates(
   options: PushOptions = {},
 ): Promise<PushPendingUpdatesResult> {
   const now = new Date();
-  const pendingItems = store
-    .listPendingSyncItems()
-    .filter((item) => item.kind === 'document-update');
-  const documentsById = new Map(store.listDocuments().map((document) => [document.id, document]));
+  const documentsById = new Map(
+    store.listAllDocuments().map((document) => [document.id, document]),
+  );
   let pushedUpdateCount = 0;
   let skippedUpdateCount = 0;
 
   if (!isSyncConnectionReady(connection)) {
+    const pendingItems = store
+      .listPendingSyncItems()
+      .filter((item) => item.kind === 'document-update');
+
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
   }
 
+  ensureLocalRecordsQueuedForRemoteSync(store);
   await registerSyncClient(connection);
+
+  const pendingItems = store
+    .listPendingSyncItems()
+    .filter((item) => item.kind === 'document-update');
 
   for (const item of pendingItems) {
     if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
@@ -162,18 +171,26 @@ export async function pushPendingDocumentSnapshots(
   options: PushOptions = {},
 ): Promise<PushPendingSnapshotsResult> {
   const now = new Date();
-  const pendingItems = store
-    .listPendingSyncItems()
-    .filter((item) => item.kind === 'document-snapshot');
-  const documentsById = new Map(store.listDocuments().map((document) => [document.id, document]));
+  const documentsById = new Map(
+    store.listAllDocuments().map((document) => [document.id, document]),
+  );
   let pushedSnapshotCount = 0;
   let skippedSnapshotCount = 0;
 
   if (!isSyncConnectionReady(connection)) {
+    const pendingItems = store
+      .listPendingSyncItems()
+      .filter((item) => item.kind === 'document-snapshot');
+
     return { pushedSnapshotCount, skippedSnapshotCount: pendingItems.length };
   }
 
+  ensureLocalRecordsQueuedForRemoteSync(store);
   await registerSyncClient(connection);
+
+  const pendingItems = store
+    .listPendingSyncItems()
+    .filter((item) => item.kind === 'document-snapshot');
 
   for (const item of pendingItems) {
     if (!options.forceRetry && !isSyncItemReadyForRetry(item, now)) {
@@ -261,6 +278,10 @@ export async function retryRemoteSyncNow(
   store: DesktopLocalStore,
   connection: SyncConnectionSettings,
 ) {
+  if (isSyncConnectionReady(connection)) {
+    ensureLocalRecordsQueuedForRemoteSync(store);
+  }
+
   const updatePush = await pushPendingDocumentUpdates(store, connection, { forceRetry: true });
   const snapshotPush = await pushPendingDocumentSnapshots(store, connection, { forceRetry: true });
   const updatePull = await pullRemoteDocumentUpdates(store, connection);
@@ -282,6 +303,21 @@ export function getSyncStatusSummary(store: DesktopLocalStore): SyncStatusSummar
     oldestFailedAt: oldestFailedAt ?? null,
     pendingItemCount: pendingItems.length,
   };
+}
+
+export function ensureLocalRecordsQueuedForRemoteSync(store: DesktopLocalStore): number {
+  const missingItems = createMissingSyncQueueItems({
+    createQueueItemId: ({ kind, recordId }) => `sync_recovered_${kind}_${recordId}`,
+    existingQueueItems: store.listAllSyncItems(),
+    snapshots: store.listAllDocumentSnapshots(),
+    updates: store.listAllDocumentUpdates(),
+  });
+
+  for (const item of missingItems) {
+    store.enqueueSyncItem(item);
+  }
+
+  return missingItems.length;
 }
 
 async function pushDocumentMetadata(

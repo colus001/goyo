@@ -37,12 +37,23 @@ declare global {
         }) => Promise<{ ok: boolean; error?: string; user?: { email: string; id: string } }>;
         getStatus: () => Promise<{
           account: { email: string; id: string } | null;
+          error?: string;
           hasSession: boolean;
+          status: 'expired' | 'signed-in' | 'signed-out' | 'unable-to-connect';
         }>;
+        getConfig: () => Promise<{
+          apiUrl: string;
+          deepLinkProtocolCommand: { args: string[]; executable: string } | null;
+          deepLinkProtocolRegistered: boolean;
+          deepLinkProtocolScheme: string;
+          userDataPath: string;
+          webUrl: string;
+        } | null>;
         logout: () => Promise<{ ok: boolean }>;
         onDeepLinkToken: (
           callback: (data: { email: string | null; userId: string | null }) => void,
         ) => () => void;
+        openAccount: () => Promise<{ ok: boolean }>;
       };
       backup: {
         exportLocalData: () => Promise<{

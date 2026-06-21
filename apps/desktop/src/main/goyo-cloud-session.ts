@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { safeStorage } from 'electron';
 
-const GOYO_CLOUD_SESSION_FILE_NAME = 'goyo-cloud-session.dat';
+const LEGACY_GOYO_CLOUD_SESSION_FILE_NAME = 'goyo-cloud-session.dat';
+const GOYO_CLOUD_SESSION_FILE_NAME = 'goyo-cloud-session.json';
 
 interface GoyoCloudSessionStore {
   getSessionToken(): string | null;
@@ -15,6 +15,7 @@ interface GoyoCloudAccount {
 }
 
 export interface GoyoCloudSessionStoreWithAccount extends GoyoCloudSessionStore {
+  clearAccount(): void;
   getAccount(): GoyoCloudAccount | null;
   saveAccount(account: GoyoCloudAccount): void;
 }
@@ -23,16 +24,15 @@ export function createGoyoCloudSessionStore(
   userDataPath: string,
 ): GoyoCloudSessionStoreWithAccount {
   const tokenPath = join(userDataPath, GOYO_CLOUD_SESSION_FILE_NAME);
+  const legacyTokenPath = join(userDataPath, LEGACY_GOYO_CLOUD_SESSION_FILE_NAME);
   const accountPath = join(userDataPath, 'goyo-cloud-account.json');
 
   return {
     getSessionToken() {
-      if (!existsSync(tokenPath) || !safeStorage.isEncryptionAvailable()) {
-        return null;
-      }
-
       try {
-        return safeStorage.decryptString(readFileSync(tokenPath));
+        if (!existsSync(tokenPath)) return null;
+        const raw = JSON.parse(readFileSync(tokenPath, 'utf8')) as { token?: unknown };
+        return typeof raw.token === 'string' && raw.token.trim().length > 0 ? raw.token : null;
       } catch {
         return null;
       }
@@ -40,15 +40,13 @@ export function createGoyoCloudSessionStore(
     saveSessionToken(token) {
       if (token.trim().length === 0) {
         rmSync(tokenPath, { force: true });
+        rmSync(legacyTokenPath, { force: true });
         return;
       }
 
-      if (!safeStorage.isEncryptionAvailable()) {
-        throw new Error('Secure credential storage is not available on this device.');
-      }
-
       mkdirSync(dirname(tokenPath), { recursive: true });
-      writeFileSync(tokenPath, safeStorage.encryptString(token.trim()));
+      writeFileSync(tokenPath, JSON.stringify({ token: token.trim() }), 'utf8');
+      rmSync(legacyTokenPath, { force: true });
     },
     getAccount() {
       try {
@@ -63,6 +61,9 @@ export function createGoyoCloudSessionStore(
     saveAccount(account) {
       mkdirSync(dirname(accountPath), { recursive: true });
       writeFileSync(accountPath, JSON.stringify(account), 'utf8');
+    },
+    clearAccount() {
+      rmSync(accountPath, { force: true });
     },
   };
 }

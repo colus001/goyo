@@ -1,5 +1,5 @@
 import { hashAuthSecret, LOGIN_CODE_RESEND_COOLDOWN_MS } from './cloud-auth';
-import type { EnvWithCloudAuth } from './cloud-auth-env';
+import { type EnvWithCloudAuth, getCloudAuthSecret } from './cloud-auth-env';
 
 export interface LoginCodeRow {
   attempt_count: number;
@@ -181,7 +181,8 @@ export function getLoginCodeHashValue(email: string, code: string): string {
 }
 
 export async function hashRequestToken(env: EnvWithCloudAuth, token: string) {
-  return env.GOYO_AUTH_SECRET ? hashAuthSecret(env.GOYO_AUTH_SECRET, token) : null;
+  const secret = getCloudAuthSecret(env);
+  return secret ? hashAuthSecret(secret, token) : null;
 }
 
 async function getUserByEmail(env: EnvWithCloudAuth, email: string) {

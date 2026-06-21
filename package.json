@@ -5,7 +5,7 @@
   "description": "Local-first writing app for essays and fiction.",
   "type": "module",
   "scripts": {
-    "dev": "turbo run dev --parallel",
+    "dev": "pnpm --filter @writer/worker dev:migrate && turbo run dev --parallel",
     "dev:desktop": "pnpm --filter @writer/desktop dev",
     "dev:landing": "pnpm --filter @writer/landing dev",
     "dev:web": "pnpm --filter @writer/web dev",

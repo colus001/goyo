@@ -11,10 +11,10 @@ function NavLink({ href, label }: { href: string; label: string }) {
 
   return (
     <Link
-      className={`rounded-full px-3 py-1.5 text-sm transition ${
+      className={`rounded-full px-3 py-1.5 text-[0.85rem] transition ${
         isActive
-          ? 'bg-[#f3f0df]/12 text-[#f3f0df]'
-          : 'text-[#b8b9ac] hover:bg-[#f3f0df]/8 hover:text-[#f3f0df]'
+          ? 'bg-[var(--goyo-active-row)] text-[var(--goyo-text)]'
+          : 'text-[var(--goyo-text-muted)] hover:bg-[var(--goyo-raised)] hover:text-[var(--goyo-text)]'
       }`}
       href={href}
     >
@@ -29,27 +29,49 @@ export function CloudShell({ children }: { children: ReactNode }) {
   const showNavLinks = !isLoading;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#151816] px-5 py-6 text-[#eef0e8] sm:px-8 lg:px-12">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_10%_12%,rgba(217,190,127,0.18),transparent_28%),radial-gradient(circle_at_82%_16%,rgba(126,153,125,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
-      <div className="relative mx-auto max-w-6xl">
-        <nav className="mb-16 flex items-center justify-between rounded-full border border-[#f3f0df]/10 bg-[#1d221d]/75 px-4 py-3 backdrop-blur">
+    <main className="goyo-cloud-shell min-h-screen overflow-hidden text-[var(--goyo-text)] [font-family:var(--goyo-ui-font-family)]">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden">
+        <span className="goyo-prose absolute -top-36 right-[-6rem] select-none font-semibold text-[34rem] leading-none tracking-[-0.06em] text-[var(--goyo-text-muted)] opacity-[0.08] sm:text-[44rem]">
+          G
+        </span>
+      </div>
+      <header className="sticky top-0 z-30 border-[var(--goyo-border)] border-b bg-[var(--goyo-paper)]/85 backdrop-blur supports-[backdrop-filter]:bg-[var(--goyo-paper)]/70">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-12">
           <Link
-            className="font-semibold text-sm tracking-[0.22em] uppercase"
+            aria-label="Goyo Cloud home"
+            className="group flex items-center gap-3"
             href={user ? '/account' : '/login'}
           >
-            Goyo Cloud
+            <span
+              aria-hidden="true"
+              className="grid size-9 place-items-center rounded-xl bg-[var(--goyo-accent)] font-semibold text-[0.9rem] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_10px_24px_-18px_rgba(31,29,25,0.8)] transition group-hover:scale-[1.03]"
+            >
+              G
+            </span>
+            <span className="flex items-baseline gap-2">
+              <span className="font-semibold text-[1.28rem] leading-none tracking-[-0.055em] text-[var(--goyo-text)]">
+                Goyo
+              </span>
+              <span className="hidden font-medium text-[0.68rem] uppercase tracking-[0.18em] text-[var(--goyo-text-faint)] sm:inline">
+                Cloud
+              </span>
+            </span>
           </Link>
           {showNavLinks ? (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex min-w-0 items-center gap-1.5">
               {user ? (
                 <>
-                  <NavLink href="/documents" label="Documents" />
-                  <NavLink href="/account" label="Account" />
-                  <NavLink href="/billing" label="Billing" />
-                  <span className="mx-1 text-[#f3f0df]/20">|</span>
-                  <span className="text-[#9fa99b] text-xs">{user.email}</span>
+                  <div className="hidden items-center gap-1.5 sm:flex">
+                    <NavLink href="/documents" label="Documents" />
+                    <NavLink href="/account" label="Account" />
+                    <NavLink href="/billing" label="Billing" />
+                  </div>
+                  <span className="mx-2 hidden h-4 w-px bg-[var(--goyo-border)] lg:inline-block" />
+                  <span className="hidden max-w-[13rem] truncate text-[var(--goyo-text-muted)] text-xs lg:inline">
+                    {user.email}
+                  </span>
                   <button
-                    className="rounded-full border border-[#f3f0df]/20 px-3 py-1 text-[#b8b9ac] text-xs transition hover:bg-[#d86b53]/20 hover:border-[#d86b53]/40 hover:text-[#d86b53]"
+                    className="rounded-full border border-[var(--goyo-border-strong)] bg-[var(--goyo-paper)] px-3 py-1.5 text-[var(--goyo-text-muted)] text-xs transition hover:bg-[var(--goyo-raised)] hover:text-[var(--goyo-danger)]"
                     onClick={logout}
                     type="button"
                   >
@@ -61,7 +83,16 @@ export function CloudShell({ children }: { children: ReactNode }) {
               )}
             </div>
           ) : null}
-        </nav>
+        </div>
+        {user && showNavLinks ? (
+          <div className="mx-auto flex max-w-6xl gap-1.5 overflow-x-auto px-5 pb-3 sm:hidden">
+            <NavLink href="/documents" label="Documents" />
+            <NavLink href="/account" label="Account" />
+            <NavLink href="/billing" label="Billing" />
+          </div>
+        ) : null}
+      </header>
+      <div className="relative mx-auto max-w-6xl px-5 pt-14 pb-20 sm:px-8 sm:pt-16 lg:px-12">
         {children}
       </div>
     </main>

@@ -16,11 +16,19 @@ import type { AppUiState } from '../shared/app-ui-state';
 import { initAutoUpdater, registerAutoUpdaterIpc } from './auto-updater';
 import { exportDocument } from './document-export';
 import { createDesktopLocalStore } from './document-metadata-store';
-import { cloudAuthLogout, cloudAuthStart, cloudAuthVerify } from './goyo-cloud-auth-client';
+import {
+  cloudAuthLogout,
+  cloudAuthMe,
+  cloudAuthStart,
+  cloudAuthVerify,
+  configureGoyoCloudAuthClient,
+} from './goyo-cloud-auth-client';
+import { parseGoyoCloudDeepLinkCallback } from './goyo-cloud-deep-link';
 import {
   createGoyoCloudSessionStore,
   type GoyoCloudSessionStoreWithAccount,
 } from './goyo-cloud-session';
+import { resolveGoyoCloudSessionStatus } from './goyo-cloud-session-status';
 import { exportLocalBackup } from './local-backup';
 import {
   getSyncStatusSummary,
@@ -36,37 +44,67 @@ import { createSyncClientIdentityStore } from './sync-client-identity';
 import { createSyncCredentialsStore } from './sync-credentials';
 
 const isDevelopment = !app.isPackaged;
-const GOYO_CLOUD_SYNC_URL = 'https://goyo-api.seokjun.kim';
-const GOYO_CLOUD_WEB_URL = 'https://goyo-cloud.seokjun.kim';
-const GOYO_DEEP_LINK_SCHEME = 'goyo';
+const GOYO_CLOUD_API_URL =
+  process.env.GOYO_CLOUD_API_URL ??
+  (isDevelopment ? 'http://localhost:8787' : 'https://goyo-api.seokjun.kim');
+const GOYO_CLOUD_WEB_URL = isDevelopment
+  ? (process.env.GOYO_CLOUD_WEB_URL ?? 'http://localhost:5174')
+  : (process.env.GOYO_CLOUD_WEB_URL ?? 'https://goyo-cloud.seokjun.kim');
+const GOYO_DEEP_LINK_SCHEME = isDevelopment ? 'goyo-dev' : 'goyo';
+const usesLocalGoyoCloudTarget =
+  GOYO_CLOUD_API_URL.includes('localhost') || GOYO_CLOUD_WEB_URL.includes('localhost');
+
+configureGoyoCloudAuthClient(GOYO_CLOUD_API_URL);
 
 let goyoCloudSessionStore: GoyoCloudSessionStoreWithAccount | null = null;
+let deepLinkProtocolRegistered = false;
+let deepLinkProtocolCommand: { args: string[]; executable: string } | null = null;
+const pendingDeepLinkUrls: string[] = getDeepLinkUrls(process.argv);
+
+function getDeepLinkUrls(args: string[]): string[] {
+  return args.filter((arg) => arg.startsWith('goyo://') || arg.startsWith('goyo-dev://'));
+}
 
 function handleDeepLinkUrl(url: string) {
-  if (!goyoCloudSessionStore) return;
-
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
+  if (!goyoCloudSessionStore) {
+    pendingDeepLinkUrls.push(url);
     return;
   }
 
-  if (parsed.pathname !== '/auth/callback') return;
+  const callback = parseGoyoCloudDeepLinkCallback(url);
+  if (!callback) return;
 
-  const token = parsed.searchParams.get('token');
-  if (!token) return;
+  const { email, userId } = callback;
+  try {
+    goyoCloudSessionStore.saveSessionToken(callback.token);
 
-  goyoCloudSessionStore.saveSessionToken(token);
-
-  const email = parsed.searchParams.get('email');
-  const userId = parsed.searchParams.get('userId');
-  if (email && userId) {
-    goyoCloudSessionStore.saveAccount({ email, id: userId });
+    if (email && userId) {
+      goyoCloudSessionStore.saveAccount({ email, id: userId });
+    }
+  } catch (error) {
+    console.error('Failed to store Goyo Cloud session from deep link.', error);
+    return;
   }
 
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('goyoCloud:deepLinkToken', { email, userId });
+  }
+}
+
+function registerDeepLinkProtocol(): boolean {
+  if (isDevelopment) {
+    deepLinkProtocolCommand = null;
+    return false;
+  }
+
+  deepLinkProtocolCommand = { args: [], executable: process.execPath };
+  return app.setAsDefaultProtocolClient(GOYO_DEEP_LINK_SCHEME);
+}
+
+function flushPendingDeepLinks() {
+  const urls = pendingDeepLinkUrls.splice(0);
+  for (const url of urls) {
+    handleDeepLinkUrl(url);
   }
 }
 
@@ -78,7 +116,7 @@ function configureUserDataPath() {
   app.setPath('userData', join(app.getPath('appData'), `${APP_NAME} Dev`));
 }
 
-app.setAsDefaultProtocolClient(GOYO_DEEP_LINK_SCHEME);
+deepLinkProtocolRegistered = registerDeepLinkProtocol();
 
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -86,8 +124,9 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, commandLine) => {
-    const url = commandLine.find((arg) => arg.startsWith(`${GOYO_DEEP_LINK_SCHEME}://`));
-    if (url) handleDeepLinkUrl(url);
+    for (const url of getDeepLinkUrls(commandLine)) {
+      handleDeepLinkUrl(url);
+    }
 
     const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
@@ -115,7 +154,7 @@ function registerDocumentIpc() {
       clientId: syncClientIdentity.getOrCreateClientId(),
       enabled: syncSettings.enabled && syncSettings.provider !== 'local',
       serverUrl:
-        syncSettings.provider === 'goyo-cloud' ? GOYO_CLOUD_SYNC_URL : syncSettings.selfHostedUrl,
+        syncSettings.provider === 'goyo-cloud' ? GOYO_CLOUD_API_URL : syncSettings.selfHostedUrl,
       token,
     };
   };
@@ -172,11 +211,34 @@ function registerDocumentIpc() {
       throw error;
     }
   });
-  ipcMain.handle('goyoCloud:getStatus', () => {
+  ipcMain.handle('goyoCloud:getStatus', async () => {
     const token = goyoCloudSession.getSessionToken();
     const account = goyoCloudSession.getAccount();
+    const status = await resolveGoyoCloudSessionStatus({
+      account,
+      checkSession: cloudAuthMe,
+      token,
+    });
 
-    return { account, hasSession: !!token };
+    if (status.status === 'signed-in' && status.account) {
+      goyoCloudSession.saveAccount(status.account);
+    }
+
+    return status;
+  });
+  ipcMain.handle('goyoCloud:getConfig', () => {
+    if (!isDevelopment && !usesLocalGoyoCloudTarget) {
+      return null;
+    }
+
+    return {
+      apiUrl: GOYO_CLOUD_API_URL,
+      deepLinkProtocolCommand,
+      deepLinkProtocolRegistered,
+      deepLinkProtocolScheme: GOYO_DEEP_LINK_SCHEME,
+      userDataPath,
+      webUrl: GOYO_CLOUD_WEB_URL,
+    };
   });
   ipcMain.handle('goyoCloud:logout', async () => {
     try {
@@ -190,16 +252,30 @@ function registerDocumentIpc() {
     }
 
     goyoCloudSession.saveSessionToken('');
+    goyoCloudSession.clearAccount();
     return { ok: true };
   });
   ipcMain.handle('goyoCloud:authStartBrowser', async () => {
     try {
       const clientId = syncClientIdentity.getOrCreateClientId();
-      const loginUrl = `${GOYO_CLOUD_WEB_URL}/login?clientId=${encodeURIComponent(clientId)}&source=desktop`;
+      const params = new URLSearchParams({
+        callbackScheme: GOYO_DEEP_LINK_SCHEME,
+        clientId,
+      });
+      const loginUrl = `${GOYO_CLOUD_WEB_URL}/desktop-sign-in?${params.toString()}`;
       await shell.openExternal(loginUrl);
       return { ok: true };
     } catch (error) {
       console.error('Failed to open browser for Goyo Cloud auth', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('goyoCloud:openAccount', async () => {
+    try {
+      await shell.openExternal(`${GOYO_CLOUD_WEB_URL}/account`);
+      return { ok: true };
+    } catch (error) {
+      console.error('Failed to open Goyo Cloud account', getErrorMessage(error));
       throw error;
     }
   });
@@ -485,6 +561,7 @@ configureUserDataPath();
 void app.whenReady().then(() => {
   app.setName(APP_NAME);
   goyoCloudSessionStore = registerDocumentIpc();
+  flushPendingDeepLinks();
   registerAutoUpdaterIpc();
   initAutoUpdater();
   createApplicationMenu();
