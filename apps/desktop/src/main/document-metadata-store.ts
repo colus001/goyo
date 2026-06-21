@@ -87,7 +87,18 @@ interface SyncQueueRow {
   created_at: string;
   attempts: number;
   last_attempt_at: string | null;
+  last_endpoint: string | null;
+  last_error: string | null;
+  last_http_status: number | null;
 }
+
+interface SyncFailureDetails {
+  lastEndpoint: string | null;
+  lastError: string | null;
+  lastHttpStatus: number | null;
+}
+
+interface SyncFailureQueueItem extends SyncQueueItem, SyncFailureDetails {}
 
 interface AppUiStateRow {
   state_json: string;
@@ -132,8 +143,13 @@ export interface DesktopLocalStore extends LocalDocumentStore {
   listDocumentUpdates(documentId: string): DocumentUpdateRecord[];
   listDocumentUpdatesAfter(documentId: string, updateId: string): DocumentUpdateRecord[];
   listPendingSyncItems(): SyncQueueItem[];
+  listRecentFailedSyncItems(limit: number): SyncFailureQueueItem[];
   listRecoveryPoints(documentId: string): RecoveryPoint[];
-  markSyncItemAttempted(syncItemId: string, attemptedAt: string): void;
+  markSyncItemAttempted(
+    syncItemId: string,
+    attemptedAt: string,
+    failure?: SyncFailureDetails,
+  ): void;
   markSyncItemCompleted(syncItemId: string, completedAt: string): void;
   saveBook(book: BookMetadata): void;
   saveChapter(chapter: ChapterMetadata): void;
@@ -256,6 +272,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
   ensureDocumentColumn(database, 'kind', "TEXT NOT NULL DEFAULT 'episode'");
   ensureDocumentColumn(database, 'sort_order', 'INTEGER NOT NULL DEFAULT 0');
   ensureSnapshotColumn(database, 'last_update_id', 'TEXT');
+  ensureSyncQueueColumn(database, 'last_error', 'TEXT');
+  ensureSyncQueueColumn(database, 'last_http_status', 'INTEGER');
+  ensureSyncQueueColumn(database, 'last_endpoint', 'TEXT');
   ensureBookColumn(
     database,
     'accent_color',
@@ -445,8 +464,16 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
   `);
   const listAllSyncItemsStatement = database.prepare(`
     SELECT id, document_id, kind, record_id, created_at, attempts, last_attempt_at
+      FROM sync_queue
+      ORDER BY created_at ASC, id ASC;
+  `);
+  const listRecentFailedSyncItemsStatement = database.prepare(`
+    SELECT id, document_id, kind, record_id, created_at, attempts, last_attempt_at,
+      last_error, last_http_status, last_endpoint
     FROM sync_queue
-    ORDER BY created_at ASC, id ASC;
+    WHERE completed_at IS NULL AND attempts >= 3
+    ORDER BY last_attempt_at DESC, created_at DESC, id DESC
+    LIMIT @limit;
   `);
   const markSyncItemCompletedStatement = database.prepare(`
     UPDATE sync_queue
@@ -456,7 +483,10 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
   const markSyncItemAttemptedStatement = database.prepare(`
     UPDATE sync_queue
     SET attempts = attempts + 1,
-      last_attempt_at = @attemptedAt
+      last_attempt_at = @attemptedAt,
+      last_error = COALESCE(@lastError, last_error),
+      last_http_status = COALESCE(@lastHttpStatus, last_http_status),
+      last_endpoint = COALESCE(@lastEndpoint, last_endpoint)
     WHERE id = @syncItemId;
   `);
   const getAppUiStateStatement = database.prepare(`
@@ -579,11 +609,20 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     listPendingSyncItems() {
       return listPendingSyncItemsStatement.all().map(rowToSyncQueueItem);
     },
+    listRecentFailedSyncItems(limit) {
+      return listRecentFailedSyncItemsStatement.all({ limit }).map(rowToSyncFailureQueueItem);
+    },
     listRecoveryPoints(documentId) {
       return listRecoveryPointsStatement.all(documentId).map(rowToRecoveryPoint);
     },
-    markSyncItemAttempted(syncItemId, attemptedAt) {
-      markSyncItemAttemptedStatement.run({ attemptedAt, syncItemId });
+    markSyncItemAttempted(syncItemId, attemptedAt, failure) {
+      markSyncItemAttemptedStatement.run({
+        attemptedAt,
+        lastEndpoint: failure?.lastEndpoint ?? null,
+        lastError: failure?.lastError ?? null,
+        lastHttpStatus: failure?.lastHttpStatus ?? null,
+        syncItemId,
+      });
     },
     markSyncItemCompleted(syncItemId, completedAt) {
       markSyncItemCompletedStatement.run({ completedAt, syncItemId });
@@ -756,6 +795,20 @@ function ensureSnapshotColumn(
   database.exec(`ALTER TABLE document_snapshots ADD COLUMN ${columnName} ${columnDefinition};`);
 }
 
+function ensureSyncQueueColumn(
+  database: Database.Database,
+  columnName: string,
+  columnDefinition: string,
+) {
+  const columns = database.pragma('table_info(sync_queue)') as Array<{ name: string }>;
+
+  if (columns.some(({ name }) => name === columnName)) {
+    return;
+  }
+
+  database.exec(`ALTER TABLE sync_queue ADD COLUMN ${columnName} ${columnDefinition};`);
+}
+
 function toUpdateBuffer(update: SerializedDocumentUpdateRecord['update']): Buffer {
   if (update instanceof Uint8Array) {
     return Buffer.from(update);
@@ -825,6 +878,17 @@ function rowToSyncQueueItem(row: unknown): SyncQueueItem {
     kind: item.kind,
     lastAttemptAt: item.last_attempt_at,
     recordId: item.record_id,
+  };
+}
+
+function rowToSyncFailureQueueItem(row: unknown): SyncFailureQueueItem {
+  const item = row as SyncQueueRow;
+
+  return {
+    ...rowToSyncQueueItem(row),
+    lastEndpoint: item.last_endpoint,
+    lastError: item.last_error,
+    lastHttpStatus: item.last_http_status,
   };
 }
 

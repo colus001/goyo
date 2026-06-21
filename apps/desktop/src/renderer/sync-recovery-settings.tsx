@@ -10,7 +10,22 @@ interface SyncStatusSummary {
   needsAttention: boolean;
   oldestFailedAt: string | null;
   pendingItemCount: number;
+  recentFailures: SyncFailureSummary[];
 }
+
+interface SyncFailureSummary {
+  attempts: number;
+  documentId: string;
+  id: string;
+  kind: string;
+  lastAttemptAt: string | null;
+  lastEndpoint: string | null;
+  lastError: string | null;
+  lastHttpStatus: number | null;
+  recordId: string;
+}
+
+type RetrySyncResult = Awaited<ReturnType<typeof window.writerDesktop.sync.retryNow>>;
 
 export function SyncRecoverySettings({
   onChangeSettings,
@@ -308,7 +323,9 @@ function SyncConnectionActions({
 
 function SyncRecoveryCard(): ReactElement {
   const [backupStatus, setBackupStatus] = useState<string | null>(null);
+  const [debugStatus, setDebugStatus] = useState<string | null>(null);
   const [summary, setSummary] = useState<SyncStatusSummary | null>(null);
+  const [retryResult, setRetryResult] = useState<RetrySyncResult | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isExportingBackup, setIsExportingBackup] = useState(false);
 
@@ -331,16 +348,24 @@ function SyncRecoveryCard(): ReactElement {
           Oldest failed sync attempt: {formatSyncDate(summary.oldestFailedAt)}
         </p>
       ) : null}
+      <SyncRetryResult result={retryResult} />
+      <SyncFailureList failures={summary?.recentFailures ?? []} />
       <SyncRecoveryActions
         isExportingBackup={isExportingBackup}
         isRetrying={isRetrying}
+        setDebugStatus={setDebugStatus}
         setBackupStatus={setBackupStatus}
         setIsExportingBackup={setIsExportingBackup}
         setIsRetrying={setIsRetrying}
+        setRetryResult={setRetryResult}
         setSummary={setSummary}
+        summary={summary}
       />
       {backupStatus ? (
         <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{backupStatus}</p>
+      ) : null}
+      {debugStatus ? (
+        <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{debugStatus}</p>
       ) : null}
     </div>
   );
@@ -366,25 +391,42 @@ function SyncRecoveryHeader({ onRefresh }: { onRefresh: () => void }): ReactElem
 function SyncRecoveryActions({
   isExportingBackup,
   isRetrying,
+  setDebugStatus,
   setBackupStatus,
   setIsExportingBackup,
   setIsRetrying,
+  setRetryResult,
   setSummary,
+  summary,
 }: {
   isExportingBackup: boolean;
   isRetrying: boolean;
+  setDebugStatus: (status: string | null) => void;
   setBackupStatus: (status: string | null) => void;
   setIsExportingBackup: (isExporting: boolean) => void;
   setIsRetrying: (isRetrying: boolean) => void;
+  setRetryResult: (result: RetrySyncResult | null) => void;
   setSummary: (summary: SyncStatusSummary | null) => void;
+  summary: SyncStatusSummary | null;
 }): ReactElement {
   const retryNow = () => {
     setIsRetrying(true);
+    setRetryResult(null);
     void window.writerDesktop.sync
       .retryNow()
+      .then((result) => {
+        setRetryResult(result);
+      })
       .then(() => window.writerDesktop.sync.getStatusSummary())
       .then(setSummary)
       .finally(() => setIsRetrying(false));
+  };
+  const copyDebugReport = () => {
+    setDebugStatus(null);
+    void navigator.clipboard
+      .writeText(createSyncDebugReport(summary))
+      .then(() => setDebugStatus('Sync debug report copied.'))
+      .catch(() => setDebugStatus('Could not copy sync debug report.'));
   };
   const exportBackup = () => {
     setIsExportingBackup(true);
@@ -406,7 +448,91 @@ function SyncRecoveryActions({
       <SettingsButton disabled={isExportingBackup} onClick={exportBackup}>
         {isExportingBackup ? 'Exporting...' : 'Export local backup'}
       </SettingsButton>
+      <SettingsButton disabled={!summary} onClick={copyDebugReport}>
+        Copy debug report
+      </SettingsButton>
     </div>
+  );
+}
+
+function SyncRetryResult({ result }: { result: RetrySyncResult | null }): ReactElement | null {
+  if (!result) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-3 text-[var(--goyo-text-muted)] text-xs">
+      <p className="font-medium text-[var(--goyo-text)]">Last retry result</p>
+      <div className="mt-2 grid gap-1 sm:grid-cols-2">
+        <p>Updates pushed: {result.updatePush.pushedUpdateCount}</p>
+        <p>Updates skipped: {result.updatePush.skippedUpdateCount}</p>
+        <p>Snapshots pushed: {result.snapshotPush.pushedSnapshotCount}</p>
+        <p>Snapshots skipped: {result.snapshotPush.skippedSnapshotCount}</p>
+        <p>Updates pulled: {result.updatePull.pulledUpdateCount}</p>
+        <p>Documents skipped on pull: {result.updatePull.skippedDocumentCount}</p>
+        <p>Snapshots pulled: {result.snapshotPull.pulledSnapshotCount}</p>
+        <p>Documents skipped on snapshot pull: {result.snapshotPull.skippedDocumentCount}</p>
+      </div>
+    </div>
+  );
+}
+
+function SyncFailureList({ failures }: { failures: SyncFailureSummary[] }): ReactElement | null {
+  if (failures.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-3">
+      <p className="font-medium text-[var(--goyo-text)] text-sm">Recent failures</p>
+      <div className="mt-2 space-y-2">
+        {failures.map((failure) => (
+          <SyncFailureRow failure={failure} key={failure.id} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SyncFailureRow({ failure }: { failure: SyncFailureSummary }): ReactElement {
+  return (
+    <div className="rounded-lg border border-[var(--goyo-border)] bg-[var(--goyo-raised)] p-2 text-xs">
+      <p className="font-medium text-[var(--goyo-text)]">
+        {failure.kind} · {failure.lastHttpStatus ?? 'no HTTP status'} · {failure.attempts} attempts
+      </p>
+      <p className="mt-1 break-all text-[var(--goyo-text-muted)]">
+        document {failure.documentId} · record {failure.recordId}
+      </p>
+      {failure.lastEndpoint ? (
+        <p className="mt-1 break-all text-[var(--goyo-text-muted)]">{failure.lastEndpoint}</p>
+      ) : null}
+      {failure.lastError ? (
+        <p className="mt-1 text-[var(--goyo-text-muted)]">{failure.lastError}</p>
+      ) : null}
+      {failure.lastAttemptAt ? (
+        <p className="mt-1 text-[var(--goyo-text-faint)]">
+          Last attempt: {formatSyncDate(failure.lastAttemptAt)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function createSyncDebugReport(summary: SyncStatusSummary | null): string {
+  if (!summary) {
+    return 'No sync summary loaded.';
+  }
+
+  return JSON.stringify(
+    {
+      failedItemCount: summary.failedItemCount,
+      needsAttention: summary.needsAttention,
+      oldestFailedAt: summary.oldestFailedAt,
+      pendingItemCount: summary.pendingItemCount,
+      recentFailures: summary.recentFailures,
+    },
+    null,
+    2,
   );
 }
 
