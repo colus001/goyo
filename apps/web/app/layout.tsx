@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { CloudShell } from '@/components/cloud-shell';
 import { AuthProvider } from '@/lib/auth-context';
+import { serverAuthMe } from '@/lib/server-api';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -10,11 +11,14 @@ export const metadata: Metadata = {
   title: 'Goyo Cloud',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const auth = await serverAuthMe();
+  const initialUser = auth.ok ? (auth.value?.user ?? null) : null;
+
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
+        <AuthProvider initialUser={initialUser}>
           <CloudShell>{children}</CloudShell>
         </AuthProvider>
       </body>

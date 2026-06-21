@@ -1,3 +1,4 @@
+// biome-ignore lint/nursery/noExcessiveLinesPerFile: Cloud document loading, polling, and uploads share one state machine.
 import type { WritingEditorRef } from '@writer/editor';
 import {
   type Dispatch,
@@ -31,6 +32,13 @@ export interface CloudDocumentEditorState {
   syncStatus: string;
 }
 
+export interface InitialCloudDocumentState {
+  document: CloudDocument;
+  initialSnapshot?: Uint8Array;
+  initialUpdates: Uint8Array[];
+  latestUpdateId: string | null;
+}
+
 type StateSetter = Dispatch<SetStateAction<CloudDocumentEditorState>>;
 type MutableRef<T> = { current: T };
 
@@ -38,17 +46,28 @@ export function useCloudDocumentSync({
   documentId,
   editorRef,
   enabled,
+  initialState,
 }: {
   documentId: string;
   editorRef: RefObject<WritingEditorRef | null>;
   enabled: boolean;
+  initialState?: InitialCloudDocumentState;
 }) {
-  const [state, setState] = useState<CloudDocumentEditorState>(getInitialEditorState);
+  const [state, setState] = useState<CloudDocumentEditorState>(() =>
+    initialState ? getReadyEditorState(initialState) : getInitialEditorState(),
+  );
   const clientIdRef = useRef<string | null>(null);
-  const latestRemoteUpdateIdRef = useRef<string | null>(null);
+  const latestRemoteUpdateIdRef = useRef<string | null>(initialState?.latestUpdateId ?? null);
   const isPullingRef = useRef(false);
 
-  useCloudDocumentLoader(documentId, enabled, clientIdRef, latestRemoteUpdateIdRef, setState);
+  useCloudDocumentLoader(
+    documentId,
+    enabled && !initialState,
+    clientIdRef,
+    latestRemoteUpdateIdRef,
+    setState,
+  );
+  useWebSyncClientRegistration(enabled && Boolean(initialState), clientIdRef, setState);
 
   const pullRemoteUpdates = useRemoteUpdatePuller({
     documentId,
@@ -74,6 +93,44 @@ function getInitialEditorState(): CloudDocumentEditorState {
     isReady: false,
     syncStatus: 'Loading document...',
   };
+}
+
+function getReadyEditorState(initialState: InitialCloudDocumentState): CloudDocumentEditorState {
+  return {
+    document: initialState.document,
+    error: null,
+    initialSnapshot: initialState.initialSnapshot,
+    initialUpdates: initialState.initialUpdates,
+    isReady: true,
+    syncStatus: 'Ready to write in Goyo Cloud.',
+  };
+}
+
+function useWebSyncClientRegistration(
+  enabled: boolean,
+  clientIdRef: MutableRef<string | null>,
+  setState: StateSetter,
+) {
+  useEffect(() => {
+    if (!enabled) return;
+
+    const clientId = getOrCreateWebSyncClientId();
+    clientIdRef.current = clientId;
+
+    let cancelled = false;
+
+    void registerRequiredSyncClient(clientId).catch((error) => {
+      if (cancelled) return;
+      setState((current) => ({
+        ...current,
+        syncStatus: error instanceof Error ? error.message : 'Could not register web sync client.',
+      }));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clientIdRef, enabled, setState]);
 }
 
 function useCloudDocumentLoader(

@@ -1,9 +1,6 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import type { ReactElement, ReactNode } from 'react';
-import { useEffect } from 'react';
-import { useAuth } from '@/lib/auth-context';
+import { serverAuthMe } from '@/lib/server-api';
 
 function Panel({ children }: { children: ReactNode }) {
   return (
@@ -13,32 +10,14 @@ function Panel({ children }: { children: ReactNode }) {
   );
 }
 
-export default function AccountPage(): ReactElement {
-  const { isLoading, user } = useAuth();
-  const router = useRouter();
+export default async function AccountPage(): Promise<ReactElement> {
+  const auth = await serverAuthMe();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login');
-    }
-  }, [isLoading, user, router]);
-
-  if (isLoading) {
-    return (
-      <div>
-        <header className="mb-10 max-w-4xl">
-          <p className="font-semibold text-[#d9be7f] text-sm uppercase tracking-[0.28em]">
-            Account
-          </p>
-        </header>
-        <Panel>
-          <p className="text-[#b8b9ac] text-sm">Loading account…</p>
-        </Panel>
-      </div>
-    );
+  if (!auth.ok || !auth.value?.user) {
+    redirect('/login');
   }
 
-  if (!user) return <div />;
+  const { user } = auth.value;
 
   return (
     <div>

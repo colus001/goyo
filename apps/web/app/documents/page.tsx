@@ -1,12 +1,7 @@
-'use client';
-
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import type { ReactElement, ReactNode } from 'react';
-import { useEffect, useState } from 'react';
-import { fetchDocuments } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
-import type { CloudDocument } from '@/lib/types';
+import { serverAuthMe, serverFetchDocuments } from '@/lib/server-api';
 
 function Panel({ children }: { children: ReactNode }) {
   return (
@@ -16,36 +11,16 @@ function Panel({ children }: { children: ReactNode }) {
   );
 }
 
-export default function DocumentsPage(): ReactElement {
-  const { isLoading, user } = useAuth();
-  const router = useRouter();
-  const [documents, setDocuments] = useState<CloudDocument[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default async function DocumentsPage(): Promise<ReactElement> {
+  const auth = await serverAuthMe();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login');
-      return;
-    }
-    if (user && !loaded) {
-      void fetchDocuments()
-        .then((result) => {
-          setLoaded(true);
-          if (result.ok && result.documents) {
-            setDocuments(result.documents);
-          } else {
-            setError(result.error ?? 'Could not load documents.');
-          }
-        })
-        .catch(() => {
-          setLoaded(true);
-          setError('Could not load documents.');
-        });
-    }
-  }, [isLoading, user, loaded, router]);
+  if (!auth.ok || !auth.value?.user) {
+    redirect('/login');
+  }
 
-  if (isLoading || !loaded) {
+  const documentsResult = await serverFetchDocuments();
+
+  if (!documentsResult.ok) {
     return (
       <div>
         <header className="mb-10 max-w-4xl">
@@ -54,26 +29,15 @@ export default function DocumentsPage(): ReactElement {
           </p>
         </header>
         <Panel>
-          <p className="text-[#b8b9ac] text-sm">Loading documents…</p>
+          <p className="text-[#c98b7a] text-sm">
+            {documentsResult.error ?? 'Could not load documents.'}
+          </p>
         </Panel>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div>
-        <header className="mb-10 max-w-4xl">
-          <p className="font-semibold text-[#d9be7f] text-sm uppercase tracking-[0.28em]">
-            Documents
-          </p>
-        </header>
-        <Panel>
-          <p className="text-[#c98b7a] text-sm">{error}</p>
-        </Panel>
-      </div>
-    );
-  }
+  const documents = documentsResult.value?.documents ?? [];
 
   return (
     <div>
