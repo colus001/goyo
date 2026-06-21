@@ -10,6 +10,7 @@ import {
   type RefObject,
   type SetStateAction,
   useCallback,
+  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -60,6 +61,7 @@ export function WritingWorkspaceScreen({
   };
 
   useWorkspaceKeyboardShortcuts(workspace, activeDocument, editorRef, requestNewChapter);
+  useApplyActiveDocumentUpdates(activeDocument?.id ?? null, editorRef);
 
   return (
     <>
@@ -83,6 +85,56 @@ export function WritingWorkspaceScreen({
       ) : null}
     </>
   );
+}
+
+function useApplyActiveDocumentUpdates(
+  documentId: string | null,
+  editorRef: RefObject<WritingEditorRef | null>,
+) {
+  useEffect(() => {
+    if (!documentId) {
+      return;
+    }
+
+    const activeDocumentId = documentId;
+    let isCancelled = false;
+
+    async function applyPersistedUpdates() {
+      const editor = editorRef.current;
+
+      if (!editor) {
+        return;
+      }
+
+      const snapshot = await window.writerDesktop.documentSnapshots.getLatest(activeDocumentId);
+      const updates = snapshot?.lastUpdateId
+        ? await window.writerDesktop.documentUpdates.listAfter(
+            activeDocumentId,
+            snapshot.lastUpdateId,
+          )
+        : await window.writerDesktop.documentUpdates.list(activeDocumentId);
+
+      if (isCancelled) {
+        return;
+      }
+
+      if (snapshot) {
+        editor.applyUpdate(snapshot.snapshot);
+      }
+
+      for (const update of updates) {
+        editor.applyUpdate(update.update);
+      }
+    }
+
+    void applyPersistedUpdates();
+    const intervalId = window.setInterval(applyPersistedUpdates, 4000);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [documentId, editorRef]);
 }
 
 function getWritingShellProps(
