@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SyncAuthContext } from './auth';
+import { getBookMetadata, listBooks, upsertBookMetadata } from './book-metadata';
+import { getChapterMetadata, listChapters, upsertChapterMetadata } from './chapter-metadata';
 import { getDocumentMetadata, upsertDocumentMetadata } from './document-metadata';
 import { createDocumentUpdate, listDocumentUpdates } from './document-updates';
 import { registerSyncClient } from './sync-clients';
@@ -23,6 +25,9 @@ describe('sync storage ownership', () => {
 
   it('accepts fractional document order values used for insertions between rows', () =>
     expectFractionalDocumentOrderAccepted());
+
+  it('stores books and chapters separately for each owner', () =>
+    expectBookAndChapterOwnershipScoped());
 });
 
 async function expectSameOwnerMultiClientSync() {
@@ -123,6 +128,82 @@ async function expectFractionalDocumentOrderAccepted() {
   await expect(metadataResponse.json()).resolves.toMatchObject({
     document: { id: 'doc-fractional-order', order: 0.5 },
   });
+}
+
+async function expectBookAndChapterOwnershipScoped() {
+  const env = createTestEnv();
+
+  await putBook(env, ownerA, 'book-1', 'Owner A book');
+  await putBook(env, ownerB, 'book-1', 'Owner B book');
+  await putChapter(env, ownerA, 'chapter-1', 'Owner A chapter');
+  await putChapter(env, ownerB, 'chapter-1', 'Owner B chapter');
+
+  const ownerABookResponse = await getBookMetadata(env, ownerA, 'book-1');
+  const ownerBBookResponse = await getBookMetadata(env, ownerB, 'book-1');
+  const ownerAChapterResponse = await getChapterMetadata(env, ownerA, 'chapter-1');
+  const ownerBChapterResponse = await getChapterMetadata(env, ownerB, 'chapter-1');
+  const ownerABooksResponse = await listBooks(env, ownerA);
+  const ownerAChaptersResponse = await listChapters(env, ownerA);
+
+  await expect(ownerABookResponse.json()).resolves.toMatchObject({
+    book: { id: 'book-1', title: 'Owner A book' },
+  });
+  await expect(ownerBBookResponse.json()).resolves.toMatchObject({
+    book: { id: 'book-1', title: 'Owner B book' },
+  });
+  await expect(ownerAChapterResponse.json()).resolves.toMatchObject({
+    chapter: { id: 'chapter-1', title: 'Owner A chapter' },
+  });
+  await expect(ownerBChapterResponse.json()).resolves.toMatchObject({
+    chapter: { id: 'chapter-1', title: 'Owner B chapter' },
+  });
+  await expect(ownerABooksResponse.json()).resolves.toMatchObject({
+    books: [{ id: 'book-1', title: 'Owner A book' }],
+  });
+  await expect(ownerAChaptersResponse.json()).resolves.toMatchObject({
+    chapters: [{ id: 'chapter-1', title: 'Owner A chapter' }],
+  });
+}
+
+async function putBook(
+  env: { DB: D1Database },
+  auth: SyncAuthContext,
+  bookId: string,
+  title: string,
+) {
+  return upsertBookMetadata(
+    jsonRequest({
+      accentColor: '#a6534b',
+      archivedAt: null,
+      createdAt: '2026-06-14T12:00:00.000Z',
+      title,
+      updatedAt: '2026-06-14T12:00:00.000Z',
+    }),
+    env,
+    auth,
+    bookId,
+  );
+}
+
+async function putChapter(
+  env: { DB: D1Database },
+  auth: SyncAuthContext,
+  chapterId: string,
+  title: string,
+) {
+  return upsertChapterMetadata(
+    jsonRequest({
+      archivedAt: null,
+      bookId: 'book-1',
+      createdAt: '2026-06-14T12:00:00.000Z',
+      order: 0,
+      title,
+      updatedAt: '2026-06-14T12:00:00.000Z',
+    }),
+    env,
+    auth,
+    chapterId,
+  );
 }
 
 async function putDocument(
