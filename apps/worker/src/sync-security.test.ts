@@ -20,6 +20,9 @@ describe('sync storage ownership', () => {
 
   it('allows different owners to use the same local document id independently', () =>
     expectSameDocumentIdAcrossOwners());
+
+  it('accepts fractional document order values used for insertions between rows', () =>
+    expectFractionalDocumentOrderAccepted());
 });
 
 async function expectSameOwnerMultiClientSync() {
@@ -110,11 +113,24 @@ async function expectSameDocumentIdAcrossOwners() {
   });
 }
 
+async function expectFractionalDocumentOrderAccepted() {
+  const env = createTestEnv();
+
+  const response = await putDocument(env, ownerA, 'doc-fractional-order', 'Inserted episode', 0.5);
+  const metadataResponse = await getDocumentMetadata(env, ownerA, 'doc-fractional-order');
+
+  expect(response.status).toBe(200);
+  await expect(metadataResponse.json()).resolves.toMatchObject({
+    document: { id: 'doc-fractional-order', order: 0.5 },
+  });
+}
+
 async function putDocument(
   env: { DB: D1Database },
   auth: SyncAuthContext,
   documentId: string,
   title = 'Chapterless episode',
+  order = 0,
 ) {
   return upsertDocumentMetadata(
     jsonRequest({
@@ -123,7 +139,7 @@ async function putDocument(
       chapterId: null,
       createdAt: '2026-06-14T12:00:00.000Z',
       kind: 'episode',
-      order: 0,
+      order,
       title,
       updatedAt: '2026-06-14T12:00:00.000Z',
     }),

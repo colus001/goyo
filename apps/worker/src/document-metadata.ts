@@ -157,8 +157,8 @@ function validateDocumentMetadataBody(
     return { ok: false, message: '`kind` must be draft, episode, or note.' };
   }
 
-  if (typeof body.order !== 'number' || !Number.isInteger(body.order)) {
-    return { ok: false, message: '`order` must be an integer.' };
+  if (typeof body.order !== 'number' || !Number.isFinite(body.order)) {
+    return { ok: false, message: '`order` must be a finite number.' };
   }
 
   if (!isIsoTimestamp(body.createdAt)) {
