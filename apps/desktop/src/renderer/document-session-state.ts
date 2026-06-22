@@ -42,9 +42,9 @@ import type {
   WorkspaceScreen,
   WritingWorkspaceState,
 } from './document-workspace-types';
+import { useRestoreCloudProgress } from './restore-cloud-progress';
 import { useRemoteSync } from './use-remote-sync';
 import { useLoadSyncClientId } from './use-sync-client-id';
-
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: This hook assembles the workspace API from local state and action wiring.
 export function useWritingWorkspace(): WritingWorkspaceState {
   const [clientId, setClientId] = useState<string | null>(null);
@@ -58,6 +58,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
   const [screen, setScreen] = useState<WorkspaceScreen>('loading');
   const [session, setSession] = useState<DocumentSession | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('Loading local documents');
+  const [syncProgressLabel, setSyncProgressLabel] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('Sync idle');
   const activeDocument = session ? getActiveDocumentOrNull(session) : null;
   const activeChapter = session ? getActiveChapterOrNull(session) : null;
@@ -80,6 +81,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
   );
   useLoadSyncClientId(setClientId, setSaveStatus);
   useRemoteSync(setSyncStatus);
+  useRestoreCloudProgress(setSyncProgressLabel);
   usePersistAppUiState({
     expandedChapterIds,
     hasLoadedWorkspace,
@@ -152,6 +154,7 @@ export function useWritingWorkspace(): WritingWorkspaceState {
       setScreen('settings');
     },
     startQuickDraft: () => startQuickDraft(setSession, setScreen, setSaveStatus),
+    syncProgressLabel,
     syncStatus,
     updateAppSettings: (settings) => updateAppSettings(settings, setAppSettings, setSaveStatus),
     updateBookAccentColor: (bookId, accentColor) =>

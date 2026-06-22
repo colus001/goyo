@@ -1,5 +1,7 @@
 // biome-ignore lint/nursery/noExcessiveLinesPerFile: Remote sync request, retry, and status helpers are kept together around one API boundary for now.
 import {
+  type BookMetadata,
+  type ChapterMetadata,
   createMissingSyncQueueItems,
   createRecoveryPoint,
   type DocumentMetadata,
@@ -60,10 +62,40 @@ interface PullRemoteSnapshotsResult {
   skippedDocumentCount: number;
 }
 
+export interface RestoreCloudProgress {
+  completed: number;
+  current: number;
+  phase: RestoreCloudProgressPhase;
+  total: number;
+}
+
+type RestoreCloudProgressPhase =
+  | 'books'
+  | 'chapters'
+  | 'documents'
+  | 'sync-clients'
+  | 'document-updates'
+  | 'document-snapshots';
+
+export interface RestoreCloudResult {
+  booksPushed: number;
+  chaptersPushed: number;
+  documentsPushed: number;
+  snapshotsPushed: number;
+  syncClientsRegistered: number;
+  updatesPushed: number;
+}
+
 interface SyncFailureDetails {
   lastEndpoint: string | null;
   lastError: string | null;
   lastHttpStatus: number | null;
+}
+
+interface RestoreCloudContext {
+  completed: number;
+  onProgress?: (progress: RestoreCloudProgress) => void;
+  total: number;
 }
 
 interface RemoteDocumentUpdatesResponse {
@@ -99,17 +131,14 @@ export async function pushPendingDocumentUpdates(
   let skippedUpdateCount = 0;
 
   if (!isSyncConnectionReady(connection)) {
-    const pendingItems = store
-      .listPendingSyncItems()
-      .filter((item) => item.kind === 'document-update');
+    const pendingItems = listPendingDocumentUpdateSyncItems(store);
 
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
   }
 
+  await pushWorkspaceMetadata(store, connection);
   ensureLocalRecordsQueuedForRemoteSync(store);
-  const pendingItems = store
-    .listPendingSyncItems()
-    .filter((item) => item.kind === 'document-update');
+  const pendingItems = listPendingDocumentUpdateSyncItems(store);
 
   if (!(await registerSyncClientOrMarkPending(store, connection, pendingItems))) {
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
@@ -148,6 +177,10 @@ export async function pushPendingDocumentUpdates(
   }
 
   return { pushedUpdateCount, skippedUpdateCount };
+}
+
+function listPendingDocumentUpdateSyncItems(store: DesktopLocalStore) {
+  return store.listPendingSyncItems().filter((item) => item.kind === 'document-update');
 }
 
 export async function pullRemoteDocumentUpdates(
@@ -213,6 +246,7 @@ export async function pushPendingDocumentSnapshots(
     return { pushedSnapshotCount, skippedSnapshotCount: pendingItems.length };
   }
 
+  await pushWorkspaceMetadata(store, connection);
   ensureLocalRecordsQueuedForRemoteSync(store);
   const pendingItems = store
     .listPendingSyncItems()
@@ -324,6 +358,77 @@ export async function retryRemoteSyncNow(
   return { snapshotPull, snapshotPush, updatePull, updatePush };
 }
 
+export async function restoreCloudFromLocal(
+  store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
+  onProgress?: (progress: RestoreCloudProgress) => void,
+): Promise<RestoreCloudResult> {
+  if (!isSyncConnectionReady(connection)) {
+    throw new Error('Remote sync is not configured.');
+  }
+
+  const books = store.listAllBooks();
+  const chapters = store.listAllChapters();
+  const documents = store.listAllDocuments();
+  const updates = store.listAllDocumentUpdates();
+  const snapshots = store.listAllDocumentSnapshots();
+  const syncClientIds = [
+    ...new Set([connection.clientId, ...updates.map((update) => update.clientId)]),
+  ];
+  const total =
+    books.length +
+    chapters.length +
+    documents.length +
+    syncClientIds.length +
+    updates.length +
+    snapshots.length;
+  const context: RestoreCloudContext = { completed: 0, onProgress, total };
+
+  await restoreCloudRecords(context, 'books', books, (book) => pushBookMetadata(connection, book));
+  await restoreCloudRecords(context, 'chapters', chapters, (chapter) =>
+    pushChapterMetadata(connection, chapter),
+  );
+  await restoreCloudRecords(context, 'documents', documents, (document) =>
+    pushDocumentMetadata(connection, document),
+  );
+  await restoreCloudRecords(context, 'sync-clients', syncClientIds, (clientId) =>
+    registerSyncClient(connection, clientId),
+  );
+  await restoreCloudRecords(context, 'document-updates', updates, (update) =>
+    pushDocumentUpdate(connection, update),
+  );
+  await restoreCloudRecords(context, 'document-snapshots', snapshots, (snapshot) =>
+    pushDocumentSnapshot(connection, snapshot),
+  );
+
+  return {
+    booksPushed: books.length,
+    chaptersPushed: chapters.length,
+    documentsPushed: documents.length,
+    snapshotsPushed: snapshots.length,
+    syncClientsRegistered: syncClientIds.length,
+    updatesPushed: updates.length,
+  };
+}
+
+async function restoreCloudRecords<TRecord>(
+  context: RestoreCloudContext,
+  phase: RestoreCloudProgressPhase,
+  records: TRecord[],
+  upload: (record: TRecord) => Promise<void>,
+) {
+  for (const [index, record] of records.entries()) {
+    context.onProgress?.({
+      completed: context.completed,
+      current: index + 1,
+      phase,
+      total: context.total,
+    });
+    await upload(record);
+    context.completed += 1;
+  }
+}
+
 export function getSyncStatusSummary(store: DesktopLocalStore): SyncStatusSummary {
   const pendingItems = store.listPendingSyncItems();
   const failedItems = pendingItems.filter((item) => item.attempts >= 3);
@@ -396,6 +501,52 @@ async function pushDocumentMetadata(
       order: document.order,
       title: document.title,
       updatedAt: document.updatedAt,
+    }),
+  });
+}
+
+async function pushWorkspaceMetadata(store: DesktopLocalStore, connection: SyncConnectionSettings) {
+  const books = store.listAllBooks();
+  const chapters = store.listAllChapters();
+
+  if (books.length === 0 && chapters.length === 0) {
+    return;
+  }
+
+  await registerSyncClient(connection);
+
+  for (const book of books) {
+    await pushBookMetadata(connection, book);
+  }
+
+  for (const chapter of chapters) {
+    await pushChapterMetadata(connection, chapter);
+  }
+}
+
+async function pushBookMetadata(connection: SyncConnectionSettings, book: BookMetadata) {
+  await fetchJson(connection, `/v1/books/${encodeURIComponent(book.id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      accentColor: book.accentColor,
+      archivedAt: book.archivedAt,
+      createdAt: book.createdAt,
+      title: book.title,
+      updatedAt: book.updatedAt,
+    }),
+  });
+}
+
+async function pushChapterMetadata(connection: SyncConnectionSettings, chapter: ChapterMetadata) {
+  await fetchJson(connection, `/v1/chapters/${encodeURIComponent(chapter.id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      archivedAt: chapter.archivedAt,
+      bookId: chapter.bookId,
+      createdAt: chapter.createdAt,
+      order: chapter.order,
+      title: chapter.title,
+      updatedAt: chapter.updatedAt,
     }),
   });
 }

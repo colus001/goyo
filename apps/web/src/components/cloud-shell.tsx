@@ -62,7 +62,7 @@ export function CloudShell({ children }: { children: ReactNode }) {
               {user ? (
                 <>
                   <div className="hidden items-center gap-1.5 sm:flex">
-                    <NavLink href="/documents" label="Documents" />
+                    <NavLink href="/books" label="Books" />
                     <NavLink href="/account" label="Account" />
                     <NavLink href="/billing" label="Billing" />
                   </div>
@@ -86,7 +86,7 @@ export function CloudShell({ children }: { children: ReactNode }) {
         </div>
         {user && showNavLinks ? (
           <div className="mx-auto flex max-w-6xl gap-1.5 overflow-x-auto px-5 pb-3 sm:hidden">
-            <NavLink href="/documents" label="Documents" />
+            <NavLink href="/books" label="Books" />
             <NavLink href="/account" label="Account" />
             <NavLink href="/billing" label="Billing" />
           </div>

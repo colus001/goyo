@@ -1,3 +1,25 @@
+// biome-ignore lint/nursery/noExcessiveLinesPerFile: The in-memory D1 test double keeps related sync table behavior together.
+interface StoredBook {
+  accent_color: string;
+  archived_at: string | null;
+  created_at: string;
+  id: string;
+  owner_id: string;
+  title: string;
+  updated_at: string;
+}
+
+interface StoredChapter {
+  archived_at: string | null;
+  book_id: string;
+  created_at: string;
+  id: string;
+  owner_id: string;
+  sort_order: number;
+  title: string;
+  updated_at: string;
+}
+
 interface StoredDocument {
   archived_at: string | null;
   book_id: string;
@@ -37,6 +59,8 @@ export function createTestEnv() {
 }
 
 class InMemoryD1Database {
+  readonly books = new Map<string, StoredBook>();
+  readonly chapters = new Map<string, StoredChapter>();
   readonly documents = new Map<string, StoredDocument>();
   readonly syncClients = new Map<string, StoredSyncClient>();
   readonly updates = new Map<string, StoredUpdate>();
@@ -62,6 +86,14 @@ class InMemoryD1Statement {
   }
 
   async run() {
+    if (this.sql.includes('INSERT INTO books')) {
+      return this.upsertBook();
+    }
+
+    if (this.sql.includes('INSERT INTO chapters')) {
+      return this.upsertChapter();
+    }
+
     if (this.sql.includes('INSERT INTO documents')) {
       return this.upsertDocument();
     }
@@ -78,6 +110,14 @@ class InMemoryD1Statement {
   }
 
   async first<Row>() {
+    if (this.sql.includes('FROM books')) {
+      return this.selectBookMetadata() as Row | null;
+    }
+
+    if (this.sql.includes('FROM chapters')) {
+      return this.selectChapterMetadata() as Row | null;
+    }
+
     if (this.sql.includes('FROM documents') && this.sql.includes('book_id')) {
       return this.selectDocumentMetadata() as Row | null;
     }
@@ -94,11 +134,58 @@ class InMemoryD1Statement {
   }
 
   async all<Row>() {
+    if (this.sql.includes('FROM books')) {
+      return { results: this.selectBooks() as Row[] };
+    }
+
+    if (this.sql.includes('FROM chapters')) {
+      return { results: this.selectChapters() as Row[] };
+    }
+
     if (this.sql.includes('FROM document_updates')) {
       return { results: this.selectDocumentUpdates() as Row[] };
     }
 
     throw new Error(`Unsupported all statement: ${this.sql}`);
+  }
+
+  private upsertBook() {
+    const [owner_id, id, title, accent_color, created_at, updated_at, archived_at] =
+      this.parameters;
+    const ownerId = String(owner_id);
+    const bookId = String(id);
+
+    this.database.books.set(scopedKey(ownerId, bookId), {
+      accent_color: String(accent_color),
+      archived_at: nullableString(archived_at),
+      created_at: String(created_at),
+      id: bookId,
+      owner_id: ownerId,
+      title: String(title),
+      updated_at: String(updated_at),
+    });
+
+    return d1Result(1);
+  }
+
+  private upsertChapter() {
+    const [owner_id, id, book_id, title, sort_order, created_at, updated_at, archived_at] =
+      this.parameters;
+    const ownerId = String(owner_id);
+    const chapterId = String(id);
+
+    this.database.chapters.set(scopedKey(ownerId, chapterId), {
+      archived_at: nullableString(archived_at),
+      book_id: String(book_id),
+      created_at: String(created_at),
+      id: chapterId,
+      owner_id: ownerId,
+      sort_order: Number(sort_order),
+      title: String(title),
+      updated_at: String(updated_at),
+    });
+
+    return d1Result(1);
   }
 
   private upsertDocument() {
@@ -172,6 +259,46 @@ class InMemoryD1Statement {
     const document = this.database.documents.get(scopedKey(String(owner_id), String(id)));
 
     return document ?? null;
+  }
+
+  private selectBookMetadata() {
+    const [owner_id, id] = this.parameters;
+    const book = this.database.books.get(scopedKey(String(owner_id), String(id)));
+
+    return book ?? null;
+  }
+
+  private selectChapterMetadata() {
+    const [owner_id, id] = this.parameters;
+    const chapter = this.database.chapters.get(scopedKey(String(owner_id), String(id)));
+
+    return chapter ?? null;
+  }
+
+  private selectBooks() {
+    const [owner_id] = this.parameters;
+    const ownerId = String(owner_id);
+
+    return Array.from(this.database.books.values())
+      .filter((book) => book.owner_id === ownerId && book.archived_at === null)
+      .sort(
+        (left, right) =>
+          right.updated_at.localeCompare(left.updated_at) || left.title.localeCompare(right.title),
+      );
+  }
+
+  private selectChapters() {
+    const [owner_id] = this.parameters;
+    const ownerId = String(owner_id);
+
+    return Array.from(this.database.chapters.values())
+      .filter((chapter) => chapter.owner_id === ownerId && chapter.archived_at === null)
+      .sort(
+        (left, right) =>
+          left.book_id.localeCompare(right.book_id) ||
+          left.sort_order - right.sort_order ||
+          left.created_at.localeCompare(right.created_at),
+      );
   }
 
   private selectDocumentOwner() {

@@ -9,6 +9,7 @@ import type { InitialCloudDocumentState } from '@/lib/use-cloud-document-sync';
 import { useCloudDocumentSync } from '@/lib/use-cloud-document-sync';
 
 interface CloudDocumentEditorProps {
+  contextLabel: string;
   document: CloudDocument;
   documentId: string;
   initialSnapshotBase64?: string;
@@ -17,6 +18,7 @@ interface CloudDocumentEditorProps {
 }
 
 export function CloudDocumentEditor({
+  contextLabel,
   document,
   documentId,
   initialSnapshotBase64,
@@ -47,6 +49,7 @@ export function CloudDocumentEditor({
     <section aria-label="Cloud document editor">
       <CloudWritingSurface
         cloudDocument={cloudDocument}
+        contextLabel={contextLabel}
         documentId={documentId}
         editorRef={editorRef}
         onWordCountChange={setWordCount}
@@ -58,12 +61,14 @@ export function CloudDocumentEditor({
 
 function CloudWritingSurface({
   cloudDocument,
+  contextLabel,
   documentId,
   editorRef,
   onWordCountChange,
   wordCount,
 }: {
   cloudDocument: ReturnType<typeof useCloudDocumentSync>;
+  contextLabel: string;
   documentId: string;
   editorRef: RefObject<WritingEditorRef | null>;
   onWordCountChange: (wordCount: number) => void;
@@ -78,6 +83,8 @@ function CloudWritingSurface({
   return (
     <article className="goyo-episode-surface mx-auto flex min-h-[38rem] w-full flex-col rounded-[2rem] bg-[var(--goyo-paper)] shadow-[0_28px_100px_rgba(0,0,0,0.24)] [font-family:var(--goyo-writing-font-family)]">
       <div className="goyo-manuscript-column mb-10 flex w-full flex-wrap items-center gap-3 text-[var(--goyo-text-faint)] text-xs">
+        <span className="truncate">{contextLabel}</span>
+        <span aria-hidden="true">/</span>
         <span>{formatWordCountLabel(wordCount)}</span>
         <span aria-hidden="true">/</span>
         <span className="truncate">{cloudDocument.syncStatus}</span>

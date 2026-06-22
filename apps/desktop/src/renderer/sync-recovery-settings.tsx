@@ -26,6 +26,20 @@ interface SyncFailureSummary {
 }
 
 type RetrySyncResult = Awaited<ReturnType<typeof window.writerDesktop.sync.retryNow>>;
+type RestoreCloudResult = Awaited<
+  ReturnType<typeof window.writerDesktop.sync.restoreCloudFromLocal>
+>;
+type RestoreCloudProgress = Parameters<
+  Parameters<typeof window.writerDesktop.sync.onRestoreCloudProgress>[0]
+>[0];
+
+interface RestoreCloudActionState {
+  setIsRestoringCloud: (isRestoring: boolean) => void;
+  setRestoreProgress: (progress: RestoreCloudProgress | null) => void;
+  setRestoreResult: (result: RestoreCloudResult | null) => void;
+  setRestoreStatus: (status: string | null) => void;
+  setSummary: (summary: SyncStatusSummary | null) => void;
+}
 
 export function SyncRecoverySettings({
   onChangeSettings,
@@ -326,14 +340,24 @@ function SyncRecoveryCard(): ReactElement {
   const [debugStatus, setDebugStatus] = useState<string | null>(null);
   const [summary, setSummary] = useState<SyncStatusSummary | null>(null);
   const [retryResult, setRetryResult] = useState<RetrySyncResult | null>(null);
+  const [restoreProgress, setRestoreProgress] = useState<RestoreCloudProgress | null>(null);
+  const [restoreResult, setRestoreResult] = useState<RestoreCloudResult | null>(null);
+  const [restoreStatus, setRestoreStatus] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isExportingBackup, setIsExportingBackup] = useState(false);
+  const [isRestoringCloud, setIsRestoringCloud] = useState(false);
 
   const refreshSummary = () => {
     void window.writerDesktop.sync.getStatusSummary().then(setSummary);
   };
 
   useEffect(refreshSummary, []);
+  useEffect(() => window.writerDesktop.sync.onRestoreCloudProgress(setRestoreProgress), []);
+  const dismissRestoreProgress = createDismissRestoreProgressHandler(
+    setRestoreProgress,
+    setRestoreResult,
+    setRestoreStatus,
+  );
 
   return (
     <div className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/45 p-4">
@@ -349,26 +373,71 @@ function SyncRecoveryCard(): ReactElement {
         </p>
       ) : null}
       <SyncRetryResult result={retryResult} />
+      <RestoreCloudProgressPanel
+        onDismiss={dismissRestoreProgress}
+        progress={restoreProgress}
+        result={restoreResult}
+      />
       <SyncFailureList failures={summary?.recentFailures ?? []} />
       <SyncRecoveryActions
         isExportingBackup={isExportingBackup}
         isRetrying={isRetrying}
+        isRestoringCloud={isRestoringCloud}
         setDebugStatus={setDebugStatus}
         setBackupStatus={setBackupStatus}
         setIsExportingBackup={setIsExportingBackup}
         setIsRetrying={setIsRetrying}
+        setIsRestoringCloud={setIsRestoringCloud}
+        setRestoreProgress={setRestoreProgress}
+        setRestoreResult={setRestoreResult}
+        setRestoreStatus={setRestoreStatus}
         setRetryResult={setRetryResult}
         setSummary={setSummary}
         summary={summary}
       />
+      <SyncRecoveryStatusMessages
+        backupStatus={backupStatus}
+        debugStatus={debugStatus}
+        restoreStatus={restoreStatus}
+      />
+    </div>
+  );
+}
+
+function SyncRecoveryStatusMessages({
+  backupStatus,
+  debugStatus,
+  restoreStatus,
+}: {
+  backupStatus: string | null;
+  debugStatus: string | null;
+  restoreStatus: string | null;
+}): ReactElement | null {
+  return (
+    <>
       {backupStatus ? (
         <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{backupStatus}</p>
       ) : null}
       {debugStatus ? (
         <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{debugStatus}</p>
       ) : null}
-    </div>
+      {restoreStatus ? (
+        <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{restoreStatus}</p>
+      ) : null}
+    </>
   );
+}
+
+function createDismissRestoreProgressHandler(
+  setRestoreProgress: (progress: RestoreCloudProgress | null) => void,
+  setRestoreResult: (result: RestoreCloudResult | null) => void,
+  setRestoreStatus: (status: string | null) => void,
+) {
+  return () => {
+    setRestoreProgress(null);
+    setRestoreResult(null);
+    setRestoreStatus(null);
+  };
 }
 
 function SyncRecoveryHeader({ onRefresh }: { onRefresh: () => void }): ReactElement {
@@ -391,20 +460,30 @@ function SyncRecoveryHeader({ onRefresh }: { onRefresh: () => void }): ReactElem
 function SyncRecoveryActions({
   isExportingBackup,
   isRetrying,
+  isRestoringCloud,
   setDebugStatus,
   setBackupStatus,
   setIsExportingBackup,
   setIsRetrying,
+  setIsRestoringCloud,
+  setRestoreProgress,
+  setRestoreResult,
+  setRestoreStatus,
   setRetryResult,
   setSummary,
   summary,
 }: {
   isExportingBackup: boolean;
   isRetrying: boolean;
+  isRestoringCloud: boolean;
   setDebugStatus: (status: string | null) => void;
   setBackupStatus: (status: string | null) => void;
   setIsExportingBackup: (isExporting: boolean) => void;
   setIsRetrying: (isRetrying: boolean) => void;
+  setIsRestoringCloud: (isRestoring: boolean) => void;
+  setRestoreProgress: (progress: RestoreCloudProgress | null) => void;
+  setRestoreResult: (result: RestoreCloudResult | null) => void;
+  setRestoreStatus: (status: string | null) => void;
   setRetryResult: (result: RetrySyncResult | null) => void;
   setSummary: (summary: SyncStatusSummary | null) => void;
   summary: SyncStatusSummary | null;
@@ -439,11 +518,21 @@ function SyncRecoveryActions({
       .catch(() => setBackupStatus('Backup export failed.'))
       .finally(() => setIsExportingBackup(false));
   };
+  const restoreCloud = createRestoreCloudHandler({
+    setIsRestoringCloud,
+    setRestoreProgress,
+    setRestoreResult,
+    setRestoreStatus,
+    setSummary,
+  });
 
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2">
-      <SettingsButton disabled={isRetrying} isPrimary onClick={retryNow}>
+      <SettingsButton disabled={isRetrying || isRestoringCloud} isPrimary onClick={retryNow}>
         {isRetrying ? 'Retrying...' : 'Retry sync now'}
+      </SettingsButton>
+      <SettingsButton disabled={isRetrying || isRestoringCloud} onClick={restoreCloud}>
+        {isRestoringCloud ? 'Restoring Cloud...' : 'Restore Cloud from this device'}
       </SettingsButton>
       <SettingsButton disabled={isExportingBackup} onClick={exportBackup}>
         {isExportingBackup ? 'Exporting...' : 'Export local backup'}
@@ -453,6 +542,115 @@ function SyncRecoveryActions({
       </SettingsButton>
     </div>
   );
+}
+
+function createRestoreCloudHandler({
+  setIsRestoringCloud,
+  setRestoreProgress,
+  setRestoreResult,
+  setRestoreStatus,
+  setSummary,
+}: RestoreCloudActionState) {
+  return () => {
+    const confirmed = window.confirm(
+      'Restore Cloud from the documents stored on this computer? This is safe to run again, but keep Goyo open until it finishes.',
+    );
+
+    if (!confirmed) return;
+
+    setIsRestoringCloud(true);
+    setRestoreProgress(null);
+    setRestoreResult(null);
+    setRestoreStatus('Restoring Cloud from this device. Keep Goyo open until this finishes.');
+    void window.writerDesktop.sync
+      .restoreCloudFromLocal()
+      .then((result) => {
+        setRestoreResult(result);
+        setRestoreStatus('Cloud restored from this device.');
+      })
+      .then(() => window.writerDesktop.sync.getStatusSummary())
+      .then(setSummary)
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : 'Cloud restore failed.';
+        setRestoreStatus(`Cloud restore failed: ${message}`);
+      })
+      .finally(() => setIsRestoringCloud(false));
+  };
+}
+
+function RestoreCloudProgressPanel({
+  onDismiss,
+  progress,
+  result,
+}: {
+  onDismiss: () => void;
+  progress: RestoreCloudProgress | null;
+  result: RestoreCloudResult | null;
+}): ReactElement | null {
+  if (!progress && !result) {
+    return null;
+  }
+
+  const percent = progress
+    ? Math.round((progress.completed / Math.max(1, progress.total)) * 100)
+    : 100;
+
+  return (
+    <div className="mt-3 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-3 text-[var(--goyo-text-muted)] text-xs">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-medium text-[var(--goyo-text)]">Cloud restore progress</p>
+        <button
+          aria-label="Close cloud restore progress"
+          className="rounded-full px-2 py-0.5 text-[var(--goyo-text-faint)] hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
+          onClick={onDismiss}
+          type="button"
+        >
+          Close
+        </button>
+      </div>
+      {progress ? (
+        <>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--goyo-border)]">
+            <div
+              className="h-full rounded-full bg-[var(--goyo-accent)] transition-[width]"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <p className="mt-2">
+            {formatRestorePhase(progress.phase)} {Math.min(progress.total, progress.completed + 1)}{' '}
+            / {progress.total}
+          </p>
+        </>
+      ) : null}
+      {result ? (
+        <div className="mt-2 grid gap-1 sm:grid-cols-2">
+          <p>Books pushed: {result.booksPushed}</p>
+          <p>Chapters pushed: {result.chaptersPushed}</p>
+          <p>Documents pushed: {result.documentsPushed}</p>
+          <p>Clients registered: {result.syncClientsRegistered}</p>
+          <p>Updates pushed: {result.updatesPushed}</p>
+          <p>Snapshots pushed: {result.snapshotsPushed}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatRestorePhase(phase: RestoreCloudProgress['phase']): string {
+  switch (phase) {
+    case 'books':
+      return 'Uploading books';
+    case 'chapters':
+      return 'Uploading chapters';
+    case 'documents':
+      return 'Uploading documents';
+    case 'sync-clients':
+      return 'Registering clients';
+    case 'document-updates':
+      return 'Uploading document updates';
+    case 'document-snapshots':
+      return 'Uploading snapshots';
+  }
 }
 
 function SyncRetryResult({ result }: { result: RetrySyncResult | null }): ReactElement | null {

@@ -234,6 +234,8 @@ function createPushStore({ attempts }: { attempts: FailureAttempt[] }): DesktopL
   const queueItem = createQueueItem('sync_update_a', 'document-update', update.id);
 
   return {
+    listAllBooks: () => [],
+    listAllChapters: () => [],
     listAllDocuments: () => [createDocument()],
     listAllDocumentSnapshots: () => [],
     listAllDocumentUpdates: () => [update],

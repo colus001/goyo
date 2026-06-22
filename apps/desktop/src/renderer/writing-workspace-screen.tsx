@@ -182,11 +182,45 @@ function getWritingShellProps(
     onSidebarCollapsedChange: workspace.setSidebarCollapsed,
     onStartQuickDraft: workspace.startQuickDraft,
     onUpdateBookAccentColor: workspace.updateBookAccentColor,
-    updateControl: workspace.isSidebarCollapsed ? undefined : (
-      <UpdateNotification isSidebarCollapsed={workspace.isSidebarCollapsed} />
-    ),
+    updateControl: getTopBarStatusControls(workspace),
     wordCountLabel,
   };
+}
+
+function getTopBarStatusControls(workspace: WritingWorkspaceState) {
+  const syncLabel = workspace.syncProgressLabel ?? getQuietSyncStatusLabel(workspace.syncStatus);
+
+  return (
+    <div className="flex items-center gap-2">
+      {syncLabel ? <SyncStatusChip label={syncLabel} /> : null}
+      {workspace.isSidebarCollapsed ? null : (
+        <UpdateNotification isSidebarCollapsed={workspace.isSidebarCollapsed} />
+      )}
+    </div>
+  );
+}
+
+function getQuietSyncStatusLabel(syncStatus: WritingWorkspaceState['syncStatus']) {
+  switch (syncStatus) {
+    case 'Syncing':
+      return 'Syncing...';
+    case 'Sync pending':
+      return 'Sync pending';
+    case 'Sync needs attention':
+      return 'Sync needs attention';
+    case 'Offline':
+      return 'Offline';
+    default:
+      return null;
+  }
+}
+
+function SyncStatusChip({ label }: { label: string }) {
+  return (
+    <span className="rounded-full border border-[var(--goyo-border)] bg-[var(--goyo-raised)] px-2.5 py-1 font-medium text-[var(--goyo-text-faint)] text-[0.66rem] uppercase tracking-[0.11em]">
+      {label}
+    </span>
+  );
 }
 
 function WritingWorkspaceContent({
