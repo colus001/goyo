@@ -243,20 +243,22 @@ async function handleStaticFileRequest(
   url: URL,
   env: EnvWithR2,
 ): Promise<Response | null> {
-  if (request.method !== 'GET') {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
     return null;
   }
+
+  const includeBody = request.method === 'GET';
 
   const downloadTarget = matchDownloadRoute(url.pathname);
 
   if (downloadTarget) {
-    return serveDownload(downloadTarget, env.RELEASES);
+    return serveDownload(downloadTarget, env.RELEASES, { includeBody });
   }
 
   const releaseFileName = matchReleaseRoute(url.pathname);
 
   if (releaseFileName) {
-    return serveReleaseFile(releaseFileName, env.RELEASES);
+    return serveReleaseFile(releaseFileName, env.RELEASES, { includeBody });
   }
 
   return null;
