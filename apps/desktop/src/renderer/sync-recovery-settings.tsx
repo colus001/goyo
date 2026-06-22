@@ -353,6 +353,11 @@ function SyncRecoveryCard(): ReactElement {
 
   useEffect(refreshSummary, []);
   useEffect(() => window.writerDesktop.sync.onRestoreCloudProgress(setRestoreProgress), []);
+  const dismissRestoreProgress = createDismissRestoreProgressHandler(
+    setRestoreProgress,
+    setRestoreResult,
+    setRestoreStatus,
+  );
 
   return (
     <div className="rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/45 p-4">
@@ -368,7 +373,11 @@ function SyncRecoveryCard(): ReactElement {
         </p>
       ) : null}
       <SyncRetryResult result={retryResult} />
-      <RestoreCloudProgressPanel progress={restoreProgress} result={restoreResult} />
+      <RestoreCloudProgressPanel
+        onDismiss={dismissRestoreProgress}
+        progress={restoreProgress}
+        result={restoreResult}
+      />
       <SyncFailureList failures={summary?.recentFailures ?? []} />
       <SyncRecoveryActions
         isExportingBackup={isExportingBackup}
@@ -386,6 +395,26 @@ function SyncRecoveryCard(): ReactElement {
         setSummary={setSummary}
         summary={summary}
       />
+      <SyncRecoveryStatusMessages
+        backupStatus={backupStatus}
+        debugStatus={debugStatus}
+        restoreStatus={restoreStatus}
+      />
+    </div>
+  );
+}
+
+function SyncRecoveryStatusMessages({
+  backupStatus,
+  debugStatus,
+  restoreStatus,
+}: {
+  backupStatus: string | null;
+  debugStatus: string | null;
+  restoreStatus: string | null;
+}): ReactElement | null {
+  return (
+    <>
       {backupStatus ? (
         <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{backupStatus}</p>
       ) : null}
@@ -395,8 +424,20 @@ function SyncRecoveryCard(): ReactElement {
       {restoreStatus ? (
         <p className="mt-3 text-[var(--goyo-text-muted)] text-xs">{restoreStatus}</p>
       ) : null}
-    </div>
+    </>
   );
+}
+
+function createDismissRestoreProgressHandler(
+  setRestoreProgress: (progress: RestoreCloudProgress | null) => void,
+  setRestoreResult: (result: RestoreCloudResult | null) => void,
+  setRestoreStatus: (status: string | null) => void,
+) {
+  return () => {
+    setRestoreProgress(null);
+    setRestoreResult(null);
+    setRestoreStatus(null);
+  };
 }
 
 function SyncRecoveryHeader({ onRefresh }: { onRefresh: () => void }): ReactElement {
@@ -538,9 +579,11 @@ function createRestoreCloudHandler({
 }
 
 function RestoreCloudProgressPanel({
+  onDismiss,
   progress,
   result,
 }: {
+  onDismiss: () => void;
   progress: RestoreCloudProgress | null;
   result: RestoreCloudResult | null;
 }): ReactElement | null {
@@ -554,7 +597,17 @@ function RestoreCloudProgressPanel({
 
   return (
     <div className="mt-3 rounded-xl border border-[var(--goyo-border)] bg-[var(--goyo-paper)]/70 p-3 text-[var(--goyo-text-muted)] text-xs">
-      <p className="font-medium text-[var(--goyo-text)]">Cloud restore progress</p>
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-medium text-[var(--goyo-text)]">Cloud restore progress</p>
+        <button
+          aria-label="Close cloud restore progress"
+          className="rounded-full px-2 py-0.5 text-[var(--goyo-text-faint)] hover:bg-[var(--goyo-accent-soft)] hover:text-[var(--goyo-text)]"
+          onClick={onDismiss}
+          type="button"
+        >
+          Close
+        </button>
+      </div>
       {progress ? (
         <>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--goyo-border)]">
