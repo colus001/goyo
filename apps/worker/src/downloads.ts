@@ -75,8 +75,10 @@ export function matchReleaseRoute(pathname: string): string | null {
 export async function serveReleaseFile(
   filename: string,
   releasesBucket: R2Bucket | undefined,
+  options: { includeBody?: boolean } = {},
 ): Promise<Response> {
-  const fromR2 = await tryServeReleaseFromR2(filename, releasesBucket);
+  const includeBody = options.includeBody ?? true;
+  const fromR2 = await tryServeReleaseFromR2(filename, releasesBucket, includeBody);
 
   if (fromR2) {
     return fromR2;
@@ -100,6 +102,7 @@ export async function serveReleaseFile(
 async function tryServeReleaseFromR2(
   filename: string,
   releasesBucket: R2Bucket | undefined,
+  includeBody: boolean,
 ): Promise<Response | null> {
   if (!releasesBucket) {
     return null;
@@ -126,7 +129,7 @@ async function tryServeReleaseFromR2(
     headers['Content-Disposition'] = `attachment; filename="${filename}"`;
   }
 
-  return new Response(r2Object.body, {
+  return new Response(includeBody ? r2Object.body : null, {
     headers,
     status: 200,
   });
@@ -135,13 +138,16 @@ async function tryServeReleaseFromR2(
 export async function serveDownload(
   target: DownloadTarget,
   releasesBucket: R2Bucket | undefined,
+  options: { includeBody?: boolean } = {},
 ): Promise<Response> {
+  const includeBody = options.includeBody ?? true;
+
   if (releasesBucket) {
     const r2Key = `${R2_KEY_PREFIX}/${R2_FILE_NAMES[target]}`;
     const r2Object = await releasesBucket.get(r2Key);
 
     if (r2Object) {
-      return new Response(r2Object.body, {
+      return new Response(includeBody ? r2Object.body : null, {
         headers: {
           'Cache-Control': `public, max-age=${REDIRECT_CACHE_SECONDS}, s-maxage=${REDIRECT_CACHE_SECONDS}`,
           'Content-Disposition': `attachment; filename="${R2_FILE_NAMES[target]}"`,
