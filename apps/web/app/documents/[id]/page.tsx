@@ -2,10 +2,13 @@ import { notFound, redirect } from 'next/navigation';
 import type { ReactElement } from 'react';
 import {
   serverAuthMe,
+  serverFetchBooks,
+  serverFetchChapters,
   serverFetchDocumentContent,
   serverFetchDocumentMetadata,
   serverFetchDocumentUpdates,
 } from '@/lib/server-api';
+import type { CloudBook, CloudChapter, CloudDocument } from '@/lib/types';
 import { CloudDocumentEditor } from './cloud-document-editor';
 
 export default async function DocumentDetailPage({
@@ -21,9 +24,11 @@ export default async function DocumentDetailPage({
 
   const { id } = await params;
   const documentId = decodeURIComponent(id);
-  const [metadataResult, contentResult] = await Promise.all([
+  const [metadataResult, contentResult, booksResult, chaptersResult] = await Promise.all([
     serverFetchDocumentMetadata(documentId),
     serverFetchDocumentContent(documentId),
+    serverFetchBooks(),
+    serverFetchChapters(),
   ]);
 
   if (!metadataResult.ok || !metadataResult.value?.document) {
@@ -49,17 +54,45 @@ export default async function DocumentDetailPage({
   }
 
   const updates = updatesResult.value?.updates ?? [];
+  const contextLabel = createDocumentContextLabel(
+    metadataResult.value.document,
+    booksResult.value?.books ?? [],
+    chaptersResult.value?.chapters ?? [],
+  );
 
   return (
     <CloudDocumentEditor
+      contextLabel={contextLabel}
       document={metadataResult.value.document}
       documentId={documentId}
       initialSnapshotBase64={content.snapshotBase64}
       initialUpdateBase64Values={updates.map((update) => update.updateBase64)}
-      key={documentId}
       latestUpdateId={updates.at(-1)?.id ?? content.snapshotLastUpdateId ?? null}
     />
   );
+}
+
+function createDocumentContextLabel(
+  document: CloudDocument,
+  books: CloudBook[],
+  chapters: CloudChapter[],
+): string {
+  return createContextLabel({
+    bookTitle: books.find((book) => book.id === document.bookId)?.title,
+    chapterTitle: document.chapterId
+      ? chapters.find((chapter) => chapter.id === document.chapterId)?.title
+      : null,
+  });
+}
+
+function createContextLabel({
+  bookTitle,
+  chapterTitle,
+}: {
+  bookTitle?: string;
+  chapterTitle?: string | null;
+}): string {
+  return `${bookTitle || 'Untitled book'} / ${chapterTitle || 'Book-level episode'}`;
 }
 
 function CloudDocumentError({ message }: { message: string }): ReactElement {

@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import type { CloudDocument, CloudUser } from './types';
+import type { CloudBook, CloudChapter, CloudDocument, CloudUser } from './types';
 
 const AUTH_COOKIE_NAME = 'goyo_session';
 
@@ -32,6 +32,19 @@ export async function serverAuthMe(): Promise<ApiResult<{ user: CloudUser }>> {
     if (!body.user) throw new Error('Not signed in.');
     return { user: body.user };
   });
+}
+
+export async function serverFetchBooks(): Promise<ApiResult<{ books: CloudBook[] }>> {
+  return serverFetchJson<{ books?: CloudBook[] }, { books: CloudBook[] }>('/books', (body) => ({
+    books: body.books ?? [],
+  }));
+}
+
+export async function serverFetchChapters(): Promise<ApiResult<{ chapters: CloudChapter[] }>> {
+  return serverFetchJson<{ chapters?: CloudChapter[] }, { chapters: CloudChapter[] }>(
+    '/chapters',
+    (body) => ({ chapters: body.chapters ?? [] }),
+  );
 }
 
 export async function serverFetchDocuments(): Promise<ApiResult<{ documents: CloudDocument[] }>> {

@@ -1,5 +1,17 @@
 import { APP_NAME } from '@writer/shared';
 import { authorizeSyncRequest, type EnvWithSyncAuth, type SyncAuthContext } from './auth';
+import {
+  getBookMetadata,
+  listBooks,
+  matchBookMetadataRoute,
+  upsertBookMetadata,
+} from './book-metadata';
+import {
+  getChapterMetadata,
+  listChapters,
+  matchChapterMetadataRoute,
+  upsertChapterMetadata,
+} from './chapter-metadata';
 import { handleCloudAuthRequest } from './cloud-auth-routes';
 import {
   getDocumentMetadata,
@@ -97,6 +109,14 @@ async function handleSyncApiRequest(
     return Response.json({ auth: auth.context.authMode, ok: true, storage: 'd1' });
   }
 
+  if (url.pathname === '/v1/books' && request.method === 'GET') {
+    return listBooks(env, auth.context);
+  }
+
+  if (url.pathname === '/v1/chapters' && request.method === 'GET') {
+    return listChapters(env, auth.context);
+  }
+
   if (url.pathname === '/v1/documents' && request.method === 'GET') {
     return listDocuments(env, auth.context);
   }
@@ -108,10 +128,50 @@ async function handleSyncApiRequest(
   }
 
   return (
+    (await handleBookMetadataRequest(request, env, auth.context, url)) ??
+    (await handleChapterMetadataRequest(request, env, auth.context, url)) ??
     (await handleDocumentMetadataRequest(request, env, auth.context, url)) ??
     (await handleDocumentUpdateRequest(request, env, auth.context, url)) ??
     (await handleDocumentSnapshotRequest(request, env, auth.context, url))
   );
+}
+
+async function handleBookMetadataRequest(
+  request: Request,
+  env: Env,
+  auth: SyncAuthContext,
+  url: URL,
+): Promise<Response | null> {
+  const metadataRoute = matchBookMetadataRoute(url.pathname);
+
+  if (metadataRoute && request.method === 'PUT') {
+    return upsertBookMetadata(request, env, auth, metadataRoute.bookId);
+  }
+
+  if (metadataRoute && request.method === 'GET') {
+    return getBookMetadata(env, auth, metadataRoute.bookId);
+  }
+
+  return null;
+}
+
+async function handleChapterMetadataRequest(
+  request: Request,
+  env: Env,
+  auth: SyncAuthContext,
+  url: URL,
+): Promise<Response | null> {
+  const metadataRoute = matchChapterMetadataRoute(url.pathname);
+
+  if (metadataRoute && request.method === 'PUT') {
+    return upsertChapterMetadata(request, env, auth, metadataRoute.chapterId);
+  }
+
+  if (metadataRoute && request.method === 'GET') {
+    return getChapterMetadata(env, auth, metadataRoute.chapterId);
+  }
+
+  return null;
 }
 
 async function handleDocumentMetadataRequest(
