@@ -133,6 +133,7 @@ export async function pushPendingDocumentUpdates(
 
     try {
       await pushDocumentMetadata(connection, document);
+      await registerSyncClient(connection, update.clientId);
       await pushDocumentUpdate(connection, update);
       store.markSyncItemCompleted(item.id, new Date().toISOString());
       pushedUpdateCount += 1;
@@ -487,8 +488,11 @@ export async function testSyncConnection(
   return fetchJson<{ ok: boolean }>(connection, '/v1/sync/status', { method: 'GET' });
 }
 
-async function registerSyncClient(connection: SyncConnectionSettings) {
-  await fetchJson(connection, `/v1/sync/clients/${encodeURIComponent(connection.clientId)}`, {
+async function registerSyncClient(
+  connection: SyncConnectionSettings,
+  clientId = connection.clientId,
+) {
+  await fetchJson(connection, `/v1/sync/clients/${encodeURIComponent(clientId)}`, {
     method: 'PUT',
     body: JSON.stringify({
       lastSeenAt: new Date().toISOString(),
