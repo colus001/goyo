@@ -62,6 +62,8 @@ function createPushStore({
   const queueItem = createQueueItem(update.id);
 
   return {
+    listAllBooks: () => [],
+    listAllChapters: () => [],
     listAllDocuments: () => [createDocument()],
     listAllDocumentSnapshots: () => [],
     listAllDocumentUpdates: () => [update],

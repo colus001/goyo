@@ -405,13 +405,20 @@ async function pushDocumentMetadata(
 }
 
 async function pushWorkspaceMetadata(store: DesktopLocalStore, connection: SyncConnectionSettings) {
+  const books = store.listAllBooks();
+  const chapters = store.listAllChapters();
+
+  if (books.length === 0 && chapters.length === 0) {
+    return;
+  }
+
   await registerSyncClient(connection);
 
-  for (const book of store.listAllBooks()) {
+  for (const book of books) {
     await pushBookMetadata(connection, book);
   }
 
-  for (const chapter of store.listAllChapters()) {
+  for (const chapter of chapters) {
     await pushChapterMetadata(connection, chapter);
   }
 }

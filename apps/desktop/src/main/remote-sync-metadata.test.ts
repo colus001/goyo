@@ -36,6 +36,7 @@ describe('remote workspace metadata push', () => {
       '/v1/chapters/chapter_1',
       '/v1/sync/clients/client_desktop',
       '/v1/documents/doc_1',
+      '/v1/sync/clients/client_1',
     ]);
     expect(
       requests.find((request) => request.url.endsWith('/v1/books/book_1'))?.body,
