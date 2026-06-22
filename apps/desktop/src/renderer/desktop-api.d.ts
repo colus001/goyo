@@ -10,6 +10,21 @@ import type {
 import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 
+type RestoreCloudProgressPhase =
+  | 'books'
+  | 'chapters'
+  | 'documents'
+  | 'sync-clients'
+  | 'document-updates'
+  | 'document-snapshots';
+
+interface RestoreCloudProgress {
+  completed: number;
+  current: number;
+  phase: RestoreCloudProgressPhase;
+  total: number;
+}
+
 declare global {
   interface Window {
     writerDesktop: {
@@ -153,6 +168,15 @@ declare global {
           updatePull: { pulledUpdateCount: number; skippedDocumentCount: number };
           updatePush: { pushedUpdateCount: number; skippedUpdateCount: number };
         }>;
+        restoreCloudFromLocal: () => Promise<{
+          booksPushed: number;
+          chaptersPushed: number;
+          documentsPushed: number;
+          snapshotsPushed: number;
+          syncClientsRegistered: number;
+          updatesPushed: number;
+        }>;
+        onRestoreCloudProgress: (callback: (progress: RestoreCloudProgress) => void) => () => void;
         testConnection: () => Promise<{ ok: boolean }>;
       };
       updater: {

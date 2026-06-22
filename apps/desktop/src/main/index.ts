@@ -36,6 +36,7 @@ import {
   pullRemoteDocumentUpdates,
   pushPendingDocumentSnapshots,
   pushPendingDocumentUpdates,
+  restoreCloudFromLocal,
   retryRemoteSyncNow,
   type SyncConnectionSettings,
   testSyncConnection,
@@ -452,6 +453,16 @@ function registerDocumentIpc() {
       return await retryRemoteSyncNow(store, getSyncConnection());
     } catch (error) {
       console.error('Failed to retry remote sync', getErrorMessage(error));
+      throw error;
+    }
+  });
+  ipcMain.handle('sync:restoreCloudFromLocal', async (event) => {
+    try {
+      return await restoreCloudFromLocal(store, getSyncConnection(), (progress) => {
+        event.sender.send('sync:restoreCloudProgress', progress);
+      });
+    } catch (error) {
+      console.error('Failed to restore cloud from local data', getErrorMessage(error));
       throw error;
     }
   });

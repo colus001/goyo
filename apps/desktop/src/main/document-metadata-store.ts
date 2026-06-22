@@ -398,10 +398,15 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     VALUES (@id, @documentId, @clientId, @update, @createdAt);
   `);
   const saveDocumentSnapshotStatement = database.prepare(`
-    INSERT OR IGNORE INTO document_snapshots (
+    INSERT INTO document_snapshots (
       id, document_id, last_update_id, snapshot_blob, created_at
     )
-    VALUES (@id, @documentId, @lastUpdateId, @snapshot, @createdAt);
+    VALUES (@id, @documentId, @lastUpdateId, @snapshot, @createdAt)
+    ON CONFLICT(id) DO UPDATE SET
+      document_id = excluded.document_id,
+      last_update_id = excluded.last_update_id,
+      snapshot_blob = excluded.snapshot_blob,
+      created_at = excluded.created_at;
   `);
   const getLatestDocumentSnapshotStatement = database.prepare(`
     SELECT id, document_id, last_update_id, snapshot_blob, created_at

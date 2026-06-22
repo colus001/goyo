@@ -104,7 +104,7 @@ describe.skipIf(!canRunNativeSqliteTests)('desktop local document snapshot store
     expect(snapshot?.snapshot).toBeInstanceOf(Uint8Array);
   });
 
-  it('ignores duplicate snapshot ids', () => {
+  it('updates duplicate snapshot ids so remote repair can refresh local content', () => {
     const store = createTestStore();
     store.saveDocument(createTestDocument('doc_1'));
 
@@ -124,11 +124,11 @@ describe.skipIf(!canRunNativeSqliteTests)('desktop local document snapshot store
     });
 
     expect(store.getLatestDocumentSnapshot('doc_1')).toEqual({
-      createdAt: '2026-06-12T10:00:00.000Z',
+      createdAt: '2026-06-12T10:01:00.000Z',
       documentId: 'doc_1',
       id: 'snapshot_1',
-      lastUpdateId: 'update_1',
-      snapshot: new Uint8Array([1]),
+      lastUpdateId: 'update_2',
+      snapshot: new Uint8Array([2]),
     });
   });
 });

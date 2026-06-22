@@ -62,6 +62,7 @@ export interface WritingWorkspaceState {
   showLibrary: () => void;
   showSettings: () => void;
   startQuickDraft: () => void;
+  syncProgressLabel: string | null;
   syncStatus: SyncStatus;
   updateAppSettings: (settings: AppSettings) => void;
   updateBookAccentColor: (bookId: string, accentColor: string) => void;

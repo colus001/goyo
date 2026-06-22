@@ -202,6 +202,51 @@ const desktopApi = {
         updatePull: { pulledUpdateCount: number; skippedDocumentCount: number };
         updatePush: { pushedUpdateCount: number; skippedUpdateCount: number };
       }>,
+    restoreCloudFromLocal: () =>
+      ipcRenderer.invoke('sync:restoreCloudFromLocal') as Promise<{
+        booksPushed: number;
+        chaptersPushed: number;
+        documentsPushed: number;
+        snapshotsPushed: number;
+        syncClientsRegistered: number;
+        updatesPushed: number;
+      }>,
+    onRestoreCloudProgress: (
+      callback: (progress: {
+        completed: number;
+        current: number;
+        phase:
+          | 'books'
+          | 'chapters'
+          | 'documents'
+          | 'sync-clients'
+          | 'document-updates'
+          | 'document-snapshots';
+        total: number;
+      }) => void,
+    ) => {
+      const listener = (
+        _event: IpcRendererEvent,
+        progress: {
+          completed: number;
+          current: number;
+          phase:
+            | 'books'
+            | 'chapters'
+            | 'documents'
+            | 'sync-clients'
+            | 'document-updates'
+            | 'document-snapshots';
+          total: number;
+        },
+      ) => {
+        callback(progress);
+      };
+      ipcRenderer.on('sync:restoreCloudProgress', listener);
+      return () => {
+        ipcRenderer.removeListener('sync:restoreCloudProgress', listener);
+      };
+    },
     testConnection: () => ipcRenderer.invoke('sync:testConnection') as Promise<{ ok: boolean }>,
   },
   updater: {

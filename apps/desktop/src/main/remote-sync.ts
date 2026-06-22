@@ -62,10 +62,40 @@ interface PullRemoteSnapshotsResult {
   skippedDocumentCount: number;
 }
 
+export interface RestoreCloudProgress {
+  completed: number;
+  current: number;
+  phase: RestoreCloudProgressPhase;
+  total: number;
+}
+
+type RestoreCloudProgressPhase =
+  | 'books'
+  | 'chapters'
+  | 'documents'
+  | 'sync-clients'
+  | 'document-updates'
+  | 'document-snapshots';
+
+export interface RestoreCloudResult {
+  booksPushed: number;
+  chaptersPushed: number;
+  documentsPushed: number;
+  snapshotsPushed: number;
+  syncClientsRegistered: number;
+  updatesPushed: number;
+}
+
 interface SyncFailureDetails {
   lastEndpoint: string | null;
   lastError: string | null;
   lastHttpStatus: number | null;
+}
+
+interface RestoreCloudContext {
+  completed: number;
+  onProgress?: (progress: RestoreCloudProgress) => void;
+  total: number;
 }
 
 interface RemoteDocumentUpdatesResponse {
@@ -326,6 +356,77 @@ export async function retryRemoteSyncNow(
   const snapshotPull = await pullRemoteDocumentSnapshots(store, connection);
 
   return { snapshotPull, snapshotPush, updatePull, updatePush };
+}
+
+export async function restoreCloudFromLocal(
+  store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
+  onProgress?: (progress: RestoreCloudProgress) => void,
+): Promise<RestoreCloudResult> {
+  if (!isSyncConnectionReady(connection)) {
+    throw new Error('Remote sync is not configured.');
+  }
+
+  const books = store.listAllBooks();
+  const chapters = store.listAllChapters();
+  const documents = store.listAllDocuments();
+  const updates = store.listAllDocumentUpdates();
+  const snapshots = store.listAllDocumentSnapshots();
+  const syncClientIds = [
+    ...new Set([connection.clientId, ...updates.map((update) => update.clientId)]),
+  ];
+  const total =
+    books.length +
+    chapters.length +
+    documents.length +
+    syncClientIds.length +
+    updates.length +
+    snapshots.length;
+  const context: RestoreCloudContext = { completed: 0, onProgress, total };
+
+  await restoreCloudRecords(context, 'books', books, (book) => pushBookMetadata(connection, book));
+  await restoreCloudRecords(context, 'chapters', chapters, (chapter) =>
+    pushChapterMetadata(connection, chapter),
+  );
+  await restoreCloudRecords(context, 'documents', documents, (document) =>
+    pushDocumentMetadata(connection, document),
+  );
+  await restoreCloudRecords(context, 'sync-clients', syncClientIds, (clientId) =>
+    registerSyncClient(connection, clientId),
+  );
+  await restoreCloudRecords(context, 'document-updates', updates, (update) =>
+    pushDocumentUpdate(connection, update),
+  );
+  await restoreCloudRecords(context, 'document-snapshots', snapshots, (snapshot) =>
+    pushDocumentSnapshot(connection, snapshot),
+  );
+
+  return {
+    booksPushed: books.length,
+    chaptersPushed: chapters.length,
+    documentsPushed: documents.length,
+    snapshotsPushed: snapshots.length,
+    syncClientsRegistered: syncClientIds.length,
+    updatesPushed: updates.length,
+  };
+}
+
+async function restoreCloudRecords<TRecord>(
+  context: RestoreCloudContext,
+  phase: RestoreCloudProgressPhase,
+  records: TRecord[],
+  upload: (record: TRecord) => Promise<void>,
+) {
+  for (const [index, record] of records.entries()) {
+    context.onProgress?.({
+      completed: context.completed,
+      current: index + 1,
+      phase,
+      total: context.total,
+    });
+    await upload(record);
+    context.completed += 1;
+  }
 }
 
 export function getSyncStatusSummary(store: DesktopLocalStore): SyncStatusSummary {
