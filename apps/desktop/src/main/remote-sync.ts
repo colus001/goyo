@@ -101,18 +101,14 @@ export async function pushPendingDocumentUpdates(
   let skippedUpdateCount = 0;
 
   if (!isSyncConnectionReady(connection)) {
-    const pendingItems = store
-      .listPendingSyncItems()
-      .filter((item) => item.kind === 'document-update');
+    const pendingItems = listPendingDocumentUpdateSyncItems(store);
 
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
   }
 
   await pushWorkspaceMetadata(store, connection);
   ensureLocalRecordsQueuedForRemoteSync(store);
-  const pendingItems = store
-    .listPendingSyncItems()
-    .filter((item) => item.kind === 'document-update');
+  const pendingItems = listPendingDocumentUpdateSyncItems(store);
 
   if (!(await registerSyncClientOrMarkPending(store, connection, pendingItems))) {
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
@@ -150,6 +146,10 @@ export async function pushPendingDocumentUpdates(
   }
 
   return { pushedUpdateCount, skippedUpdateCount };
+}
+
+function listPendingDocumentUpdateSyncItems(store: DesktopLocalStore) {
+  return store.listPendingSyncItems().filter((item) => item.kind === 'document-update');
 }
 
 export async function pullRemoteDocumentUpdates(
