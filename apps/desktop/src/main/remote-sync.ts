@@ -1,5 +1,7 @@
 // biome-ignore lint/nursery/noExcessiveLinesPerFile: Remote sync request, retry, and status helpers are kept together around one API boundary for now.
 import {
+  type BookMetadata,
+  type ChapterMetadata,
   createMissingSyncQueueItems,
   createRecoveryPoint,
   type DocumentMetadata,
@@ -106,6 +108,7 @@ export async function pushPendingDocumentUpdates(
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
   }
 
+  await pushWorkspaceMetadata(store, connection);
   ensureLocalRecordsQueuedForRemoteSync(store);
   const pendingItems = store
     .listPendingSyncItems()
@@ -212,6 +215,7 @@ export async function pushPendingDocumentSnapshots(
     return { pushedSnapshotCount, skippedSnapshotCount: pendingItems.length };
   }
 
+  await pushWorkspaceMetadata(store, connection);
   ensureLocalRecordsQueuedForRemoteSync(store);
   const pendingItems = store
     .listPendingSyncItems()
@@ -395,6 +399,45 @@ async function pushDocumentMetadata(
       order: document.order,
       title: document.title,
       updatedAt: document.updatedAt,
+    }),
+  });
+}
+
+async function pushWorkspaceMetadata(store: DesktopLocalStore, connection: SyncConnectionSettings) {
+  await registerSyncClient(connection);
+
+  for (const book of store.listAllBooks()) {
+    await pushBookMetadata(connection, book);
+  }
+
+  for (const chapter of store.listAllChapters()) {
+    await pushChapterMetadata(connection, chapter);
+  }
+}
+
+async function pushBookMetadata(connection: SyncConnectionSettings, book: BookMetadata) {
+  await fetchJson(connection, `/v1/books/${encodeURIComponent(book.id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      accentColor: book.accentColor,
+      archivedAt: book.archivedAt,
+      createdAt: book.createdAt,
+      title: book.title,
+      updatedAt: book.updatedAt,
+    }),
+  });
+}
+
+async function pushChapterMetadata(connection: SyncConnectionSettings, chapter: ChapterMetadata) {
+  await fetchJson(connection, `/v1/chapters/${encodeURIComponent(chapter.id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      archivedAt: chapter.archivedAt,
+      bookId: chapter.bookId,
+      createdAt: chapter.createdAt,
+      order: chapter.order,
+      title: chapter.title,
+      updatedAt: chapter.updatedAt,
     }),
   });
 }
