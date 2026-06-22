@@ -2,6 +2,26 @@
 
 PRAGMA foreign_keys = OFF;
 
+DROP TABLE IF EXISTS documents_migration;
+DROP TABLE IF EXISTS document_updates_migration;
+DROP TABLE IF EXISTS document_snapshots_migration;
+DROP TABLE IF EXISTS sync_clients_migration;
+DROP TABLE IF EXISTS document_updates_data_migration;
+DROP TABLE IF EXISTS document_snapshots_data_migration;
+DROP TABLE IF EXISTS sync_clients_data_migration;
+
+CREATE TABLE document_updates_data_migration AS
+SELECT owner_id, id, document_id, client_id, update_blob, created_at, received_at
+FROM document_updates;
+
+CREATE TABLE document_snapshots_data_migration AS
+SELECT owner_id, id, document_id, last_update_id, snapshot_blob, created_at, received_at
+FROM document_snapshots;
+
+CREATE TABLE sync_clients_data_migration AS
+SELECT owner_id, id, name, platform, created_at, registered_at, last_seen_at
+FROM sync_clients;
+
 CREATE TABLE documents_migration (
   owner_id TEXT NOT NULL,
   id TEXT NOT NULL,
@@ -22,7 +42,14 @@ INSERT INTO documents_migration (
 SELECT owner_id, id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
 FROM documents;
 
-CREATE TABLE document_updates_migration (
+DROP TABLE document_snapshots;
+DROP TABLE document_updates;
+DROP TABLE sync_clients;
+DROP TABLE documents;
+
+ALTER TABLE documents_migration RENAME TO documents;
+
+CREATE TABLE document_updates (
   owner_id TEXT NOT NULL,
   id TEXT NOT NULL,
   document_id TEXT NOT NULL,
@@ -34,13 +61,13 @@ CREATE TABLE document_updates_migration (
   FOREIGN KEY(owner_id, document_id) REFERENCES documents(owner_id, id) ON DELETE CASCADE
 );
 
-INSERT INTO document_updates_migration (
+INSERT INTO document_updates (
   owner_id, id, document_id, client_id, update_blob, created_at, received_at
 )
 SELECT owner_id, id, document_id, client_id, update_blob, created_at, received_at
-FROM document_updates;
+FROM document_updates_data_migration;
 
-CREATE TABLE document_snapshots_migration (
+CREATE TABLE document_snapshots (
   owner_id TEXT NOT NULL,
   id TEXT NOT NULL,
   document_id TEXT NOT NULL,
@@ -49,17 +76,16 @@ CREATE TABLE document_snapshots_migration (
   created_at TEXT NOT NULL,
   received_at TEXT NOT NULL,
   PRIMARY KEY (owner_id, id),
-  FOREIGN KEY(owner_id, document_id) REFERENCES documents(owner_id, id) ON DELETE CASCADE,
-  FOREIGN KEY(owner_id, last_update_id) REFERENCES document_updates(owner_id, id) ON DELETE SET NULL
+  FOREIGN KEY(owner_id, document_id) REFERENCES documents(owner_id, id) ON DELETE CASCADE
 );
 
-INSERT INTO document_snapshots_migration (
+INSERT INTO document_snapshots (
   owner_id, id, document_id, last_update_id, snapshot_blob, created_at, received_at
 )
 SELECT owner_id, id, document_id, last_update_id, snapshot_blob, created_at, received_at
-FROM document_snapshots;
+FROM document_snapshots_data_migration;
 
-CREATE TABLE sync_clients_migration (
+CREATE TABLE sync_clients (
   owner_id TEXT NOT NULL,
   id TEXT NOT NULL,
   name TEXT,
@@ -70,21 +96,15 @@ CREATE TABLE sync_clients_migration (
   PRIMARY KEY (owner_id, id)
 );
 
-INSERT INTO sync_clients_migration (
+INSERT INTO sync_clients (
   owner_id, id, name, platform, created_at, registered_at, last_seen_at
 )
 SELECT owner_id, id, name, platform, created_at, registered_at, last_seen_at
-FROM sync_clients;
+FROM sync_clients_data_migration;
 
-DROP TABLE document_snapshots;
-DROP TABLE document_updates;
-DROP TABLE sync_clients;
-DROP TABLE documents;
-
-ALTER TABLE documents_migration RENAME TO documents;
-ALTER TABLE document_updates_migration RENAME TO document_updates;
-ALTER TABLE document_snapshots_migration RENAME TO document_snapshots;
-ALTER TABLE sync_clients_migration RENAME TO sync_clients;
+DROP TABLE document_updates_data_migration;
+DROP TABLE document_snapshots_data_migration;
+DROP TABLE sync_clients_data_migration;
 
 CREATE INDEX IF NOT EXISTS documents_owner_idx
   ON documents(owner_id, id);
