@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { SyncStatus } from './document-workspace-types';
 
-const REMOTE_SYNC_INTERVAL_MS = 4000;
+const REMOTE_SYNC_INTERVAL_MS = 15_000;
 
 export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
   useEffect(() => {
