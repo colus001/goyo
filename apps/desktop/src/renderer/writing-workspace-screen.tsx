@@ -202,8 +202,6 @@ function getTopBarStatusControls(workspace: WritingWorkspaceState) {
 
 function getQuietSyncStatusLabel(syncStatus: WritingWorkspaceState['syncStatus']) {
   switch (syncStatus) {
-    case 'Syncing':
-      return 'Syncing...';
     case 'Sync pending':
       return 'Sync pending';
     case 'Sync needs attention':
