@@ -17,6 +17,9 @@ describe('Goyo Cloud auth endpoints', () => {
   it('creates a new user and returns a desktop bearer token on valid verification', () =>
     expectDesktopVerificationCreatesUser());
 
+  it('creates a mobile bearer token on valid verification', () =>
+    expectMobileVerificationCreatesToken());
+
   it('returns a null token and sets a cookie for web session verification', () =>
     expectWebVerificationSetsCookie());
 
@@ -108,6 +111,27 @@ async function expectDesktopVerificationCreatesUser() {
   expect(body.ok).toBe(true);
   expect(body.token).toEqual(expect.any(String));
   expect(body.user).toEqual({ email: 'writer@example.com', id: expect.any(String) });
+}
+
+async function expectMobileVerificationCreatesToken() {
+  const env = createAuthTestEnv({ authSecret: AUTH_SECRET });
+  const code = await startAndGetCode(env, 'mobile@example.com');
+  const response = await handleCloudAuthRequest(
+    jsonRequest({
+      clientId: 'client_mobile_1',
+      code,
+      email: 'mobile@example.com',
+      sessionKind: 'mobile',
+    }),
+    env,
+    new URL('https://api.example.com/v1/auth/verify'),
+  );
+  expect(response?.status).toBe(200);
+  const body = (await response?.json()) as Record<string, unknown>;
+  expect(body.ok).toBe(true);
+  expect(body.token).toEqual(expect.any(String));
+  expect(body.user).toEqual({ email: 'mobile@example.com', id: expect.any(String) });
+  expect(response?.headers.get('set-cookie')).toBeNull();
 }
 
 async function expectWebVerificationSetsCookie() {

@@ -315,7 +315,7 @@ async function createVerifiedSession(env: EnvWithCloudAuth, input: ValidAuthVeri
     responseBody: {
       account: getDefaultAccountStatus(),
       ok: true,
-      token: input.sessionKind === 'desktop' ? token : null,
+      token: input.sessionKind === 'web' ? null : token,
       user: rowToAuthUser(user),
     } satisfies AuthVerifyResponse,
     token,
@@ -328,7 +328,7 @@ interface ValidAuthVerifyRequest {
   email: string;
   loginCodeId: string | null;
   ok: true;
-  sessionKind: 'desktop' | 'web';
+  sessionKind: 'desktop' | 'mobile' | 'web';
 }
 
 function validateAuthVerifyRequest(
@@ -344,8 +344,12 @@ function validateAuthVerifyRequest(
     return { message: 'Login code must be six digits.', ok: false };
   }
 
-  if (body.sessionKind !== 'desktop' && body.sessionKind !== 'web') {
-    return { message: 'Session kind must be desktop or web.', ok: false };
+  if (
+    body.sessionKind !== 'desktop' &&
+    body.sessionKind !== 'mobile' &&
+    body.sessionKind !== 'web'
+  ) {
+    return { message: 'Session kind must be desktop, mobile, or web.', ok: false };
   }
 
   if (body.clientId !== undefined && typeof body.clientId !== 'string') {
