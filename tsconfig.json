@@ -3,6 +3,7 @@
   "references": [
     { "path": "./apps/desktop" },
     { "path": "./apps/landing" },
+    { "path": "./apps/mobile" },
     { "path": "./apps/worker" },
     { "path": "./packages/core" },
     { "path": "./packages/editor" },

@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Goyo",
+    "slug": "goyo-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "goyo",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "kim.seokjun.goyo.mobile",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "kim.seokjun.goyo.mobile"
+    },
+    "plugins": []
+  }
+}

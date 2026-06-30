@@ -1,0 +1,32 @@
+# Expo
+.expo/
+dist/
+
+# dependencies
+node_modules/
+
+# native build artifacts
+ios/Pods/
+android/.gradle/
+android/app/build/
+android/build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# env
+.env*.local
+
+# macOS
+.DS_Store
