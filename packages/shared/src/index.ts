@@ -32,7 +32,7 @@ export interface AuthVerifyRequest {
   clientId?: SyncClientId;
   code: string;
   email: string;
-  sessionKind: 'desktop' | 'web';
+  sessionKind: 'desktop' | 'mobile' | 'web';
 }
 
 export interface AuthVerifyResponse {
@@ -67,3 +67,37 @@ export interface AuthErrorResponse {
   error: string;
   ok: false;
 }
+
+export type {
+  RemoteBookMetadata,
+  RemoteBooksResponse,
+  RemoteChapterMetadata,
+  RemoteChaptersResponse,
+  RemoteDocumentMetadata,
+  RemoteDocumentSnapshotRecord,
+  RemoteDocumentsResponse,
+  RemoteDocumentUpdateRecord,
+  RemoteDocumentUpdatesResponse,
+  RemoteLatestDocumentSnapshotResponse,
+  RemoteSyncClientInfo,
+  RemoteSyncConnection,
+} from './remote-sync-client';
+export {
+  base64ToBytes,
+  fetchJson,
+  fetchLatestRemoteDocumentSnapshot,
+  fetchRemoteBooks,
+  fetchRemoteChapters,
+  fetchRemoteDocuments,
+  fetchRemoteDocumentUpdates,
+  isRemoteSnapshotNewer,
+  isRemoteSyncConnectionReady,
+  pushRemoteBookMetadata,
+  pushRemoteChapterMetadata,
+  pushRemoteDocumentMetadata,
+  pushRemoteDocumentSnapshot,
+  pushRemoteDocumentUpdate,
+  RemoteSyncRequestError,
+  registerRemoteSyncClient,
+  testRemoteSyncConnection,
+} from './remote-sync-client';
