@@ -1,13 +1,7 @@
 import type { SyncAuthContext } from './auth';
 import type { EnvWithDocumentsDatabase } from './document-updates';
 import { documentBelongsToOwner } from './document-updates';
-import {
-  decodeBase64,
-  encodeBase64,
-  getStorageErrorMessage,
-  jsonError,
-  readJsonBody,
-} from './http';
+import { decodeBase64, encodeBase64, jsonError, readJsonBody, storageErrorResponse } from './http';
 
 interface CreateDocumentSnapshotRequestBody {
   createdAt?: unknown;
@@ -76,7 +70,7 @@ export async function createDocumentSnapshot(
       { status: result.meta.changes === 0 ? 200 : 201 },
     );
   } catch (error) {
-    return jsonError(getStorageErrorMessage(error), 409);
+    return storageErrorResponse(error);
   }
 }
 

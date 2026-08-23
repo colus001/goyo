@@ -146,21 +146,11 @@ declare global {
             recordId: string;
           }>;
         }>;
-        pullRemoteUpdates: () => Promise<{
-          pulledUpdateCount: number;
-          skippedDocumentCount: number;
-        }>;
-        pullRemoteSnapshots: () => Promise<{
-          pulledSnapshotCount: number;
-          skippedDocumentCount: number;
-        }>;
-        pushPendingSnapshots: () => Promise<{
-          pushedSnapshotCount: number;
-          skippedSnapshotCount: number;
-        }>;
-        pushPendingUpdates: () => Promise<{
-          pushedUpdateCount: number;
-          skippedUpdateCount: number;
+        run: () => Promise<{
+          snapshotPull: { pulledSnapshotCount: number; skippedDocumentCount: number };
+          snapshotPush: { pushedSnapshotCount: number; skippedSnapshotCount: number };
+          updatePull: { pulledUpdateCount: number; skippedDocumentCount: number };
+          updatePush: { pushedUpdateCount: number; skippedUpdateCount: number };
         }>;
         retryNow: () => Promise<{
           snapshotPull: { pulledSnapshotCount: number; skippedDocumentCount: number };

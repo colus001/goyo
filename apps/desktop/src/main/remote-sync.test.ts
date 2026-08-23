@@ -179,7 +179,7 @@ function stubRemoteUpdateFetch(
       return Response.json({ ok: true });
     }
 
-    if (init?.method === 'GET' && url.endsWith('/v1/documents/doc_1/updates')) {
+    if (init?.method === 'GET' && url.includes('/v1/documents/doc_1/updates')) {
       return Response.json({ documentId: 'doc_1', updates });
     }
 

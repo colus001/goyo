@@ -34,7 +34,6 @@ describe('remote workspace metadata push', () => {
       '/v1/sync/clients/client_desktop',
       '/v1/books/book_1',
       '/v1/chapters/chapter_1',
-      '/v1/sync/clients/client_desktop',
       '/v1/documents/doc_1',
       '/v1/sync/clients/client_1',
     ]);
@@ -44,6 +43,26 @@ describe('remote workspace metadata push', () => {
     expect(
       requests.find((request) => request.url.endsWith('/v1/chapters/chapter_1'))?.body,
     ).toMatchObject({ bookId: 'book_1', title: 'Chapter' });
+  });
+
+  it('does not write remote metadata when there is no pending content', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const store = createPushStore();
+    store.listAllSyncItems = () => [];
+    store.listAllDocumentUpdates = () => [];
+    store.listPendingSyncItems = () => [];
+
+    const result = await pushPendingDocumentUpdates(store, {
+      clientId: 'client_desktop',
+      enabled: true,
+      serverUrl: 'https://sync.example.com',
+      token: 'token_1',
+    });
+
+    expect(result).toEqual({ pushedUpdateCount: 0, skippedUpdateCount: 0 });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

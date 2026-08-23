@@ -1,0 +1,39 @@
+{
+  "name": "@writer/mobile",
+  "private": true,
+  "version": "0.1.0",
+  "description": "iOS-first Expo mobile app for Goyo Writer.",
+  "license": "MIT",
+  "type": "module",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start --ios",
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "android": "expo start --android",
+    "web": "expo start --web",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@writer/core": "workspace:*",
+    "@writer/shared": "workspace:*",
+    "expo": "56.0.12",
+    "expo-router": "^56.2.11",
+    "expo-secure-store": "~56.0.4",
+    "expo-sqlite": "~56.0.5",
+    "expo-status-bar": "~56.0.4",
+    "expo-system-ui": "~56.0.5",
+    "expo-updates": "~56.0.19",
+    "isomorphic-webcrypto": "^2.3.8",
+    "react": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "4.25.2",
+    "yjs": "^13.6.31"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "typescript": "latest"
+  }
+}

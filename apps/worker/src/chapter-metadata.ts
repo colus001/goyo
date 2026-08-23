@@ -1,6 +1,6 @@
 import type { SyncAuthContext } from './auth';
 import type { EnvWithDocumentsDatabase } from './document-updates';
-import { getStorageErrorMessage, jsonError, readJsonBody } from './http';
+import { jsonError, readJsonBody, storageErrorResponse } from './http';
 
 interface UpsertChapterMetadataRequestBody {
   archivedAt?: unknown;
@@ -75,7 +75,7 @@ export async function upsertChapterMetadata(
 
     return Response.json({ chapterId, ok: true });
   } catch (error) {
-    return jsonError(getStorageErrorMessage(error), 409);
+    return storageErrorResponse(error);
   }
 }
 

@@ -1,6 +1,6 @@
 import type { SyncAuthContext } from './auth';
 import type { EnvWithDocumentsDatabase } from './document-updates';
-import { getStorageErrorMessage, jsonError, readJsonBody } from './http';
+import { jsonError, readJsonBody, storageErrorResponse } from './http';
 
 type DocumentKind = 'draft' | 'episode' | 'note';
 
@@ -87,7 +87,7 @@ export async function upsertDocumentMetadata(
 
     return Response.json({ documentId, ok: true });
   } catch (error) {
-    return jsonError(getStorageErrorMessage(error), 409);
+    return storageErrorResponse(error);
   }
 }
 

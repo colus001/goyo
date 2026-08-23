@@ -1,6 +1,6 @@
 import type { SyncAuthContext } from './auth';
 import type { EnvWithDocumentsDatabase } from './document-updates';
-import { getStorageErrorMessage, jsonError, readJsonBody } from './http';
+import { jsonError, readJsonBody, storageErrorResponse } from './http';
 
 interface RegisterSyncClientRequestBody {
   lastSeenAt?: unknown;
@@ -54,7 +54,7 @@ export async function registerSyncClient(
 
     return Response.json({ clientId, ok: true, ownerId: auth.ownerId });
   } catch (error) {
-    return jsonError(getStorageErrorMessage(error), 409);
+    return storageErrorResponse(error);
   }
 }
 

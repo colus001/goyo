@@ -1,13 +1,20 @@
 // biome-ignore lint/nursery/noExcessiveLinesPerFile: Remote sync request, retry, and status helpers are kept together around one API boundary for now.
+import { createMissingSyncQueueItems, createRecoveryPoint } from '@writer/core';
 import {
-  type BookMetadata,
-  type ChapterMetadata,
-  createMissingSyncQueueItems,
-  createRecoveryPoint,
-  type DocumentMetadata,
-  type DocumentSnapshotRecord,
-  type DocumentUpdateRecord,
-} from '@writer/core';
+  base64ToBytes,
+  fetchLatestRemoteDocumentSnapshot,
+  fetchRemoteDocumentUpdates,
+  isRemoteSnapshotNewer,
+  isRemoteSyncConnectionReady,
+  pushRemoteBookMetadata,
+  pushRemoteChapterMetadata,
+  pushRemoteDocumentMetadata,
+  pushRemoteDocumentSnapshot,
+  pushRemoteDocumentUpdate,
+  RemoteSyncRequestError,
+  registerRemoteSyncClient,
+  testRemoteSyncConnection,
+} from '@writer/shared';
 import type { DesktopLocalStore } from './document-metadata-store';
 import { isSyncItemReadyForRetry } from './sync-retry';
 
@@ -44,7 +51,18 @@ interface SyncFailureSummary {
 }
 
 interface PushOptions {
+  context?: SyncRunContext;
   forceRetry?: boolean;
+}
+
+interface PullOptions {
+  context?: SyncRunContext;
+}
+
+interface SyncRunContext {
+  pushedDocumentIds: Set<string>;
+  registeredClientIds: Set<string>;
+  workspaceMetadataPushed: boolean;
 }
 
 interface PullRemoteUpdatesResult {
@@ -98,26 +116,7 @@ interface RestoreCloudContext {
   total: number;
 }
 
-interface RemoteDocumentUpdatesResponse {
-  documentId: string;
-  updates: Array<{
-    clientId: string;
-    createdAt: string;
-    id: string;
-    updateBase64: string;
-  }>;
-}
-
-interface RemoteLatestDocumentSnapshotResponse {
-  documentId: string;
-  snapshot: {
-    createdAt: string;
-    id: string;
-    lastUpdateId: string | null;
-    snapshotBase64: string;
-  } | null;
-}
-
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: Queue preparation and per-item diagnostics belong to one sync operation.
 export async function pushPendingDocumentUpdates(
   store: DesktopLocalStore,
   connection: SyncConnectionSettings,
@@ -130,17 +129,23 @@ export async function pushPendingDocumentUpdates(
   let pushedUpdateCount = 0;
   let skippedUpdateCount = 0;
 
-  if (!isSyncConnectionReady(connection)) {
+  if (!isRemoteSyncConnectionReady(connection)) {
     const pendingItems = listPendingDocumentUpdateSyncItems(store);
 
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
   }
 
-  await pushWorkspaceMetadata(store, connection);
   ensureLocalRecordsQueuedForRemoteSync(store);
   const pendingItems = listPendingDocumentUpdateSyncItems(store);
+  const context = options.context ?? createSyncRunContext();
 
-  if (!(await registerSyncClientOrMarkPending(store, connection, pendingItems))) {
+  if (pendingItems.length === 0) {
+    return { pushedUpdateCount, skippedUpdateCount };
+  }
+
+  await pushWorkspaceMetadata(store, connection, context);
+
+  if (!(await registerSyncClientOrMarkPending(store, connection, pendingItems, context))) {
     return { pushedUpdateCount, skippedUpdateCount: pendingItems.length };
   }
 
@@ -161,9 +166,9 @@ export async function pushPendingDocumentUpdates(
     }
 
     try {
-      await pushDocumentMetadata(connection, document);
-      await registerSyncClient(connection, update.clientId);
-      await pushDocumentUpdate(connection, update);
+      await pushDocumentMetadata(connection, document, context);
+      await registerSyncClient(connection, update.clientId, context);
+      await pushRemoteDocumentUpdate(connection, update);
       store.markSyncItemCompleted(item.id, new Date().toISOString());
       pushedUpdateCount += 1;
     } catch (error) {
@@ -186,21 +191,22 @@ function listPendingDocumentUpdateSyncItems(store: DesktopLocalStore) {
 export async function pullRemoteDocumentUpdates(
   store: DesktopLocalStore,
   connection: SyncConnectionSettings,
+  options: PullOptions = {},
 ): Promise<PullRemoteUpdatesResult> {
   let pulledUpdateCount = 0;
   let skippedDocumentCount = 0;
 
-  if (!isSyncConnectionReady(connection)) {
+  if (!isRemoteSyncConnectionReady(connection)) {
     return { pulledUpdateCount, skippedDocumentCount };
   }
 
-  await registerSyncClient(connection);
+  const context = options.context ?? createSyncRunContext();
+  await registerSyncClient(connection, connection.clientId, context);
 
   for (const document of store.listDocuments()) {
     try {
-      const localUpdateIds = new Set(
-        store.listDocumentUpdates(document.id).map((update) => update.id),
-      );
+      const localUpdates = store.listDocumentUpdates(document.id);
+      const localUpdateIds = new Set(localUpdates.map((update) => update.id));
       const remoteUpdates = await fetchRemoteDocumentUpdates(connection, document.id, null);
 
       for (const update of remoteUpdates.updates) {
@@ -213,7 +219,7 @@ export async function pullRemoteDocumentUpdates(
           createdAt: update.createdAt,
           documentId: remoteUpdates.documentId,
           id: update.id,
-          update: Buffer.from(update.updateBase64, 'base64'),
+          update: base64ToBytes(update.updateBase64),
         });
         localUpdateIds.add(update.id);
         pulledUpdateCount += 1;
@@ -226,7 +232,8 @@ export async function pullRemoteDocumentUpdates(
   return { pulledUpdateCount, skippedDocumentCount };
 }
 
-export async function pushPendingDocumentSnapshots(
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: Queue preparation and per-item diagnostics belong to one sync operation.
+async function pushPendingDocumentSnapshots(
   store: DesktopLocalStore,
   connection: SyncConnectionSettings,
   options: PushOptions = {},
@@ -238,7 +245,7 @@ export async function pushPendingDocumentSnapshots(
   let pushedSnapshotCount = 0;
   let skippedSnapshotCount = 0;
 
-  if (!isSyncConnectionReady(connection)) {
+  if (!isRemoteSyncConnectionReady(connection)) {
     const pendingItems = store
       .listPendingSyncItems()
       .filter((item) => item.kind === 'document-snapshot');
@@ -246,13 +253,19 @@ export async function pushPendingDocumentSnapshots(
     return { pushedSnapshotCount, skippedSnapshotCount: pendingItems.length };
   }
 
-  await pushWorkspaceMetadata(store, connection);
   ensureLocalRecordsQueuedForRemoteSync(store);
   const pendingItems = store
     .listPendingSyncItems()
     .filter((item) => item.kind === 'document-snapshot');
+  const context = options.context ?? createSyncRunContext();
 
-  if (!(await registerSyncClientOrMarkPending(store, connection, pendingItems))) {
+  if (pendingItems.length === 0) {
+    return { pushedSnapshotCount, skippedSnapshotCount };
+  }
+
+  await pushWorkspaceMetadata(store, connection, context);
+
+  if (!(await registerSyncClientOrMarkPending(store, connection, pendingItems, context))) {
     return { pushedSnapshotCount, skippedSnapshotCount: pendingItems.length };
   }
 
@@ -271,8 +284,8 @@ export async function pushPendingDocumentSnapshots(
     }
 
     try {
-      await pushDocumentMetadata(connection, document);
-      await pushDocumentSnapshot(connection, snapshot);
+      await pushDocumentMetadata(connection, document, context);
+      await pushRemoteDocumentSnapshot(connection, snapshot);
       store.markSyncItemCompleted(item.id, new Date().toISOString());
       pushedSnapshotCount += 1;
     } catch (error) {
@@ -288,18 +301,20 @@ export async function pushPendingDocumentSnapshots(
   return { pushedSnapshotCount, skippedSnapshotCount };
 }
 
-export async function pullRemoteDocumentSnapshots(
+async function pullRemoteDocumentSnapshots(
   store: DesktopLocalStore,
   connection: SyncConnectionSettings,
+  options: PullOptions = {},
 ): Promise<PullRemoteSnapshotsResult> {
   let pulledSnapshotCount = 0;
   let skippedDocumentCount = 0;
 
-  if (!isSyncConnectionReady(connection)) {
+  if (!isRemoteSyncConnectionReady(connection)) {
     return { pulledSnapshotCount, skippedDocumentCount };
   }
 
-  await registerSyncClient(connection);
+  const context = options.context ?? createSyncRunContext();
+  await registerSyncClient(connection, connection.clientId, context);
 
   for (const document of store.listDocuments()) {
     try {
@@ -320,7 +335,7 @@ export async function pullRemoteDocumentSnapshots(
         documentId: remoteSnapshot.documentId,
         id: remoteSnapshot.snapshot.id,
         lastUpdateId: remoteSnapshot.snapshot.lastUpdateId,
-        snapshot: Buffer.from(remoteSnapshot.snapshot.snapshotBase64, 'base64'),
+        snapshot: base64ToBytes(remoteSnapshot.snapshot.snapshotBase64),
       });
       store.saveRecoveryPoint(
         createRecoveryPoint({
@@ -342,18 +357,18 @@ export async function pullRemoteDocumentSnapshots(
   return { pulledSnapshotCount, skippedDocumentCount };
 }
 
-export async function retryRemoteSyncNow(
+export async function synchronizeRemoteDocuments(
   store: DesktopLocalStore,
   connection: SyncConnectionSettings,
+  options: Pick<PushOptions, 'forceRetry'> = {},
 ) {
-  if (isSyncConnectionReady(connection)) {
-    ensureLocalRecordsQueuedForRemoteSync(store);
-  }
-
-  const updatePush = await pushPendingDocumentUpdates(store, connection, { forceRetry: true });
-  const snapshotPush = await pushPendingDocumentSnapshots(store, connection, { forceRetry: true });
-  const updatePull = await pullRemoteDocumentUpdates(store, connection);
-  const snapshotPull = await pullRemoteDocumentSnapshots(store, connection);
+  const context = createSyncRunContext();
+  const pushOptions = { ...options, context };
+  const pullOptions = { context };
+  const updatePush = await pushPendingDocumentUpdates(store, connection, pushOptions);
+  const snapshotPush = await pushPendingDocumentSnapshots(store, connection, pushOptions);
+  const updatePull = await pullRemoteDocumentUpdates(store, connection, pullOptions);
+  const snapshotPull = await pullRemoteDocumentSnapshots(store, connection, pullOptions);
 
   return { snapshotPull, snapshotPush, updatePull, updatePush };
 }
@@ -363,7 +378,7 @@ export async function restoreCloudFromLocal(
   connection: SyncConnectionSettings,
   onProgress?: (progress: RestoreCloudProgress) => void,
 ): Promise<RestoreCloudResult> {
-  if (!isSyncConnectionReady(connection)) {
+  if (!isRemoteSyncConnectionReady(connection)) {
     throw new Error('Remote sync is not configured.');
   }
 
@@ -384,21 +399,23 @@ export async function restoreCloudFromLocal(
     snapshots.length;
   const context: RestoreCloudContext = { completed: 0, onProgress, total };
 
-  await restoreCloudRecords(context, 'books', books, (book) => pushBookMetadata(connection, book));
+  await restoreCloudRecords(context, 'books', books, (book) =>
+    pushRemoteBookMetadata(connection, book),
+  );
   await restoreCloudRecords(context, 'chapters', chapters, (chapter) =>
-    pushChapterMetadata(connection, chapter),
+    pushRemoteChapterMetadata(connection, chapter),
   );
   await restoreCloudRecords(context, 'documents', documents, (document) =>
-    pushDocumentMetadata(connection, document),
+    pushRemoteDocumentMetadata(connection, document),
   );
   await restoreCloudRecords(context, 'sync-clients', syncClientIds, (clientId) =>
     registerSyncClient(connection, clientId),
   );
   await restoreCloudRecords(context, 'document-updates', updates, (update) =>
-    pushDocumentUpdate(connection, update),
+    pushRemoteDocumentUpdate(connection, update),
   );
   await restoreCloudRecords(context, 'document-snapshots', snapshots, (snapshot) =>
-    pushDocumentSnapshot(connection, snapshot),
+    pushRemoteDocumentSnapshot(connection, snapshot),
   );
 
   return {
@@ -461,9 +478,10 @@ async function registerSyncClientOrMarkPending(
   store: DesktopLocalStore,
   connection: SyncConnectionSettings,
   items: Array<{ id: string }>,
+  context: SyncRunContext,
 ): Promise<boolean> {
   try {
-    await registerSyncClient(connection);
+    await registerSyncClient(connection, connection.clientId, context);
     return true;
   } catch (error) {
     markSyncItemsAttempted(store, items, createSyncFailureDetails(error));
@@ -486,221 +504,78 @@ export function ensureLocalRecordsQueuedForRemoteSync(store: DesktopLocalStore):
   return missingItems.length;
 }
 
-async function pushDocumentMetadata(
+async function pushWorkspaceMetadata(
+  store: DesktopLocalStore,
   connection: SyncConnectionSettings,
-  document: DocumentMetadata,
+  context: SyncRunContext,
 ) {
-  await fetchJson(connection, `/v1/documents/${encodeURIComponent(document.id)}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      archivedAt: document.archivedAt,
-      bookId: document.bookId,
-      chapterId: document.chapterId,
-      createdAt: document.createdAt,
-      kind: document.kind,
-      order: document.order,
-      title: document.title,
-      updatedAt: document.updatedAt,
-    }),
-  });
-}
+  if (context.workspaceMetadataPushed) {
+    return;
+  }
 
-async function pushWorkspaceMetadata(store: DesktopLocalStore, connection: SyncConnectionSettings) {
   const books = store.listAllBooks();
   const chapters = store.listAllChapters();
 
   if (books.length === 0 && chapters.length === 0) {
+    context.workspaceMetadataPushed = true;
     return;
   }
 
-  await registerSyncClient(connection);
+  await registerSyncClient(connection, connection.clientId, context);
 
   for (const book of books) {
-    await pushBookMetadata(connection, book);
+    await pushRemoteBookMetadata(connection, book);
   }
 
   for (const chapter of chapters) {
-    await pushChapterMetadata(connection, chapter);
-  }
-}
-
-async function pushBookMetadata(connection: SyncConnectionSettings, book: BookMetadata) {
-  await fetchJson(connection, `/v1/books/${encodeURIComponent(book.id)}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      accentColor: book.accentColor,
-      archivedAt: book.archivedAt,
-      createdAt: book.createdAt,
-      title: book.title,
-      updatedAt: book.updatedAt,
-    }),
-  });
-}
-
-async function pushChapterMetadata(connection: SyncConnectionSettings, chapter: ChapterMetadata) {
-  await fetchJson(connection, `/v1/chapters/${encodeURIComponent(chapter.id)}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      archivedAt: chapter.archivedAt,
-      bookId: chapter.bookId,
-      createdAt: chapter.createdAt,
-      order: chapter.order,
-      title: chapter.title,
-      updatedAt: chapter.updatedAt,
-    }),
-  });
-}
-
-async function pushDocumentUpdate(
-  connection: SyncConnectionSettings,
-  update: DocumentUpdateRecord,
-) {
-  await fetchJson(connection, `/v1/documents/${encodeURIComponent(update.documentId)}/updates`, {
-    method: 'POST',
-    body: JSON.stringify({
-      clientId: update.clientId,
-      createdAt: update.createdAt,
-      id: update.id,
-      updateBase64: Buffer.from(update.update).toString('base64'),
-    }),
-  });
-}
-
-async function pushDocumentSnapshot(
-  connection: SyncConnectionSettings,
-  snapshot: DocumentSnapshotRecord,
-) {
-  await fetchJson(
-    connection,
-    `/v1/documents/${encodeURIComponent(snapshot.documentId)}/snapshots`,
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        createdAt: snapshot.createdAt,
-        id: snapshot.id,
-        lastUpdateId: snapshot.lastUpdateId,
-        snapshotBase64: Buffer.from(snapshot.snapshot).toString('base64'),
-      }),
-    },
-  );
-}
-
-async function fetchRemoteDocumentUpdates(
-  connection: SyncConnectionSettings,
-  documentId: string,
-  afterUpdateId: string | null,
-): Promise<RemoteDocumentUpdatesResponse> {
-  const url = new URL(
-    `${connection.serverUrl}/v1/documents/${encodeURIComponent(documentId)}/updates`,
-  );
-
-  if (afterUpdateId) {
-    url.searchParams.set('afterUpdateId', afterUpdateId);
+    await pushRemoteChapterMetadata(connection, chapter);
   }
 
-  return fetchJson<RemoteDocumentUpdatesResponse>(connection, url, { method: 'GET' });
-}
-
-async function fetchLatestRemoteDocumentSnapshot(
-  connection: SyncConnectionSettings,
-  documentId: string,
-): Promise<RemoteLatestDocumentSnapshotResponse> {
-  return fetchJson<RemoteLatestDocumentSnapshotResponse>(
-    connection,
-    `/v1/documents/${encodeURIComponent(documentId)}/snapshots/latest`,
-    { method: 'GET' },
-  );
-}
-
-function isRemoteSnapshotNewer(
-  remoteSnapshot: RemoteLatestDocumentSnapshotResponse['snapshot'],
-  localSnapshot: DocumentSnapshotRecord,
-) {
-  if (!remoteSnapshot) {
-    return false;
-  }
-
-  const createdAtOrder = remoteSnapshot.createdAt.localeCompare(localSnapshot.createdAt);
-
-  if (createdAtOrder !== 0) {
-    return createdAtOrder > 0;
-  }
-
-  return remoteSnapshot.id > localSnapshot.id;
+  context.workspaceMetadataPushed = true;
 }
 
 export async function testSyncConnection(
   connection: SyncConnectionSettings,
 ): Promise<{ ok: boolean }> {
-  if (!isSyncConnectionReady(connection)) {
-    return { ok: false };
-  }
-
-  return fetchJson<{ ok: boolean }>(connection, '/v1/sync/status', { method: 'GET' });
+  return testRemoteSyncConnection(connection);
 }
 
 async function registerSyncClient(
   connection: SyncConnectionSettings,
   clientId = connection.clientId,
+  context?: SyncRunContext,
 ) {
-  await fetchJson(connection, `/v1/sync/clients/${encodeURIComponent(clientId)}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      lastSeenAt: new Date().toISOString(),
-      name: 'Goyo Desktop',
-      platform: process.platform,
-    }),
-  });
-}
-
-function isSyncConnectionReady(
-  connection: SyncConnectionSettings,
-): connection is SyncConnectionSettings & {
-  token: string;
-} {
-  return connection.enabled && connection.serverUrl.length > 0 && !!connection.token;
-}
-
-async function fetchJson<T = unknown>(
-  connection: SyncConnectionSettings,
-  pathOrUrl: string | URL,
-  init: RequestInit,
-): Promise<T> {
-  const url = pathOrUrl instanceof URL ? pathOrUrl : `${connection.serverUrl}${pathOrUrl}`;
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      authorization: `Bearer ${connection.token ?? ''}`,
-      'content-type': 'application/json',
-      ...init.headers,
-    },
-  });
-
-  if (!response.ok) {
-    throw new RemoteSyncRequestError({
-      endpoint: getSyncEndpoint(url),
-      message: await getSyncErrorMessage(response),
-      status: response.status,
-    });
+  if (context?.registeredClientIds.has(clientId)) {
+    return;
   }
 
-  return (await response.json()) as T;
+  await registerRemoteSyncClient(connection, clientId, {
+    lastSeenAt: new Date().toISOString(),
+    name: 'Goyo Desktop',
+    platform: process.platform,
+  });
+  context?.registeredClientIds.add(clientId);
 }
 
-class RemoteSyncRequestError extends Error {
-  readonly endpoint: string;
-  readonly status: number;
-
-  constructor({
-    endpoint,
-    message,
-    status,
-  }: { endpoint: string; message: string; status: number }) {
-    super(message);
-    this.name = 'RemoteSyncRequestError';
-    this.endpoint = endpoint;
-    this.status = status;
+async function pushDocumentMetadata(
+  connection: SyncConnectionSettings,
+  document: Parameters<typeof pushRemoteDocumentMetadata>[1],
+  context: SyncRunContext,
+) {
+  if (context.pushedDocumentIds.has(document.id)) {
+    return;
   }
+
+  await pushRemoteDocumentMetadata(connection, document);
+  context.pushedDocumentIds.add(document.id);
+}
+
+function createSyncRunContext(): SyncRunContext {
+  return {
+    pushedDocumentIds: new Set(),
+    registeredClientIds: new Set(),
+    workspaceMetadataPushed: false,
+  };
 }
 
 function createSyncFailureDetails(error: unknown): SyncFailureDetails {
@@ -717,26 +592,4 @@ function createSyncFailureDetails(error: unknown): SyncFailureDetails {
     lastError: error instanceof Error ? error.message : 'Unknown sync error',
     lastHttpStatus: null,
   };
-}
-
-async function getSyncErrorMessage(response: Response): Promise<string> {
-  const fallback = `Remote sync request failed with ${response.status}.`;
-
-  try {
-    const body = (await response.json()) as { error?: unknown };
-
-    return typeof body.error === 'string' && body.error.length > 0 ? body.error : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function getSyncEndpoint(url: string | URL): string {
-  try {
-    const parsedUrl = new URL(String(url));
-
-    return `${parsedUrl.pathname}${parsedUrl.search}`;
-  } catch {
-    return String(url);
-  }
 }

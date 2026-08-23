@@ -99,7 +99,7 @@ export async function createSession(
   input: {
     clientId: string | null;
     now: string;
-    sessionKind: 'desktop' | 'web';
+    sessionKind: 'desktop' | 'mobile' | 'web';
     tokenHash: string;
     userId: string;
   },
