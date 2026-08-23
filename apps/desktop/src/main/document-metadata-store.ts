@@ -151,6 +151,7 @@ export interface DesktopLocalStore extends LocalDocumentStore {
     failure?: SyncFailureDetails,
   ): void;
   markSyncItemCompleted(syncItemId: string, completedAt: string): void;
+  markSyncItemsCompleted(syncItemIds: string[], completedAt: string): void;
   saveBook(book: BookMetadata): void;
   saveChapter(chapter: ChapterMetadata): void;
   saveDocument(document: DocumentMetadata): void;
@@ -485,6 +486,13 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     SET completed_at = @completedAt
     WHERE id = @syncItemId;
   `);
+  const markSyncItemsCompletedTransaction = database.transaction(
+    (syncItemIds: string[], completedAt: string) => {
+      for (const syncItemId of syncItemIds) {
+        markSyncItemCompletedStatement.run({ completedAt, syncItemId });
+      }
+    },
+  );
   const markSyncItemAttemptedStatement = database.prepare(`
     UPDATE sync_queue
     SET attempts = attempts + 1,
@@ -631,6 +639,9 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
     },
     markSyncItemCompleted(syncItemId, completedAt) {
       markSyncItemCompletedStatement.run({ completedAt, syncItemId });
+    },
+    markSyncItemsCompleted(syncItemIds, completedAt) {
+      markSyncItemsCompletedTransaction(syncItemIds, completedAt);
     },
     saveBook(book) {
       saveBookStatement.run(book);

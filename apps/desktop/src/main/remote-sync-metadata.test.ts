@@ -66,6 +66,44 @@ describe('remote workspace metadata push', () => {
   });
 });
 
+describe('remote workspace metadata failure handling', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('does not repeat failed document metadata requests for every queued update', async () => {
+    const attemptedItems: string[] = [];
+    const firstUpdate = createUpdate();
+    const updates = [
+      firstUpdate,
+      { ...firstUpdate, createdAt: '2026-06-12T10:01:00.000Z', id: 'update_b' },
+    ];
+    const fetchMock = vi.fn(async (input: unknown, init?: RequestInit) => {
+      const url = String(input);
+
+      if (init?.method === 'PUT' && url.endsWith('/v1/documents/doc_1')) {
+        return Response.json({ error: 'Storage busy.' }, { status: 503 });
+      }
+
+      return Response.json({ ok: true });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await pushPendingDocumentUpdates(createPushStore({ attemptedItems, updates }), {
+      clientId: 'client_desktop',
+      enabled: true,
+      serverUrl: 'https://sync.example.com',
+      token: 'token_1',
+    });
+
+    expect(result).toEqual({ pushedUpdateCount: 0, skippedUpdateCount: 2 });
+    expect(
+      fetchMock.mock.calls.filter(([input]) => String(input).endsWith('/v1/documents/doc_1')),
+    ).toHaveLength(1);
+    expect(attemptedItems).toEqual(['sync_update_a', 'sync_update_b']);
+  });
+});
+
 function createFetchRecorder(
   requests: Array<{ body: unknown; method: string | undefined; url: string }>,
 ) {
@@ -80,20 +118,22 @@ function createFetchRecorder(
   };
 }
 
-function createPushStore(): DesktopLocalStore {
-  const update = createUpdate();
-  const queueItem = createQueueItem(update.id);
+function createPushStore(
+  options: { attemptedItems?: string[]; updates?: DocumentUpdateRecord[] } = {},
+): DesktopLocalStore {
+  const updates = options.updates ?? [createUpdate()];
+  const queueItems = updates.map((update) => createQueueItem(update.id));
 
   return {
     listAllBooks: () => [createBook()],
     listAllChapters: () => [createChapter()],
     listAllDocuments: () => [createDocument()],
     listAllDocumentSnapshots: () => [],
-    listAllDocumentUpdates: () => [update],
-    listAllSyncItems: () => [queueItem],
-    listDocumentUpdates: () => [update],
-    listPendingSyncItems: () => [queueItem],
-    markSyncItemAttempted: () => undefined,
+    listAllDocumentUpdates: () => updates,
+    listAllSyncItems: () => queueItems,
+    listDocumentUpdates: () => updates,
+    listPendingSyncItems: () => queueItems,
+    markSyncItemAttempted: (syncItemId: string) => options.attemptedItems?.push(syncItemId),
     markSyncItemCompleted: () => undefined,
   } as unknown as DesktopLocalStore;
 }
@@ -150,7 +190,7 @@ function createQueueItem(recordId: string): SyncQueueItem {
     attempts: 0,
     createdAt: '2026-06-12T10:00:00.000Z',
     documentId: 'doc_1',
-    id: 'sync_update_a',
+    id: `sync_${recordId}`,
     kind: 'document-update',
     lastAttemptAt: null,
     recordId,

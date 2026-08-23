@@ -45,6 +45,9 @@ describe('sync request auth', () => {
 
   it('self-host token takes priority over hosted session lookup', () =>
     expectSelfHostPriorityOverHosted());
+
+  it('returns a retryable response when hosted session storage is overloaded', () =>
+    expectHostedStorageOverload());
 });
 
 async function expectAuthNotConfigured() {
@@ -125,4 +128,25 @@ async function expectSelfHostPriorityOverHosted() {
     expect(result.context.authMode).toBe('self-host-token');
     expect(result.context.ownerId).toBe('self');
   }
+}
+
+async function expectHostedStorageOverload() {
+  const env = createAuthTestEnv({ authSecret: 'hosted-secret' });
+  const statement = {
+    bind: () => statement,
+    first: async () => {
+      throw new Error('D1_ERROR: D1 DB is overloaded. Requests queued for too long.');
+    },
+  };
+  env.DB = { prepare: () => statement } as unknown as D1Database;
+  const result = await authorizeSyncRequest(
+    new Request('https://sync.example.com/v1/sync/status', {
+      headers: { authorization: 'Bearer hosted-token' },
+    }),
+    env,
+  );
+
+  expect(result.ok).toBe(false);
+  expect(result.ok ? null : result.response.status).toBe(503);
+  expect(result.ok ? null : result.response.headers.get('Retry-After')).toBe('30');
 }

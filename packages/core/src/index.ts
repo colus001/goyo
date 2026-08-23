@@ -96,4 +96,8 @@ export type {
 } from './sync';
 export { createSyncQueueItem, sortSyncQueueItemsForProcessing } from './sync';
 export type { YjsCrdtDocument } from './yjs-crdt';
-export { copyYjsSnapshotFragment, createYjsCrdtAdapter } from './yjs-crdt';
+export {
+  copyYjsSnapshotFragment,
+  createYjsCrdtAdapter,
+  transactYjsTextUpdate,
+} from './yjs-crdt';
