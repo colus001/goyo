@@ -12,6 +12,8 @@ describe('Goyo Cloud auth endpoints', () => {
 
   it('returns 503 when auth is not configured', () => expectAuthNotConfigured503());
 
+  it('returns a retryable 503 when D1 is overloaded', () => expectDatabaseOverload503());
+
   it('enforces resend cooldown when a recent code exists', () => expectResendCooldownEnforced());
 
   it('creates a new user and returns a desktop bearer token on valid verification', () =>
@@ -78,6 +80,26 @@ async function expectAuthNotConfigured503() {
     new URL('https://api.example.com/v1/auth/start'),
   );
   expect(response?.status).toBe(503);
+}
+
+async function expectDatabaseOverload503() {
+  const env = createAuthTestEnv({ authSecret: AUTH_SECRET });
+  const statement = {
+    bind: () => statement,
+    first: async () => {
+      throw new Error('D1_ERROR: D1 DB is overloaded. Requests queued for too long.');
+    },
+  };
+  env.DB = { prepare: () => statement } as unknown as D1Database;
+
+  const response = await handleCloudAuthRequest(
+    jsonRequest({ email: 'writer@example.com' }),
+    env,
+    new URL('https://api.example.com/v1/auth/start'),
+  );
+
+  expect(response?.status).toBe(503);
+  expect(response?.headers.get('Retry-After')).toBe('30');
 }
 
 async function expectResendCooldownEnforced() {

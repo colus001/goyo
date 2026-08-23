@@ -1,11 +1,5 @@
 import type { SyncAuthContext } from './auth';
-import {
-  decodeBase64,
-  encodeBase64,
-  getStorageErrorMessage,
-  jsonError,
-  readJsonBody,
-} from './http';
+import { decodeBase64, encodeBase64, jsonError, readJsonBody, storageErrorResponse } from './http';
 import { requireRegisteredSyncClient } from './sync-clients';
 
 export interface EnvWithDocumentsDatabase {
@@ -89,7 +83,7 @@ export async function createDocumentUpdate(
       { status: result.meta.changes === 0 ? 200 : 201 },
     );
   } catch (error) {
-    return jsonError(getStorageErrorMessage(error), 409);
+    return storageErrorResponse(error);
   }
 }
 

@@ -64,3 +64,15 @@ export function getStorageErrorMessage(error: unknown): string {
 
   return 'Storage operation failed.';
 }
+
+export function storageErrorResponse(error: unknown, fallbackStatus = 409): Response {
+  const message = getStorageErrorMessage(error);
+
+  if (/overloaded|queued for too long/i.test(message)) {
+    const response = jsonError('Service is temporarily busy. Please try again shortly.', 503);
+    response.headers.set('Retry-After', '30');
+    return response;
+  }
+
+  return jsonError(message, fallbackStatus);
+}

@@ -40,7 +40,7 @@ import {
   touchSessionByTokenHash,
   type UserRow,
 } from './cloud-auth-storage';
-import { getStorageErrorMessage, jsonError, readJsonBody } from './http';
+import { jsonError, readJsonBody, storageErrorResponse } from './http';
 
 export type { EnvWithCloudAuth } from './cloud-auth-env';
 
@@ -49,27 +49,31 @@ export async function handleCloudAuthRequest(
   env: EnvWithCloudAuth,
   url: URL,
 ): Promise<Response | null> {
-  if (url.pathname === '/v1/auth/start' && request.method === 'POST') {
-    return startCloudAuth(request, env);
-  }
+  try {
+    if (url.pathname === '/v1/auth/start' && request.method === 'POST') {
+      return await startCloudAuth(request, env);
+    }
 
-  if (url.pathname === '/v1/auth/verify' && request.method === 'POST') {
-    return verifyCloudAuth(request, env);
-  }
+    if (url.pathname === '/v1/auth/verify' && request.method === 'POST') {
+      return await verifyCloudAuth(request, env);
+    }
 
-  if (url.pathname === '/v1/auth/me' && request.method === 'GET') {
-    return getCloudAuthMe(request, env);
-  }
+    if (url.pathname === '/v1/auth/me' && request.method === 'GET') {
+      return await getCloudAuthMe(request, env);
+    }
 
-  if (url.pathname === '/v1/auth/desktop-handoff' && request.method === 'POST') {
-    return createDesktopHandoff(request, env);
-  }
+    if (url.pathname === '/v1/auth/desktop-handoff' && request.method === 'POST') {
+      return await createDesktopHandoff(request, env);
+    }
 
-  if (url.pathname === '/v1/auth/logout' && request.method === 'POST') {
-    return logoutCloudAuth(request, env);
-  }
+    if (url.pathname === '/v1/auth/logout' && request.method === 'POST') {
+      return await logoutCloudAuth(request, env);
+    }
 
-  return null;
+    return null;
+  } catch (error) {
+    return storageErrorResponse(error, 500);
+  }
 }
 
 async function startCloudAuth(request: Request, env: EnvWithCloudAuth): Promise<Response> {
@@ -141,7 +145,7 @@ async function createVerifiedSessionResponse(
   try {
     return { ok: true, value: await createVerifiedSession(env, input) };
   } catch (error) {
-    return { ok: false, response: jsonError(getStorageErrorMessage(error), 409) };
+    return { ok: false, response: storageErrorResponse(error) };
   }
 }
 

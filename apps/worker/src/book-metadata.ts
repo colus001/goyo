@@ -1,6 +1,6 @@
 import type { SyncAuthContext } from './auth';
 import type { EnvWithDocumentsDatabase } from './document-updates';
-import { getStorageErrorMessage, jsonError, readJsonBody } from './http';
+import { jsonError, readJsonBody, storageErrorResponse } from './http';
 
 interface UpsertBookMetadataRequestBody {
   accentColor?: unknown;
@@ -68,7 +68,7 @@ export async function upsertBookMetadata(
 
     return Response.json({ bookId, ok: true });
   } catch (error) {
-    return jsonError(getStorageErrorMessage(error), 409);
+    return storageErrorResponse(error);
   }
 }
 
