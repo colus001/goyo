@@ -175,25 +175,12 @@ const desktopApi = {
           recordId: string;
         }>;
       }>,
-    pushPendingUpdates: () =>
-      ipcRenderer.invoke('sync:pushPendingUpdates') as Promise<{
-        pushedUpdateCount: number;
-        skippedUpdateCount: number;
-      }>,
-    pushPendingSnapshots: () =>
-      ipcRenderer.invoke('sync:pushPendingSnapshots') as Promise<{
-        pushedSnapshotCount: number;
-        skippedSnapshotCount: number;
-      }>,
-    pullRemoteUpdates: () =>
-      ipcRenderer.invoke('sync:pullRemoteUpdates') as Promise<{
-        pulledUpdateCount: number;
-        skippedDocumentCount: number;
-      }>,
-    pullRemoteSnapshots: () =>
-      ipcRenderer.invoke('sync:pullRemoteSnapshots') as Promise<{
-        pulledSnapshotCount: number;
-        skippedDocumentCount: number;
+    run: () =>
+      ipcRenderer.invoke('sync:run') as Promise<{
+        snapshotPull: { pulledSnapshotCount: number; skippedDocumentCount: number };
+        snapshotPush: { pushedSnapshotCount: number; skippedSnapshotCount: number };
+        updatePull: { pulledUpdateCount: number; skippedDocumentCount: number };
+        updatePush: { pushedUpdateCount: number; skippedUpdateCount: number };
       }>,
     retryNow: () =>
       ipcRenderer.invoke('sync:retryNow') as Promise<{

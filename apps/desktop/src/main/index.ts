@@ -32,13 +32,9 @@ import { resolveGoyoCloudSessionStatus } from './goyo-cloud-session-status';
 import { exportLocalBackup } from './local-backup';
 import {
   getSyncStatusSummary,
-  pullRemoteDocumentSnapshots,
-  pullRemoteDocumentUpdates,
-  pushPendingDocumentSnapshots,
-  pushPendingDocumentUpdates,
   restoreCloudFromLocal,
-  retryRemoteSyncNow,
   type SyncConnectionSettings,
+  synchronizeRemoteDocuments,
   testSyncConnection,
 } from './remote-sync';
 import { createSyncClientIdentityStore } from './sync-client-identity';
@@ -144,6 +140,8 @@ function registerDocumentIpc() {
   const syncClientIdentity = createSyncClientIdentityStore(userDataPath);
   const syncCredentials = createSyncCredentialsStore(userDataPath);
   const goyoCloudSession = createGoyoCloudSessionStore(userDataPath);
+  let activeSyncRun: ReturnType<typeof synchronizeRemoteDocuments> | null = null;
+  let activeSyncForcesRetry = false;
   const getSyncConnection = (): SyncConnectionSettings => {
     const syncSettings = store.getAppSettings().sync;
     const token =
@@ -158,6 +156,37 @@ function registerDocumentIpc() {
         syncSettings.provider === 'goyo-cloud' ? GOYO_CLOUD_API_URL : syncSettings.selfHostedUrl,
       token,
     };
+  };
+  const trackRemoteSync = (
+    run: ReturnType<typeof synchronizeRemoteDocuments>,
+    forceRetry: boolean,
+  ) => {
+    activeSyncRun = run;
+    activeSyncForcesRetry = forceRetry;
+    const clearRun = () => {
+      if (activeSyncRun === run) {
+        activeSyncRun = null;
+        activeSyncForcesRetry = false;
+      }
+    };
+    void run.then(clearRun, clearRun);
+    return run;
+  };
+  const runRemoteSync = (forceRetry = false): ReturnType<typeof synchronizeRemoteDocuments> => {
+    if (!activeSyncRun) {
+      return trackRemoteSync(
+        synchronizeRemoteDocuments(store, getSyncConnection(), { forceRetry }),
+        forceRetry,
+      );
+    }
+
+    if (!forceRetry || activeSyncForcesRetry) {
+      return activeSyncRun;
+    }
+
+    const forceSync = () =>
+      synchronizeRemoteDocuments(store, getSyncConnection(), { forceRetry: true });
+    return trackRemoteSync(activeSyncRun.then(forceSync, forceSync), true);
   };
 
   ipcMain.handle('appUiState:get', () => store.getAppUiState());
@@ -408,39 +437,15 @@ function registerDocumentIpc() {
       throw error;
     }
   });
-  ipcMain.handle('sync:pushPendingUpdates', async () => {
-    try {
-      return await pushPendingDocumentUpdates(store, getSyncConnection());
-    } catch (error) {
-      console.error('Failed to push pending document updates', getErrorMessage(error));
-      throw error;
-    }
-  });
-  ipcMain.handle('sync:pushPendingSnapshots', async () => {
-    try {
-      return await pushPendingDocumentSnapshots(store, getSyncConnection());
-    } catch (error) {
-      console.error('Failed to push pending document snapshots', getErrorMessage(error));
-      throw error;
-    }
-  });
-  ipcMain.handle('sync:pullRemoteUpdates', async () => {
-    try {
-      return await pullRemoteDocumentUpdates(store, getSyncConnection());
-    } catch (error) {
-      console.error('Failed to pull remote document updates', getErrorMessage(error));
-      throw error;
-    }
-  });
-  ipcMain.handle('sync:pullRemoteSnapshots', async () => {
-    try {
-      return await pullRemoteDocumentSnapshots(store, getSyncConnection());
-    } catch (error) {
-      console.error('Failed to pull remote document snapshots', getErrorMessage(error));
-      throw error;
-    }
-  });
   ipcMain.handle('sync:getStatusSummary', () => getSyncStatusSummary(store));
+  ipcMain.handle('sync:run', async () => {
+    try {
+      return await runRemoteSync();
+    } catch (error) {
+      console.error('Failed to synchronize documents', getErrorMessage(error));
+      throw error;
+    }
+  });
   ipcMain.handle('sync:testConnection', async () => {
     try {
       return await testSyncConnection(getSyncConnection());
@@ -450,7 +455,7 @@ function registerDocumentIpc() {
   });
   ipcMain.handle('sync:retryNow', async () => {
     try {
-      return await retryRemoteSyncNow(store, getSyncConnection());
+      return await runRemoteSync(true);
     } catch (error) {
       console.error('Failed to retry remote sync', getErrorMessage(error));
       throw error;

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { SyncStatus } from './document-workspace-types';
 
-const REMOTE_SYNC_INTERVAL_MS = 15_000;
+const REMOTE_SYNC_INTERVAL_MS = 30_000;
 
 export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
   useEffect(() => {
@@ -21,10 +21,8 @@ export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
       setSyncStatus('Syncing');
 
       try {
-        const updatePush = await window.writerDesktop.sync.pushPendingUpdates();
-        const snapshotPush = await window.writerDesktop.sync.pushPendingSnapshots();
-        const updatePull = await window.writerDesktop.sync.pullRemoteUpdates();
-        const snapshotPull = await window.writerDesktop.sync.pullRemoteSnapshots();
+        const { snapshotPull, snapshotPush, updatePull, updatePush } =
+          await window.writerDesktop.sync.run();
         const summary = await window.writerDesktop.sync.getStatusSummary();
 
         setSyncStatus(
