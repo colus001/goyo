@@ -5,7 +5,14 @@ import {
   selectActiveBook,
   selectActiveDocument,
 } from '@writer/core';
-import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { AppState } from 'react-native';
 import {
   type MobileAppUiState,
@@ -13,6 +20,15 @@ import {
   openMobileLocalStore,
 } from '../storage/mobile-local-store';
 import { syncMobileWorkspace } from '../sync/mobile-remote-sync';
+import {
+  beginDocumentBodyLoad,
+  canEditDocumentBody,
+  completeDocumentBodyLoad,
+  type DocumentBodyStates,
+  failDocumentBodyLoad,
+  getDocumentBodyText,
+  updateDocumentBodyText,
+} from './document-body-state';
 import { loadDocumentBodyFromCrdt } from './mobile-document-body-crdt';
 import {
   createAndPersistBook,
@@ -20,21 +36,28 @@ import {
   createAndPersistEpisode,
   createAndPersistQuickDraft,
   renameAndPersistActiveDocument,
-  saveAndPersistActiveDocumentBody,
+  saveAndPersistDocumentBody,
 } from './mobile-workspace-actions';
 import type {
   MobileWorkspaceScreen,
   MobileWorkspaceState,
   MobileWorkspaceStatus,
 } from './mobile-workspace-types';
+import {
+  completePendingBodySave,
+  flushPendingBodySaves,
+  type PendingBodySave,
+  queuePendingBodySave,
+} from './pending-body-save';
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: This hook owns mobile workspace state wiring and exposes the app API.
 export function useMobileWorkspace(authToken: string | null): MobileWorkspaceState {
   const [store, setStore] = useState<MobileLocalStore | null>(null);
-  const [activeDocumentBody, setActiveDocumentBody] = useState('');
+  const [documentBodyStates, setDocumentBodyStates] = useState<DocumentBodyStates>({});
   const [clientId, setClientId] = useState<string | null>(null);
-  const [pendingBodySave, setPendingBodySave] = useState(false);
-  const [pendingBodyText, setPendingBodyText] = useState<string | null>(null);
+  const [pendingBodySaves, setPendingBodySaves] = useState<PendingBodySave[]>([]);
+  const pendingBodySavesRef = useRef<PendingBodySave[]>([]);
+  const pendingBodyRevisionRef = useRef(0);
   const [session, setSession] = useState<MobileWorkspaceState['session']>(null);
   const [screen, setScreen] = useState<MobileWorkspaceScreen>('home');
   const [settingsReturnScreen, setSettingsReturnScreen] =
@@ -49,28 +72,30 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
     store,
     session?.activeDocumentId ?? null,
     syncRevision,
-    setActiveDocumentBody,
+    setDocumentBodyStates,
     setStatus,
   );
-  usePersistPendingBody({
+  const flushPendingBodySave = usePersistPendingBody({
     clientId,
-    pendingBodyText,
-    session,
-    setPendingBodySave,
-    setPendingBodyText,
+    pendingBodySaves,
+    pendingBodySavesRef,
+    setPendingBodySaves,
     setStatus,
     store,
   });
   useMobileAutoSync({
     authToken,
     clientId,
-    pendingBodySave,
+    pendingBodySave: pendingBodySaves.length > 0,
     setSession,
     setStatus,
     setSyncRevision,
     store,
   });
   usePersistMobileUiState({ hasLoadedWorkspace, screen, session, store });
+
+  const activeDocumentId = session?.activeDocumentId ?? null;
+  const activeDocumentBody = getDocumentBodyText(documentBodyStates, activeDocumentId);
 
   return {
     activeDocumentBody,
@@ -79,7 +104,10 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
     createChapter: () => void createAndPersistChapter(store, session, setSession, setStatus),
     createEpisode: (chapterId) =>
       void createAndPersistEpisode(store, session, chapterId, setSession, setScreen, setStatus),
+    flushActiveDocumentBody: () =>
+      activeDocumentId ? flushPendingBodySave(activeDocumentId) : Promise.resolve(true),
     goBackToBook: () => setScreen(screen === 'settings' ? settingsReturnScreen : 'book'),
+    isActiveDocumentBodyEditable: canEditDocumentBody(documentBodyStates, activeDocumentId),
     isLoading: status === 'Loading local library',
     openBook: (bookId) => {
       setScreen('book');
@@ -93,9 +121,24 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
       setSettingsReturnScreen(screen === 'settings' ? 'home' : screen);
       setScreen('settings');
     },
-    pendingBodySave,
-    saveActiveDocumentBody: (text) =>
-      saveBodyLater(text, setActiveDocumentBody, setPendingBodyText, setPendingBodySave),
+    pendingBodySave: pendingBodySaves.length > 0,
+    saveActiveDocumentBody: (text) => {
+      const documentId = activeDocumentId;
+
+      if (!documentId || !canEditDocumentBody(documentBodyStates, documentId)) {
+        return;
+      }
+
+      pendingBodyRevisionRef.current += 1;
+      setDocumentBodyStates((states) => updateDocumentBodyText(states, documentId, text));
+      const nextPendingSaves = queuePendingBodySave(pendingBodySavesRef.current, {
+        documentId,
+        revision: pendingBodyRevisionRef.current,
+        text,
+      });
+      pendingBodySavesRef.current = nextPendingSaves;
+      setPendingBodySaves(nextPendingSaves);
+    },
     renameActiveDocumentTitle: (title) =>
       void renameAndPersistActiveDocument(store, session, title, setSession, setStatus),
     screen,
@@ -300,17 +343,6 @@ function usePersistMobileUiState({
   }, [hasLoadedWorkspace, screen, session, store]);
 }
 
-function saveBodyLater(
-  text: string,
-  setActiveDocumentBody: (body: string) => void,
-  setPendingBodyText: (body: string) => void,
-  setPendingBodySave: (isPending: boolean) => void,
-) {
-  setActiveDocumentBody(text);
-  setPendingBodyText(text);
-  setPendingBodySave(true);
-}
-
 function useLoadMobileClientId(
   store: MobileLocalStore | null,
   setClientId: (clientId: string) => void,
@@ -347,46 +379,72 @@ function useLoadMobileClientId(
 
 function usePersistPendingBody({
   clientId,
-  pendingBodyText,
-  session,
-  setPendingBodySave,
-  setPendingBodyText,
+  pendingBodySaves,
+  pendingBodySavesRef,
+  setPendingBodySaves,
   setStatus,
   store,
 }: {
   clientId: string | null;
-  pendingBodyText: string | null;
-  session: MobileWorkspaceState['session'];
-  setPendingBodySave: (isPending: boolean) => void;
-  setPendingBodyText: (body: string | null) => void;
+  pendingBodySaves: PendingBodySave[];
+  pendingBodySavesRef: { current: PendingBodySave[] };
+  setPendingBodySaves: Dispatch<SetStateAction<PendingBodySave[]>>;
   setStatus: (status: MobileWorkspaceStatus) => void;
   store: MobileLocalStore | null;
 }) {
+  const inFlightSavesRef = useRef(new Map<number, Promise<void>>());
+
+  const persistPendingSave = useCallback(
+    (pendingSave: PendingBodySave): Promise<void> => {
+      const existingPromise = inFlightSavesRef.current.get(pendingSave.revision);
+
+      if (existingPromise) {
+        return existingPromise;
+      }
+
+      const savePromise = saveAndPersistDocumentBody(
+        store,
+        clientId,
+        pendingSave.documentId,
+        pendingSave.text,
+        setStatus,
+      )
+        .then(() => {
+          const nextPendingSaves = completePendingBodySave(
+            pendingBodySavesRef.current,
+            pendingSave,
+          );
+          pendingBodySavesRef.current = nextPendingSaves;
+          setPendingBodySaves(nextPendingSaves);
+        })
+        .finally(() => {
+          inFlightSavesRef.current.delete(pendingSave.revision);
+        });
+
+      inFlightSavesRef.current.set(pendingSave.revision, savePromise);
+      return savePromise;
+    },
+    [clientId, pendingBodySavesRef, setPendingBodySaves, setStatus, store],
+  );
+
   useEffect(() => {
-    if (pendingBodyText === null) {
+    const pendingSave = pendingBodySaves[0];
+
+    if (!pendingSave) {
       return;
     }
 
-    const bodyToSave = pendingBodyText;
     const timeoutId = globalThis.setTimeout(() => {
-      void saveAndPersistActiveDocumentBody(store, clientId, session, bodyToSave, setStatus).then(
-        () => {
-          setPendingBodyText(null);
-          setPendingBodySave(false);
-        },
-      );
+      void persistPendingSave(pendingSave).catch(() => {
+        // Keep the document-scoped save in memory so a later retry cannot lose the text.
+      });
     }, 700);
 
     return () => globalThis.clearTimeout(timeoutId);
-  }, [
-    clientId,
-    pendingBodyText,
-    session,
-    setPendingBodySave,
-    setPendingBodyText,
-    setStatus,
-    store,
-  ]);
+  }, [pendingBodySaves, persistPendingSave]);
+
+  return (documentId: string) =>
+    flushPendingBodySaves(documentId, () => pendingBodySavesRef.current, persistPendingSave);
 }
 
 function createLocalId(prefix: string): string {
@@ -399,35 +457,42 @@ function useLoadActiveDocumentBody(
   store: MobileLocalStore | null,
   documentId: string | null,
   syncRevision: number,
-  setActiveDocumentBody: (body: string) => void,
+  setDocumentBodyStates: Dispatch<SetStateAction<DocumentBodyStates>>,
   setStatus: (status: MobileWorkspaceStatus) => void,
 ) {
   useEffect(() => {
     void syncRevision;
 
     if (!store || !documentId) {
-      setActiveDocumentBody('');
       return;
     }
 
     const currentStore = store;
     const currentDocumentId = documentId;
     let isCancelled = false;
+    setDocumentBodyStates((states) => beginDocumentBodyLoad(states, currentDocumentId));
 
     async function loadBody() {
       const body = await loadDocumentBodyFromCrdt(currentStore, currentDocumentId);
 
       if (!isCancelled) {
-        setActiveDocumentBody(body);
+        setDocumentBodyStates((states) =>
+          completeDocumentBodyLoad(states, currentDocumentId, body),
+        );
       }
     }
 
-    void loadBody().catch(() => !isCancelled && setStatus('Save failed'));
+    void loadBody().catch(() => {
+      if (!isCancelled) {
+        setDocumentBodyStates((states) => failDocumentBodyLoad(states, currentDocumentId));
+        setStatus('Save failed');
+      }
+    });
 
     return () => {
       isCancelled = true;
     };
-  }, [documentId, setActiveDocumentBody, setStatus, store, syncRevision]);
+  }, [documentId, setDocumentBodyStates, setStatus, store, syncRevision]);
 }
 
 function useLoadMobileWorkspace(

@@ -17,7 +17,9 @@ export interface MobileWorkspaceState {
   createBook(): void;
   createChapter(): void;
   createEpisode(chapterId: string | null): void;
+  flushActiveDocumentBody(): Promise<boolean>;
   goBackToBook(): void;
+  isActiveDocumentBodyEditable: boolean;
   isLoading: boolean;
   openBook(bookId: string): void;
   openDocument(documentId: string): void;

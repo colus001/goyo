@@ -177,24 +177,26 @@ export async function renameAndPersistActiveDocument(
   }
 }
 
-export async function saveAndPersistActiveDocumentBody(
+export async function saveAndPersistDocumentBody(
   store: MobileLocalStore | null,
   clientId: string | null,
-  session: DocumentSession | null,
+  documentId: string,
   text: string,
   setStatus: SetStatus,
 ): Promise<void> {
-  if (!store || !clientId || !session?.activeDocumentId) {
-    return;
+  if (!store || !clientId) {
+    setStatus('Save failed');
+    throw new Error('Document persistence is not ready');
   }
 
   setStatus('Saving');
 
   try {
-    await saveDocumentBodyAsCrdtUpdate(store, clientId, session.activeDocumentId, text);
+    await saveDocumentBodyAsCrdtUpdate(store, clientId, documentId, text);
     setStatus('Ready');
-  } catch {
+  } catch (error) {
     setStatus('Save failed');
+    throw error;
   }
 }
 

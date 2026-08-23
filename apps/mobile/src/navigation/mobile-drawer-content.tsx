@@ -40,17 +40,13 @@ function MobileMenuContent() {
 
       <DrawerItem
         label="Library"
-        onPress={() => {
-          closeMenu();
-          router.navigate('/');
-        }}
+        onPress={() => void navigateFromMenu(workspace, closeMenu, () => router.navigate('/'))}
       />
       <DrawerItem
         label={QUICK_DRAFTS_BOOK_TITLE}
-        onPress={() => {
-          closeMenu();
-          openQuickDrafts(workspace);
-        }}
+        onPress={() =>
+          void navigateFromMenu(workspace, closeMenu, () => openQuickDrafts(workspace))
+        }
       />
 
       <DrawerSectionTitle label="Continue" />
@@ -63,11 +59,12 @@ function MobileMenuContent() {
             label={
               document.title || (document.kind === 'draft' ? 'Untitled draft' : 'Untitled episode')
             }
-            onPress={() => {
-              closeMenu();
-              workspace.openDocument(document.id);
-              router.navigate(`/editor/${encodeURIComponent(document.id)}`);
-            }}
+            onPress={() =>
+              void navigateFromMenu(workspace, closeMenu, () => {
+                workspace.openDocument(document.id);
+                router.navigate(`/editor/${encodeURIComponent(document.id)}`);
+              })
+            }
           />
         ))
       )}
@@ -77,21 +74,21 @@ function MobileMenuContent() {
         <DrawerItem
           key={book.id}
           label={book.title}
-          onPress={() => {
-            closeMenu();
-            workspace.openBook(book.id);
-            router.navigate(`/book/${encodeURIComponent(book.id)}`);
-          }}
+          onPress={() =>
+            void navigateFromMenu(workspace, closeMenu, () => {
+              workspace.openBook(book.id);
+              router.navigate(`/book/${encodeURIComponent(book.id)}`);
+            })
+          }
         />
       ))}
 
       <DrawerSectionTitle label="Account" />
       <DrawerItem
         label="Settings"
-        onPress={() => {
-          closeMenu();
-          router.navigate('/settings');
-        }}
+        onPress={() =>
+          void navigateFromMenu(workspace, closeMenu, () => router.navigate('/settings'))
+        }
       />
     </ScrollView>
   );
@@ -107,6 +104,19 @@ function DrawerItem({ label, onPress }: { label: string; onPress: () => void }) 
       <Text style={styles.drawerItemText}>{label}</Text>
     </Pressable>
   );
+}
+
+async function navigateFromMenu(
+  workspace: ReturnType<typeof useMobileApp>['workspace'],
+  closeMenu: () => void,
+  navigate: () => void,
+) {
+  if (workspace.screen === 'editor' && !(await workspace.flushActiveDocumentBody())) {
+    return;
+  }
+
+  closeMenu();
+  navigate();
 }
 
 function openQuickDrafts(workspace: ReturnType<typeof useMobileApp>['workspace']) {
