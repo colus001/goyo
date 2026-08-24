@@ -162,11 +162,9 @@ describe.skipIf(!canRunNativeSqliteTests)('desktop local sync queue store', () =
       createExpectedSyncItem('sync_b', 'update_2', '2026-06-12T10:01:00.000Z'),
     ]);
 
-    store.markSyncItemCompleted('sync_a', '2026-06-12T10:02:00.000Z');
+    store.markSyncItemsCompleted(['sync_a', 'sync_b'], '2026-06-12T10:02:00.000Z');
 
-    expect(store.listPendingSyncItems()).toEqual([
-      createExpectedSyncItem('sync_b', 'update_2', '2026-06-12T10:01:00.000Z'),
-    ]);
+    expect(store.listPendingSyncItems()).toEqual([]);
     expect(store.listAllSyncItems()).toEqual([
       createExpectedSyncItem('sync_a', 'update_1', '2026-06-12T10:00:00.000Z'),
       createExpectedSyncItem('sync_b', 'update_2', '2026-06-12T10:01:00.000Z'),

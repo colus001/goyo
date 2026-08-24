@@ -1,7 +1,7 @@
 {
   "name": "@writer/desktop",
   "private": true,
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Distraction-free long-form writing desktop app.",
   "author": {
     "name": "Seokjun Kim",

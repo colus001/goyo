@@ -1,7 +1,7 @@
 import { getBearerOrCookieToken } from './cloud-auth-cookie';
 import type { EnvWithCloudAuth } from './cloud-auth-env';
 import { getSessionByTokenHash, hashRequestToken } from './cloud-auth-storage';
-import { jsonError } from './http';
+import { jsonError, storageErrorResponse } from './http';
 
 export type SyncAuthContext =
   | { authMode: 'self-host-token'; ownerId: 'self' }
@@ -27,24 +27,28 @@ export async function authorizeSyncRequest(
     return { ok: false, response: jsonError('Unauthorized.', 401) };
   }
 
-  const tokenHash = await hashRequestToken(env, token);
+  try {
+    const tokenHash = await hashRequestToken(env, token);
 
-  if (!tokenHash) {
-    return { ok: false, response: jsonError('Sync server auth is not configured.', 503) };
+    if (!tokenHash) {
+      return { ok: false, response: jsonError('Sync server auth is not configured.', 503) };
+    }
+
+    const session = await getSessionByTokenHash(env, tokenHash);
+
+    if (!session) {
+      return { ok: false, response: jsonError('Unauthorized.', 401) };
+    }
+
+    return {
+      context: {
+        authMode: 'goyo-cloud-session',
+        ownerId: session.user_id,
+        userId: session.user_id,
+      },
+      ok: true,
+    };
+  } catch (error) {
+    return { ok: false, response: storageErrorResponse(error, 500) };
   }
-
-  const session = await getSessionByTokenHash(env, tokenHash);
-
-  if (!session) {
-    return { ok: false, response: jsonError('Unauthorized.', 401) };
-  }
-
-  return {
-    context: {
-      authMode: 'goyo-cloud-session',
-      ownerId: session.user_id,
-      userId: session.user_id,
-    },
-    ok: true,
-  };
 }

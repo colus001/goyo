@@ -178,6 +178,12 @@ export function EditorScreen({
     (document) => document.id === activeDocumentId,
   );
 
+  async function leaveEditor(navigate: () => void) {
+    if (await workspace.flushActiveDocumentBody()) {
+      navigate();
+    }
+  }
+
   useEffect(() => {
     if (activeDocumentId) {
       workspace.openDocument(activeDocumentId);
@@ -188,7 +194,7 @@ export function EditorScreen({
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          <ActionButton label="Back to Library" onPress={onOpenLibrary} />
+          <ActionButton label="Back to Library" onPress={() => void leaveEditor(onOpenLibrary)} />
         </View>
       </SafeAreaView>
     );
@@ -207,7 +213,7 @@ export function EditorScreen({
               <MenuButton />
               <Pressable
                 accessibilityRole="button"
-                onPress={() => onBackToBook(activeDocument.bookId)}
+                onPress={() => void leaveEditor(() => onBackToBook(activeDocument.bookId))}
                 style={styles.secondaryButton}
               >
                 <Text style={styles.secondaryButtonText}>Back</Text>
@@ -226,9 +232,12 @@ export function EditorScreen({
               value={activeDocument.title}
             />
             <TextInput
+              editable={workspace.isActiveDocumentBodyEditable}
               multiline
               onChangeText={workspace.saveActiveDocumentBody}
-              placeholder="Start writing..."
+              placeholder={
+                workspace.isActiveDocumentBodyEditable ? 'Start writing...' : 'Loading writing...'
+              }
               placeholderTextColor="#958678"
               style={styles.bodyInput}
               value={workspace.activeDocumentBody}
@@ -238,7 +247,7 @@ export function EditorScreen({
               {workspace.pendingBodySave ? 'Saving soon' : 'Saved locally'}
             </Text>
           </View>
-          <CloudSummaryCard auth={auth} onOpenSettings={onOpenSettings} />
+          <CloudSummaryCard auth={auth} onOpenSettings={() => void leaveEditor(onOpenSettings)} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -1,5 +1,15 @@
 // biome-ignore lint/nursery/noExcessiveLinesPerFile: Remote sync request, retry, and status helpers are kept together around one API boundary for now.
-import { createMissingSyncQueueItems, createRecoveryPoint } from '@writer/core';
+import type { DocumentMetadata, DocumentSnapshotRecord, DocumentUpdateRecord } from '@writer/core';
+import {
+  createDocumentSnapshotRecord,
+  createDocumentUpdateRecord,
+  createMissingSyncQueueItems,
+  createRecoveryPoint,
+  createSyncQueueItem,
+  createYjsCrdtAdapter,
+  replayDocumentUpdates,
+  restoreDocumentFromSnapshot,
+} from '@writer/core';
 import {
   base64ToBytes,
   fetchLatestRemoteDocumentSnapshot,
@@ -60,6 +70,7 @@ interface PullOptions {
 }
 
 interface SyncRunContext {
+  documentMetadataFailures: Map<string, unknown>;
   pushedDocumentIds: Set<string>;
   registeredClientIds: Set<string>;
   workspaceMetadataPushed: boolean;
@@ -382,21 +393,25 @@ export async function restoreCloudFromLocal(
     throw new Error('Remote sync is not configured.');
   }
 
+  const syncContext = createSyncRunContext();
+  const updatePull = await pullRemoteDocumentUpdates(store, connection, { context: syncContext });
+  const snapshotPull = await pullRemoteDocumentSnapshots(store, connection, {
+    context: syncContext,
+  });
+
+  if (updatePull.skippedDocumentCount > 0 || snapshotPull.skippedDocumentCount > 0) {
+    throw new Error('Could not pull every remote document before full sync. Try again shortly.');
+  }
+
+  ensureLocalRecordsQueuedForRemoteSync(store);
   const books = store.listAllBooks();
   const chapters = store.listAllChapters();
   const documents = store.listAllDocuments();
-  const updates = store.listAllDocumentUpdates();
-  const snapshots = store.listAllDocumentSnapshots();
-  const syncClientIds = [
-    ...new Set([connection.clientId, ...updates.map((update) => update.clientId)]),
-  ];
+  const reconciliationRecords = documents.map((document) =>
+    createFullSyncRecords(store, connection.clientId, document),
+  );
   const total =
-    books.length +
-    chapters.length +
-    documents.length +
-    syncClientIds.length +
-    updates.length +
-    snapshots.length;
+    books.length + chapters.length + documents.length + 1 + reconciliationRecords.length * 2;
   const context: RestoreCloudContext = { completed: 0, onProgress, total };
 
   await restoreCloudRecords(context, 'books', books, (book) =>
@@ -408,24 +423,122 @@ export async function restoreCloudFromLocal(
   await restoreCloudRecords(context, 'documents', documents, (document) =>
     pushRemoteDocumentMetadata(connection, document),
   );
-  await restoreCloudRecords(context, 'sync-clients', syncClientIds, (clientId) =>
-    registerSyncClient(connection, clientId),
+  await restoreCloudRecords(context, 'sync-clients', [connection.clientId], (clientId) =>
+    registerSyncClient(connection, clientId, syncContext),
   );
-  await restoreCloudRecords(context, 'document-updates', updates, (update) =>
-    pushRemoteDocumentUpdate(connection, update),
-  );
-  await restoreCloudRecords(context, 'document-snapshots', snapshots, (snapshot) =>
-    pushRemoteDocumentSnapshot(connection, snapshot),
-  );
+  await reconcileFullSyncRecords(store, connection, context, reconciliationRecords);
 
   return {
     booksPushed: books.length,
     chaptersPushed: chapters.length,
     documentsPushed: documents.length,
-    snapshotsPushed: snapshots.length,
-    syncClientsRegistered: syncClientIds.length,
-    updatesPushed: updates.length,
+    snapshotsPushed: reconciliationRecords.length,
+    syncClientsRegistered: 1,
+    updatesPushed: reconciliationRecords.length,
   };
+}
+
+interface FullSyncRecords {
+  pendingSyncItemIds: string[];
+  snapshot: DocumentSnapshotRecord;
+  update: DocumentUpdateRecord;
+}
+
+function createFullSyncRecords(
+  store: DesktopLocalStore,
+  clientId: string,
+  document: DocumentMetadata,
+): FullSyncRecords {
+  const adapter = createYjsCrdtAdapter();
+  const latestSnapshot = store.getLatestDocumentSnapshot(document.id);
+  // Reapplying every Yjs update is idempotent and preserves late updates that predate the snapshot cursor.
+  const updates = store.listDocumentUpdates(document.id);
+  const crdtDocument = latestSnapshot
+    ? restoreDocumentFromSnapshot(adapter, latestSnapshot, updates)
+    : replayDocumentUpdates(adapter, document.id, updates);
+  const fullState = adapter.encodeSnapshot(crdtDocument);
+  const createdAt = new Date().toISOString();
+  const updateId = `update_full_${crypto.randomUUID()}`;
+  const snapshotId = `snapshot_full_${crypto.randomUUID()}`;
+
+  return {
+    pendingSyncItemIds: store
+      .listPendingSyncItems()
+      .filter((item) => item.documentId === document.id)
+      .map((item) => item.id),
+    snapshot: createDocumentSnapshotRecord({
+      createdAt,
+      documentId: document.id,
+      id: snapshotId,
+      lastUpdateId: null,
+      snapshot: fullState,
+    }),
+    update: createDocumentUpdateRecord({
+      clientId,
+      createdAt,
+      documentId: document.id,
+      id: updateId,
+      update: fullState,
+    }),
+  };
+}
+
+async function reconcileFullSyncRecords(
+  store: DesktopLocalStore,
+  connection: SyncConnectionSettings,
+  context: RestoreCloudContext,
+  records: FullSyncRecords[],
+) {
+  for (const [index, record] of records.entries()) {
+    reportRestoreProgress(context, 'document-updates', index, records.length);
+    await pushRemoteDocumentUpdate(connection, record.update);
+    context.completed += 1;
+    reportRestoreProgress(context, 'document-snapshots', index, records.length);
+    await pushRemoteDocumentSnapshot(connection, record.snapshot);
+    context.completed += 1;
+    recordFullSyncSuccess(store, record);
+  }
+}
+
+function reportRestoreProgress(
+  context: RestoreCloudContext,
+  phase: RestoreCloudProgressPhase,
+  index: number,
+  recordCount: number,
+) {
+  context.onProgress?.({
+    completed: context.completed,
+    current: Math.min(index + 1, recordCount),
+    phase,
+    total: context.total,
+  });
+}
+
+function recordFullSyncSuccess(store: DesktopLocalStore, records: FullSyncRecords) {
+  const completedAt = new Date().toISOString();
+  const updateSyncItem = createSyncQueueItem({
+    createdAt: records.update.createdAt,
+    documentId: records.update.documentId,
+    id: `sync_full_update_${records.update.id}`,
+    kind: 'document-update',
+    recordId: records.update.id,
+  });
+  const snapshotSyncItem = createSyncQueueItem({
+    createdAt: records.snapshot.createdAt,
+    documentId: records.snapshot.documentId,
+    id: `sync_full_snapshot_${records.snapshot.id}`,
+    kind: 'document-snapshot',
+    recordId: records.snapshot.id,
+  });
+
+  store.appendDocumentUpdate(records.update);
+  store.saveDocumentSnapshot(records.snapshot);
+  store.enqueueSyncItem(updateSyncItem);
+  store.enqueueSyncItem(snapshotSyncItem);
+  store.markSyncItemsCompleted(
+    [...records.pendingSyncItemIds, updateSyncItem.id, snapshotSyncItem.id],
+    completedAt,
+  );
 }
 
 async function restoreCloudRecords<TRecord>(
@@ -566,12 +679,22 @@ async function pushDocumentMetadata(
     return;
   }
 
-  await pushRemoteDocumentMetadata(connection, document);
-  context.pushedDocumentIds.add(document.id);
+  if (context.documentMetadataFailures.has(document.id)) {
+    throw context.documentMetadataFailures.get(document.id);
+  }
+
+  try {
+    await pushRemoteDocumentMetadata(connection, document);
+    context.pushedDocumentIds.add(document.id);
+  } catch (error) {
+    context.documentMetadataFailures.set(document.id, error);
+    throw error;
+  }
 }
 
 function createSyncRunContext(): SyncRunContext {
   return {
+    documentMetadataFailures: new Map(),
     pushedDocumentIds: new Set(),
     registeredClientIds: new Set(),
     workspaceMetadataPushed: false,
