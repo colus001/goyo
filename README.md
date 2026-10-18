@@ -7,7 +7,9 @@ future browser app.
 ## Status
 
 This project is in early preview. The desktop app, sync API, release automation,
-and landing site are still changing quickly.
+and landing site are still changing quickly. The Expo mobile app has an internal
+iPhone/iPad TestFlight build; physical-device validation and public-beta safety
+work are still in progress.
 
 Important limitations:
 
@@ -49,6 +51,8 @@ time from Settings. Local-only writing never leaves the device.
 
 ## Releases
 
+### Desktop
+
 Desktop release automation is configured through GitHub Actions. Tagged releases
 use `apps/desktop/package.json` as the desktop version source of truth.
 
@@ -72,6 +76,22 @@ If you build Goyo from source yourself:
 - **Linux**: AppImage and `.deb` artifacts are unsigned by default. Most
   distributions accept them without further steps.
 
+### iPhone and iPad / TestFlight
+
+`apps/mobile` uses Expo and EAS Build/Submit, independently of desktop release
+tags. One signed iOS archive supports iPhone and iPad. Builds and submissions are
+currently manual, not triggered by commits or pushes.
+
+- [iOS / TestFlight release runbook](apps/mobile/RELEASE.md): account/project IDs,
+  signing versus submission credentials, environments, build/upload/status
+  commands, tester setup, and troubleshooting.
+- [Mobile public-beta checklist](apps/mobile/PUBLIC_BETA_MVP.md): writing safety,
+  account isolation, synchronization, accessibility, and device verification gates.
+
+The mobile `build` script only typechecks; `pnpm build` does not create an `.ipa`.
+Use the EAS workflow in the release runbook. Keep testing to disposable writing
+until the safety gates have been verified.
+
 ## Workspace
 
 This repository uses pnpm and Turborepo.
@@ -80,6 +100,7 @@ This repository uses pnpm and Turborepo.
   source of truth for the published desktop version. The other workspace
   packages use their own versions; do not assume they are kept in lockstep.
 - `apps/landing`: Public marketing site, downloads, and product information.
+- `apps/mobile`: Expo React Native iPhone/iPad app, SQLite storage, and EAS release configuration.
 - `apps/web`: Goyo Cloud product web app for login, account status, and future billing.
 - `apps/worker`: Cloudflare Worker sync, auth, and future billing API.
 - `packages/core`: Platform-agnostic writing, sync, recovery, and domain logic.
@@ -106,6 +127,7 @@ Run one target:
 ```sh
 pnpm dev:desktop
 pnpm dev:landing
+pnpm dev:mobile
 pnpm dev:web
 pnpm dev:worker
 ```
