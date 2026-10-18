@@ -1,4 +1,5 @@
-import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloudAuthPanel } from '../auth/cloud-auth-panel';
 import type { MobileAuthState } from '../auth/use-mobile-auth';
 import { GOYO_CLOUD_API_URL } from '../config/mobile-cloud-api';

@@ -1,26 +1,41 @@
 import { router, Stack } from 'expo-router';
 import { useEffect, useRef } from 'react';
+import { View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MobileAppProvider, useMobileApp } from '../src/mobile-app-context';
-import { MobileMenuOverlay } from '../src/navigation/mobile-drawer-content';
+import { MobileNavigation } from '../src/navigation/mobile-drawer-content';
+import { styles } from '../src/screens/mobile-library-styles';
 
 export default function RootLayout() {
   return (
-    <MobileAppProvider>
-      <RestoreLastRoute />
-      <Stack
-        screenOptions={{
-          animation: 'none',
-          contentStyle: { backgroundColor: '#f6efe5' },
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="book/[bookId]" options={{ headerShown: false }} />
-        <Stack.Screen name="editor/[documentId]" options={{ headerShown: false }} />
-        <Stack.Screen name="settings" options={{ headerShown: false }} />
-      </Stack>
-      <MobileMenuOverlay />
-    </MobileAppProvider>
+    <SafeAreaProvider>
+      <MobileAppProvider>
+        <MobileAppShell />
+      </MobileAppProvider>
+    </SafeAreaProvider>
+  );
+}
+
+function MobileAppShell() {
+  return (
+    <View style={styles.appShell}>
+      <MobileNavigation />
+      <View style={styles.appMain}>
+        <RestoreLastRoute />
+        <Stack
+          screenOptions={{
+            animation: 'none',
+            contentStyle: { backgroundColor: '#f6efe5' },
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="book/[bookId]" options={{ headerShown: false }} />
+          <Stack.Screen name="editor/[documentId]" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
+        </Stack>
+      </View>
+    </View>
   );
 }
 

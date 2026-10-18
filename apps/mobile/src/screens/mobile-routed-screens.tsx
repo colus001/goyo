@@ -11,12 +11,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMobileApp } from '../mobile-app-context';
 import { styles } from './mobile-library-styles';
 import { CloudSummaryCard } from './mobile-settings-screen';
@@ -177,6 +177,7 @@ export function EditorScreen({
   const activeDocument = workspace.session?.documents.find(
     (document) => document.id === activeDocumentId,
   );
+  const activeBook = workspace.session?.books.find((book) => book.id === activeDocument?.bookId);
 
   async function leaveEditor(navigate: () => void) {
     if (await workspace.flushActiveDocumentBody()) {
@@ -212,11 +213,14 @@ export function EditorScreen({
             <View style={styles.actionRowCompact}>
               <MenuButton />
               <Pressable
+                accessibilityLabel={`Back to ${activeBook?.title ?? 'book'}`}
                 accessibilityRole="button"
                 onPress={() => void leaveEditor(() => onBackToBook(activeDocument.bookId))}
                 style={styles.secondaryButton}
               >
-                <Text style={styles.secondaryButtonText}>Back</Text>
+                <Text numberOfLines={1} style={styles.secondaryButtonText}>
+                  {activeBook?.title ?? 'Back'}
+                </Text>
               </Pressable>
             </View>
             <StatusPill status={workspace.status} />
@@ -509,13 +513,14 @@ function StatusPill({ status }: { status: string }) {
 }
 
 function MenuButton() {
-  const { openMenu } = useMobileApp();
+  const { isMenuOpen, isSidebarVisible, toggleMenu } = useMobileApp();
 
   return (
     <Pressable
-      accessibilityLabel="Open navigation menu"
+      accessibilityLabel={isSidebarVisible ? 'Hide sidebar' : 'Open navigation menu'}
       accessibilityRole="button"
-      onPress={openMenu}
+      accessibilityState={{ expanded: isSidebarVisible || isMenuOpen }}
+      onPress={toggleMenu}
       style={styles.menuButton}
     >
       <Text style={styles.menuButtonText}>☰</Text>
