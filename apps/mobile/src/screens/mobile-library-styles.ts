@@ -133,9 +133,10 @@ export const styles = StyleSheet.create({
   },
   bodyInput: {
     color: '#4d433b',
+    flex: 1,
     fontSize: 17,
     lineHeight: 27,
-    minHeight: 360,
+    minHeight: 0,
     paddingHorizontal: 0,
     paddingTop: 20,
     textAlignVertical: 'top',
@@ -156,7 +157,17 @@ export const styles = StyleSheet.create({
     borderColor: '#eadfce',
     borderRadius: 28,
     borderWidth: 1,
-    padding: 22,
+    flex: 1,
+    minHeight: 0,
+    padding: 16,
+  },
+  editorContent: {
+    alignSelf: 'center',
+    flex: 1,
+    gap: 12,
+    maxWidth: 820,
+    padding: 12,
+    width: '100%',
   },
   editorMetaText: {
     color: '#9b8d80',
@@ -173,6 +184,9 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'space-between',
+  },
+  episodeDestinations: {
+    maxHeight: 150,
   },
   drawerContent: {
     gap: 8,
@@ -292,6 +306,8 @@ export const styles = StyleSheet.create({
   inlineButton: {
     backgroundColor: '#efe2d1',
     borderRadius: 999,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingHorizontal: 10,
     paddingVertical: 7,
   },

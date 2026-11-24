@@ -116,16 +116,21 @@ export async function createAndPersistEpisode(
   store: MobileLocalStore | null,
   session: DocumentSession | null,
   chapterId: string | null,
-  setSession: SetSession,
-  setScreen: SetScreen,
+  setSession: (update: (current: DocumentSession | null) => DocumentSession | null) => void,
   setStatus: SetStatus,
-): Promise<void> {
+): Promise<string | null> {
   if (
     !store ||
     !session ||
-    (chapterId && !session.chapters.some((chapter) => chapter.id === chapterId))
+    (chapterId &&
+      !session.chapters.some(
+        (chapter) =>
+          chapter.id === chapterId &&
+          chapter.bookId === session.activeBookId &&
+          !chapter.archivedAt,
+      ))
   ) {
-    return;
+    return null;
   }
 
   setStatus('Saving');
@@ -133,11 +138,12 @@ export async function createAndPersistEpisode(
 
   try {
     await store.saveDocument(document);
-    setSession(addDocumentToSession(session, document));
-    setScreen('editor');
+    setSession((current) => addDocumentToSession(current ?? session, document));
     setStatus('Ready');
+    return document.id;
   } catch {
     setStatus('Save failed');
+    return null;
   }
 }
 

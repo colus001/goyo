@@ -30,6 +30,7 @@ import {
   updateDocumentBodyText,
 } from './document-body-state';
 import { loadDocumentBodyFromCrdt } from './mobile-document-body-crdt';
+import { moveAndPersistEpisode } from './mobile-episode-actions';
 import {
   createAndPersistBook,
   createAndPersistChapter,
@@ -96,6 +97,15 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
 
   const activeDocumentId = session?.activeDocumentId ?? null;
   const activeDocumentBody = getDocumentBodyText(documentBodyStates, activeDocumentId);
+  const openBook = useCallback((bookId: string) => {
+    setScreen('book');
+    setSession((current) => (current ? selectActiveBook(current, bookId) : current));
+  }, []);
+  const openDocument = useCallback((documentId: string) => {
+    setSession((current) => (current ? selectActiveDocument(current, documentId) : current));
+    setScreen('editor');
+  }, []);
+  const showHome = useCallback(() => setScreen('home'), []);
 
   return {
     activeDocumentBody,
@@ -103,20 +113,16 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
     createBook: () => void createAndPersistBook(store, session, setSession, setScreen, setStatus),
     createChapter: () => void createAndPersistChapter(store, session, setSession, setStatus),
     createEpisode: (chapterId) =>
-      void createAndPersistEpisode(store, session, chapterId, setSession, setScreen, setStatus),
+      createAndPersistEpisode(store, session, chapterId, setSession, setStatus),
     flushActiveDocumentBody: () =>
       activeDocumentId ? flushPendingBodySave(activeDocumentId) : Promise.resolve(true),
     goBackToBook: () => setScreen(screen === 'settings' ? settingsReturnScreen : 'book'),
     isActiveDocumentBodyEditable: canEditDocumentBody(documentBodyStates, activeDocumentId),
     isLoading: status === 'Loading local library',
-    openBook: (bookId) => {
-      setScreen('book');
-      setSession((current) => (current ? selectActiveBook(current, bookId) : current));
-    },
-    openDocument: (documentId) => {
-      setSession((current) => (current ? selectActiveDocument(current, documentId) : current));
-      setScreen('editor');
-    },
+    moveEpisode: (documentId, chapterId) =>
+      moveAndPersistEpisode(store, session, documentId, chapterId, setSession, setStatus),
+    openBook,
+    openDocument,
     openSettings: () => {
       setSettingsReturnScreen(screen === 'settings' ? 'home' : screen);
       setScreen('settings');
@@ -142,7 +148,7 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
     renameActiveDocumentTitle: (title) =>
       void renameAndPersistActiveDocument(store, session, title, setSession, setStatus),
     screen,
-    showHome: () => setScreen('home'),
+    showHome,
     session,
     settingsReturnScreen,
     startQuickDraft: () =>
@@ -179,8 +185,8 @@ function useMobileAutoSync({
 
     let isCancelled = false;
 
-    async function sync() {
-      if (isSyncingRef.current || !store || !clientId || !authToken) {
+    const sync = async () => {
+      if (isSyncingRef.current) {
         return;
       }
 
@@ -188,11 +194,12 @@ function useMobileAutoSync({
       setStatus('Syncing');
 
       try {
-        await syncMobileWorkspace({ clientId, store, token: authToken });
+        const result = await syncMobileWorkspace({ clientId, store, token: authToken });
         await reloadMobileSession(store, setSession);
 
         if (!isCancelled) {
-          setSyncRevision((revision) => revision + 1);
+          const bodyChanges = result.pulledSnapshots + result.pulledUpdates;
+          setSyncRevision((revision) => revision + Math.min(1, bodyChanges));
           setStatus('Synced');
         }
       } catch {
@@ -202,7 +209,7 @@ function useMobileAutoSync({
       } finally {
         isSyncingRef.current = false;
       }
-    }
+    };
 
     void sync();
     const intervalId = globalThis.setInterval(sync, 15_000);

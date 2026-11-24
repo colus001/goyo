@@ -16,11 +16,12 @@ export interface MobileWorkspaceState {
   clientId: string | null;
   createBook(): void;
   createChapter(): void;
-  createEpisode(chapterId: string | null): void;
+  createEpisode(chapterId: string | null): Promise<string | null>;
   flushActiveDocumentBody(): Promise<boolean>;
   goBackToBook(): void;
   isActiveDocumentBodyEditable: boolean;
   isLoading: boolean;
+  moveEpisode(documentId: string, chapterId: string | null): Promise<boolean>;
   openBook(bookId: string): void;
   openDocument(documentId: string): void;
   openSettings(): void;
