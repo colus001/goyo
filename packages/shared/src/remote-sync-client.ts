@@ -14,7 +14,12 @@ import type {
   RemoteSyncConnection,
 } from './remote-sync-types';
 
-export { base64ToBytes, fetchJson, RemoteSyncRequestError } from './remote-sync-runtime';
+export {
+  base64ToBytes,
+  bytesToBase64,
+  fetchJson,
+  RemoteSyncRequestError,
+} from './remote-sync-runtime';
 
 export type {
   RemoteBookMetadata,

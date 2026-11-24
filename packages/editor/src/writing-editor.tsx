@@ -1,11 +1,10 @@
-import Collaboration from '@tiptap/extension-collaboration';
 import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import type { MouseEvent, ReactElement } from 'react';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { tiptapJsonToMarkdown } from './document-export';
 import { applyPersistedContent, REMOTE_UPDATE_ORIGIN } from './persisted-editor-content';
+import { createWritingExtensions } from './writing-extensions';
 
 const SNAPSHOT_UPDATE_INTERVAL = 50;
 const NO_UPDATES: Uint8Array[] = [];
@@ -26,6 +25,7 @@ export interface WritingEditorRef {
   getMarkdown: () => string;
   getPlainText: () => string;
   getSnapshot: () => Uint8Array | null;
+  isComposing: () => boolean;
 }
 
 export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
@@ -43,6 +43,7 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
     const yDocument = useYDocument(initialUpdates, initialSnapshot);
     const content = useMemo(() => yDocument.getXmlFragment(documentId), [documentId, yDocument]);
     const editor = useWritingTiptapEditor(content, yDocument);
+    useMergePersistedContent(yDocument, editor, initialUpdates, initialSnapshot);
 
     useImperativeHandle(
       ref,
@@ -53,6 +54,7 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
         getMarkdown: () => (editor ? tiptapJsonToMarkdown(editor.getJSON()) : ''),
         getPlainText: () => editor?.state.doc.textContent ?? '',
         getSnapshot: () => (editor ? Y.encodeStateAsUpdate(yDocument) : null),
+        isComposing: () => Boolean(editor?.view.composing),
       }),
       [editor, yDocument],
     );
@@ -92,13 +94,36 @@ function useYDocument(
     return document;
   });
 
-  useEffect(() => {
-    applyPersistedContent(document, initialUpdates, initialSnapshot);
-  }, [document, initialSnapshot, initialUpdates]);
-
   return document;
 }
 
+function useMergePersistedContent(
+  document: Y.Doc,
+  editor: ReturnType<typeof useEditor>,
+  updates: Uint8Array[],
+  snapshot?: Uint8Array,
+) {
+  useEffect(() => {
+    if (!editor) return;
+    if (!editor.view.composing) {
+      applyPersistedContent(document, updates, snapshot);
+      return;
+    }
+
+    // ProseMirror commits the composition asynchronously after compositionend.
+    let timer: ReturnType<typeof setTimeout>;
+    const mergeAfterComposition = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (editor.isDestroyed) return;
+        if (editor.view.composing) mergeAfterComposition();
+        else applyPersistedContent(document, updates, snapshot);
+      }, 30);
+    };
+    mergeAfterComposition();
+    return () => clearTimeout(timer);
+  }, [document, editor, snapshot, updates]);
+}
 function useWritingTiptapEditor(content: Y.XmlFragment, yDocument: Y.Doc) {
   return useEditor(
     {
@@ -110,10 +135,7 @@ function useWritingTiptapEditor(content: Y.XmlFragment, yDocument: Y.Doc) {
           style: 'font-family: var(--goyo-writing-font-family);',
         },
       },
-      extensions: [
-        StarterKit.configure({ undoRedo: false }),
-        Collaboration.configure({ document: yDocument, fragment: content }),
-      ],
+      extensions: createWritingExtensions(yDocument, content),
     },
     [content, yDocument],
   );

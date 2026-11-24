@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMobileApp } from '../mobile-app-context';
+import { MobileEpisodeBody } from './mobile-episode-body';
 import { MobileEpisodePlacement } from './mobile-episode-placement';
 import { styles } from './mobile-library-styles';
 import { CloudSummaryCard } from './mobile-settings-screen';
@@ -276,24 +277,7 @@ export function EditorScreen({
               style={styles.titleInput}
               value={activeDocument.title}
             />
-            <TextInput
-              accessibilityLabel="Episode body"
-              editable={workspace.isActiveDocumentBodyEditable}
-              key={activeDocument.id}
-              multiline
-              onChangeText={workspace.saveActiveDocumentBody}
-              placeholder={
-                workspace.isActiveDocumentBodyEditable ? 'Start writing...' : 'Loading writing...'
-              }
-              placeholderTextColor="#958678"
-              scrollEnabled
-              style={styles.bodyInput}
-              value={workspace.activeDocumentBody}
-            />
-            <Text style={styles.editorMetaText}>
-              {formatWordCount(workspace.activeDocumentBody)} ·{' '}
-              {workspace.pendingBodySave ? 'Saving soon' : 'Saved locally'}
-            </Text>
+            <MobileEpisodeBody documentId={activeDocument.id} workspace={workspace} />
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -575,12 +559,6 @@ function formatBookSummary(chapterCount: number, documentCount: number): string 
 
 function getEditorTitlePlaceholder(kind: string): string {
   return kind === 'draft' ? 'Untitled draft' : 'Untitled episode';
-}
-
-function formatWordCount(text: string): string {
-  const words = text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
-
-  return `${words} words`;
 }
 
 function getDocumentTitle(title: string, chapterId: string): string {

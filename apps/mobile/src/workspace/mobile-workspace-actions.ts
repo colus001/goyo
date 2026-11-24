@@ -13,7 +13,6 @@ import {
   selectActiveBook,
 } from '@writer/core';
 import type { MobileLocalStore } from '../storage/mobile-local-store';
-import { saveDocumentBodyAsCrdtUpdate } from './mobile-document-body-crdt';
 import type { MobileWorkspaceScreen, MobileWorkspaceStatus } from './mobile-workspace-types';
 
 type SetSession = (session: DocumentSession) => void;
@@ -180,29 +179,6 @@ export async function renameAndPersistActiveDocument(
     setStatus('Ready');
   } catch {
     setStatus('Save failed');
-  }
-}
-
-export async function saveAndPersistDocumentBody(
-  store: MobileLocalStore | null,
-  clientId: string | null,
-  documentId: string,
-  text: string,
-  setStatus: SetStatus,
-): Promise<void> {
-  if (!store || !clientId) {
-    setStatus('Save failed');
-    throw new Error('Document persistence is not ready');
-  }
-
-  setStatus('Saving');
-
-  try {
-    await saveDocumentBodyAsCrdtUpdate(store, clientId, documentId, text);
-    setStatus('Ready');
-  } catch (error) {
-    setStatus('Save failed');
-    throw error;
   }
 }
 

@@ -84,6 +84,7 @@ export type {
 } from './remote-sync-client';
 export {
   base64ToBytes,
+  bytesToBase64,
   fetchJson,
   fetchLatestRemoteDocumentSnapshot,
   fetchRemoteBooks,

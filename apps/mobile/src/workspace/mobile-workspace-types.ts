@@ -1,4 +1,5 @@
 import type { DocumentSession } from '@writer/core';
+import type { MobileEditorContent } from './mobile-editor-content';
 
 export type MobileWorkspaceStatus =
   | 'Loading local library'
@@ -12,21 +13,21 @@ export type MobileWorkspaceStatus =
 export type MobileWorkspaceScreen = 'book' | 'editor' | 'home' | 'settings';
 
 export interface MobileWorkspaceState {
-  activeDocumentBody: string;
+  activeDocumentBody: MobileEditorContent | null;
   clientId: string | null;
   createBook(): void;
   createChapter(): void;
   createEpisode(chapterId: string | null): Promise<string | null>;
   flushActiveDocumentBody(): Promise<boolean>;
   goBackToBook(): void;
-  isActiveDocumentBodyEditable: boolean;
   isLoading: boolean;
   moveEpisode(documentId: string, chapterId: string | null): Promise<boolean>;
   openBook(bookId: string): void;
   openDocument(documentId: string): void;
   openSettings(): void;
   pendingBodySave: boolean;
-  saveActiveDocumentBody(text: string): void;
+  recordDocumentUpdate(documentId: string, updateBase64: string): void;
+  registerEditorFlush(documentId: string, flush: () => Promise<boolean>): () => void;
   settingsReturnScreen: Exclude<MobileWorkspaceScreen, 'settings'>;
   renameActiveDocumentTitle(title: string): void;
   screen: MobileWorkspaceScreen;

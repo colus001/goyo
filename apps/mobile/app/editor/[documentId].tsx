@@ -1,31 +1,27 @@
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { usePreventRemove } from 'expo-router/react-navigation';
+import { useRef } from 'react';
 import { useMobileApp } from '../../src/mobile-app-context';
 import { EditorScreen } from '../../src/screens/mobile-routed-screens';
 
 export default function EditorRoute() {
   const { documentId } = useLocalSearchParams<{ documentId: string }>();
   const navigation = useNavigation();
-  const allowNextRemovalRef = useRef(false);
+  const flushingRef = useRef(false);
   const { workspace } = useMobileApp();
 
-  useEffect(
-    () =>
-      navigation.addListener('beforeRemove', (event) => {
-        if (allowNextRemovalRef.current || !workspace.pendingBodySave) {
-          return;
-        }
-
-        event.preventDefault();
-        void workspace.flushActiveDocumentBody().then((didFlush) => {
-          if (didFlush) {
-            allowNextRemovalRef.current = true;
-            navigation.dispatch(event.data.action);
-          }
-        });
-      }),
-    [navigation, workspace],
-  );
+  usePreventRemove(true, ({ data }) => {
+    if (flushingRef.current) return;
+    flushingRef.current = true;
+    void workspace
+      .flushActiveDocumentBody()
+      .then((didFlush) => {
+        if (didFlush) navigation.dispatch(data.action);
+      })
+      .finally(() => {
+        flushingRef.current = false;
+      });
+  });
 
   return (
     <EditorScreen

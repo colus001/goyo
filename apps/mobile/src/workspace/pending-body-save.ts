@@ -1,24 +1,17 @@
 export interface PendingBodySave {
+  createdAt: string;
   documentId: string;
+  id: string;
   revision: number;
-  text: string;
+  updateBase64: string;
 }
 
 export function queuePendingBodySave(
   pendingSaves: PendingBodySave[],
   nextSave: PendingBodySave,
 ): PendingBodySave[] {
-  const existingIndex = pendingSaves.findIndex(
-    (pendingSave) => pendingSave.documentId === nextSave.documentId,
-  );
-
-  if (existingIndex === -1) {
-    return [...pendingSaves, nextSave];
-  }
-
-  return pendingSaves.map((pendingSave, index) =>
-    index === existingIndex ? nextSave : pendingSave,
-  );
+  // A later Yjs update can depend on an earlier one, so never coalesce by document.
+  return [...pendingSaves, nextSave];
 }
 
 export function completePendingBodySave(

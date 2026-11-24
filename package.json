@@ -26,6 +26,7 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "latest",
+    "happy-dom": "^21.0.4",
     "knip": "latest",
     "turbo": "^2.9.18",
     "typescript": "latest",

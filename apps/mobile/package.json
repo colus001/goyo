@@ -18,6 +18,7 @@
   "dependencies": {
     "@expo/dom-webview": "~57.0.1",
     "@writer/core": "workspace:*",
+    "@writer/editor": "workspace:*",
     "@writer/shared": "workspace:*",
     "expo": "57.0.30",
     "expo-constants": "~57.0.22",
@@ -31,10 +32,12 @@
     "expo-updates": "~57.0.26",
     "isomorphic-webcrypto": "^2.3.8",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "^5.7.0",
     "react-native-screens": "4.26.2",
+    "react-native-web": "^0.21.4",
     "react-native-worklets": "0.10.1",
     "yjs": "^13.6.31"
   },

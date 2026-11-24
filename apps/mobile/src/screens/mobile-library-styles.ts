@@ -132,14 +132,9 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bodyInput: {
-    color: '#4d433b',
+    backgroundColor: '#fffaf1',
     flex: 1,
-    fontSize: 17,
-    lineHeight: 27,
     minHeight: 0,
-    paddingHorizontal: 0,
-    paddingTop: 20,
-    textAlignVertical: 'top',
   },
   authInput: {
     backgroundColor: '#fbf4ea',
