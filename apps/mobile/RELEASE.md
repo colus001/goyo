@@ -46,6 +46,24 @@ The `production` profile creates a signed App Store archive for TestFlight. The
 build. `pnpm build` currently runs TypeScript checks for mobile; it does not
 produce an iOS archive.
 
+### iOS 27 SDK readiness
+
+Apple's `ITMS-90725` warning for `0.1.1 (5)` is about the SDK used to build the
+app, not its minimum supported iOS version. Apple says new uploads will require
+the iOS 27 SDK starting in April 2027.
+
+`xcode27-preview` is a simulator-only profile that pins Xcode 27 and enables
+UIKit scene support (`GOYO_IOS_SCENE_SUPPORT=1`) for Expo SDK 57. Regular
+`preview` and `production` builds keep their current behavior.
+
+When ready to validate, run `eas build --platform ios --profile xcode27-preview`
+from `apps/mobile` without auto-submit. Confirm the Xcode/SDK version in the
+build log and test launch, background/foreground, sign-in links, and writing
+on an iOS 27 simulator. The preview profile uses the production sync API, so
+use disposable writing. After that, opt `production` into the tested image
+and scene setting, and validate a new archive with internal TestFlight before
+wider distribution. Do not change the minimum iOS version for this transition.
+
 ## Environments and Versioning
 
 | Workflow | Configuration | API |

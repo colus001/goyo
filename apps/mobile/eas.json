@@ -14,6 +14,16 @@
         "simulator": true
       }
     },
+    "xcode27-preview": {
+      "extends": "preview",
+      "env": {
+        "GOYO_IOS_SCENE_SUPPORT": "1"
+      },
+      "ios": {
+        "image": "macos-tahoe-26.6-xcode-27.0",
+        "simulator": true
+      }
+    },
     "production": {
       "distribution": "store",
       "environment": "production",
