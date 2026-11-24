@@ -47,7 +47,37 @@ your Worker before pushing or pulling document updates. Rotate
 desktop Settings.
 
 You can switch between Local-only, Self-hosted Worker, and Goyo Cloud at any
-time from Settings. Local-only writing never leaves the device.
+time from Settings. Local-only disables manuscript sync; it does not disable
+explicit actions such as sending a text to the writing coach.
+
+## Desktop Writing Coach
+
+In Goyo, open **Settings → AI Providers** and connect **ChatGPT** or
+**OpenRouter** in your browser. Then open a book and choose an account and a
+model in **Writing coach**. ChatGPT uses eligible usage from your ChatGPT plan;
+OpenRouter uses your own OpenRouter credits. Neither requires pasting an API key.
+**OpenCode Go** connects directly with your subscriber API key and loads the
+current Go model catalog. OpenCode itself does not need to be installed or running.
+
+**Direct API providers** offers compatible presets from `models.dev` and accepts
+manual endpoints for OpenAI Chat Completions and Responses, Anthropic Messages,
+and Gemini GenerateContent. Local Ollama and LM Studio endpoints can be connected
+without a key. If a provider does not expose model discovery, enter model IDs
+manually. The provider catalog does not imply support for every provider-specific
+OAuth, cloud identity, or API protocol.
+
+**Cloud accounts** uses OpenCode's published MIT-licensed `@opencode/ai` provider
+modules without starting OpenCode. Amazon Bedrock uses the AWS credential chain
+or a named SSO profile; Vertex AI uses Google Application Default Credentials
+(`gcloud auth application-default login`); Azure OpenAI uses the Entra session
+from `az login`. Enter the model or Azure deployment IDs when connecting. This
+setup does not enumerate or verify your cloud deployments; the provider checks
+your credentials and access on the first request.
+
+Select a document and ask about it in Writing coach. Sending shares the question,
+optional book notes, recent turns about that document, and its current text with
+the selected provider directly. The Goyo server does not handle these requests.
+Conversations are saved locally; Goyo does not save separate manuscript copies.
 
 ## Releases
 

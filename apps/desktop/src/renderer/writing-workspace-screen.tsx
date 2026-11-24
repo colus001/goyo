@@ -16,6 +16,7 @@ import {
 } from 'react';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { UpdateNotification } from './update-notification';
+import { useWritingCoachSlots } from './use-writing-coach-slots';
 import { BookEmptyState, EpisodeSurface } from './writing-surfaces';
 import { exportActiveChapter, exportActiveDocument } from './writing-workspace-export-actions';
 import { useWorkspaceKeyboardShortcuts } from './writing-workspace-shortcuts';
@@ -36,10 +37,7 @@ export function WritingWorkspaceScreen({
   const editorRef = useRef<WritingEditorRef>(null);
   const [wordCountState, setWordCountState] = useState<WordCountState>({ wordCount: 0 });
   const [isNewChapterModalOpen, setIsNewChapterModalOpen] = useState(false);
-  const wordCount =
-    activeDocument && wordCountState.documentId === activeDocument.id
-      ? wordCountState.wordCount
-      : 0;
+  const wordCount = getDocumentWordCount(activeDocument?.id, wordCountState);
   const chapters = getVisibleChapters(workspace);
   const documents = getVisibleDocuments(workspace);
   const wordCountLabel = activeDocument ? formatWordCountLabel(wordCount) : undefined;
@@ -62,10 +60,11 @@ export function WritingWorkspaceScreen({
 
   useWorkspaceKeyboardShortcuts(workspace, activeDocument, editorRef, requestNewChapter);
   useApplyActiveDocumentUpdates(activeDocument?.id ?? null, editorRef);
+  const coachSlots = useWritingCoachSlots(workspace, editorRef, onOpenSettings);
 
   return (
     <>
-      <WritingShell {...shellProps} chapters={chapters} documents={documents}>
+      <WritingShell {...shellProps} {...coachSlots} chapters={chapters} documents={documents}>
         <WritingWorkspaceContent
           activeDocument={activeDocument}
           editorRef={editorRef}
@@ -287,6 +286,10 @@ function getVisibleDocuments(workspace: WritingWorkspaceState) {
 
 function formatWordCountLabel(wordCount: number): string {
   return `${wordCount} ${wordCount === 1 ? 'word' : 'words'}`;
+}
+
+function getDocumentWordCount(id: string | undefined, state: WordCountState) {
+  return id && id === state.documentId ? state.wordCount : 0;
 }
 
 function getEpisodeBreadcrumbSegments(

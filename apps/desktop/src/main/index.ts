@@ -39,6 +39,7 @@ import {
 } from './remote-sync';
 import { createSyncClientIdentityStore } from './sync-client-identity';
 import { createSyncCredentialsStore } from './sync-credentials';
+import { registerWritingCoachIpc } from './writing-coach-ipc';
 
 const isDevelopment = !app.isPackaged;
 const GOYO_CLOUD_API_URL =
@@ -137,6 +138,7 @@ if (!gotTheLock) {
 function registerDocumentIpc() {
   const userDataPath = app.getPath('userData');
   const store = createDesktopLocalStore(userDataPath);
+  registerWritingCoachIpc(store, userDataPath);
   const syncClientIdentity = createSyncClientIdentityStore(userDataPath);
   const syncCredentials = createSyncCredentialsStore(userDataPath);
   const goyoCloudSession = createGoyoCloudSessionStore(userDataPath);

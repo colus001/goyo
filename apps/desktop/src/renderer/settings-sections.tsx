@@ -12,6 +12,7 @@ import { CustomThemeEditor } from './custom-theme-editor';
 import { DeletedDocumentRecovery } from './deleted-document-recovery';
 import type { WritingWorkspaceState } from './document-workspace-types';
 import { FontDropdown, SettingsDropdown } from './font-dropdown';
+import { AiProviderSettings } from './settings-ai-providers';
 import { DevelopmentSettings } from './settings-development';
 import { SyncRecoverySettings } from './sync-recovery-settings';
 
@@ -77,6 +78,10 @@ export function SettingsSections({
 
       <SettingsSection title="Sync & Account">
         <SyncRecoverySettings onChangeSettings={onChangeSettings} settings={settings} />
+      </SettingsSection>
+
+      <SettingsSection title="AI Providers">
+        <AiProviderSettings />
       </SettingsSection>
 
       <SettingsSection title="Recovery">

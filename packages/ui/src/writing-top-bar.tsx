@@ -17,6 +17,7 @@ export function WritingTopBar({
   activeMoveTarget,
   bookTitle,
   breadcrumbSegments,
+  companionControl,
   isSidebarCollapsed,
   onCreateChapter,
   onCreateDocument,
@@ -31,6 +32,7 @@ export function WritingTopBar({
   activeMoveTarget: ActiveMoveTarget | null;
   bookTitle: string;
   breadcrumbSegments?: string[];
+  companionControl?: ReactNode;
   isSidebarCollapsed: boolean;
   onCreateChapter?: (title?: string) => void;
   onCreateDocument?: (kind: 'draft' | 'episode' | 'note') => void;
@@ -69,6 +71,7 @@ export function WritingTopBar({
           </p>
         ) : null}
         {updateControl ? <div className="[-webkit-app-region:no-drag]">{updateControl}</div> : null}
+        {companionControl}
         <WritingExportMenu
           canExportDocument={Boolean(activeDocument)}
           onExportChapter={onExportChapter}
