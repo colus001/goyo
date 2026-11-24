@@ -93,6 +93,13 @@ recommended way to install Goyo.** The maintainer signs and notarizes
 releases when Apple Developer / Windows code signing credentials are
 available; check the release notes for the current signing status.
 
+Desktop release CI expects `CSC_LINK` to contain a Base64-encoded Developer ID
+Application `.p12` and `CSC_KEY_PASSWORD` to contain its export password.
+Artifacts larger than 300 MiB use R2's S3-compatible multipart upload; configure
+the GitHub Actions secrets `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` with
+object read/write credentials scoped to the `goyo-releases` bucket. Smaller
+artifacts continue to use Wrangler and the existing Cloudflare API token.
+
 If you build Goyo from source yourself:
 
 - **macOS**: an Apple Developer account and a Developer ID Application
