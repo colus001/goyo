@@ -26,6 +26,19 @@ describe('sync storage ownership', () => {
   it('accepts fractional document order values used for insertions between rows', () =>
     expectFractionalDocumentOrderAccepted());
 
+  it('does not let a stale upload move an episode back to its old chapter', async () => {
+    const env = createTestEnv();
+    await putDocument(env, ownerA, 'doc-1', 'Episode', 3, {
+      chapterId: 'new-chapter',
+      updatedAt: '2026-06-14T12:05:00.000Z',
+    });
+    await putDocument(env, ownerA, 'doc-1', 'Episode', 0);
+    const response = await getDocumentMetadata(env, ownerA, 'doc-1');
+    await expect(response.json()).resolves.toMatchObject({
+      document: { chapterId: 'new-chapter', id: 'doc-1', order: 3 },
+    });
+  });
+
   it('stores books and chapters separately for each owner', () =>
     expectBookAndChapterOwnershipScoped());
 });
@@ -212,17 +225,18 @@ async function putDocument(
   documentId: string,
   title = 'Chapterless episode',
   order = 0,
+  placement: { chapterId: string; updatedAt: string } | null = null,
 ) {
   return upsertDocumentMetadata(
     jsonRequest({
       archivedAt: null,
       bookId: 'book-1',
-      chapterId: null,
+      chapterId: placement?.chapterId ?? null,
       createdAt: '2026-06-14T12:00:00.000Z',
       kind: 'episode',
       order,
       title,
-      updatedAt: '2026-06-14T12:00:00.000Z',
+      updatedAt: placement?.updatedAt ?? '2026-06-14T12:00:00.000Z',
     }),
     env,
     auth,

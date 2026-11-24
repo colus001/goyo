@@ -2,12 +2,13 @@ import Collaboration from '@tiptap/extension-collaboration';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { MouseEvent, ReactElement } from 'react';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { tiptapJsonToMarkdown } from './document-export';
+import { applyPersistedContent, REMOTE_UPDATE_ORIGIN } from './persisted-editor-content';
 
 const SNAPSHOT_UPDATE_INTERVAL = 50;
-const REMOTE_UPDATE_ORIGIN = 'remote-sync';
+const NO_UPDATES: Uint8Array[] = [];
 
 export interface WritingEditorProps {
   documentId: string;
@@ -33,7 +34,7 @@ export const WritingEditor = forwardRef<WritingEditorRef, WritingEditorProps>(
       documentId,
       focusOnMount = false,
       initialSnapshot,
-      initialUpdates = [],
+      initialUpdates = NO_UPDATES,
       onDocumentUpdate,
       onWordCountChange,
     },
@@ -85,19 +86,17 @@ function useYDocument(
   initialUpdates: Uint8Array[],
   initialSnapshot: Uint8Array | undefined,
 ): Y.Doc {
-  return useMemo(() => {
+  const [document] = useState(() => {
     const document = new Y.Doc();
-
-    if (initialSnapshot) {
-      Y.applyUpdate(document, initialSnapshot);
-    }
-
-    for (const update of initialUpdates) {
-      Y.applyUpdate(document, update);
-    }
-
+    applyPersistedContent(document, initialUpdates, initialSnapshot);
     return document;
-  }, [initialSnapshot, initialUpdates]);
+  });
+
+  useEffect(() => {
+    applyPersistedContent(document, initialUpdates, initialSnapshot);
+  }, [document, initialSnapshot, initialUpdates]);
+
+  return document;
 }
 
 function useWritingTiptapEditor(content: Y.XmlFragment, yDocument: Y.Doc) {

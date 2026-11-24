@@ -203,8 +203,11 @@ class InMemoryD1Statement {
     ] = this.parameters;
     const ownerId = String(owner_id);
     const documentId = String(id);
+    const key = scopedKey(ownerId, documentId);
+    const existing = this.database.documents.get(key);
+    if (existing && existing.updated_at >= String(updated_at)) return d1Result(0);
 
-    this.database.documents.set(scopedKey(ownerId, documentId), {
+    this.database.documents.set(key, {
       archived_at: nullableString(archived_at),
       book_id: String(book_id),
       chapter_id: nullableString(chapter_id),

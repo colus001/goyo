@@ -320,7 +320,8 @@ async function saveDocument(database: MobileDatabase, document: DocumentMetadata
         kind = excluded.kind,
         sort_order = excluded.sort_order,
         updated_at = excluded.updated_at,
-        archived_at = excluded.archived_at;
+        archived_at = excluded.archived_at
+      WHERE excluded.updated_at >= documents.updated_at;
     `,
     document.id,
     document.bookId,

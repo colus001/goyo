@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { type Dispatch, type SetStateAction, useEffect } from 'react';
 import type { SyncStatus } from './document-workspace-types';
 
 const REMOTE_SYNC_INTERVAL_MS = 30_000;
 
-export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
+export function useRemoteSync(
+  setSyncStatus: (syncStatus: SyncStatus) => void,
+  setSyncRevision: Dispatch<SetStateAction<number>>,
+) {
   useEffect(() => {
     let isSyncing = false;
 
@@ -23,6 +26,7 @@ export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
       try {
         const { snapshotPull, snapshotPush, updatePull, updatePush } =
           await window.writerDesktop.sync.run();
+        setSyncRevision((revision) => revision + 1);
         const summary = await window.writerDesktop.sync.getStatusSummary();
 
         setSyncStatus(
@@ -47,13 +51,15 @@ export function useRemoteSync(setSyncStatus: (syncStatus: SyncStatus) => void) {
     const intervalId = globalThis.setInterval(syncDocuments, REMOTE_SYNC_INTERVAL_MS);
     globalThis.addEventListener('online', handleOnline);
     globalThis.addEventListener('offline', handleOffline);
+    globalThis.addEventListener('focus', handleOnline);
 
     return () => {
       globalThis.clearInterval(intervalId);
       globalThis.removeEventListener('online', handleOnline);
       globalThis.removeEventListener('offline', handleOffline);
+      globalThis.removeEventListener('focus', handleOnline);
     };
-  }, [setSyncStatus]);
+  }, [setSyncRevision, setSyncStatus]);
 }
 
 function getCompletedSyncStatus({
