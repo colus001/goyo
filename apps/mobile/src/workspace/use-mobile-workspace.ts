@@ -21,22 +21,17 @@ import {
 } from '../storage/mobile-local-store';
 import { syncMobileWorkspace } from '../sync/mobile-remote-sync';
 import {
-  beginDocumentBodyLoad,
-  canEditDocumentBody,
-  completeDocumentBodyLoad,
-  type DocumentBodyStates,
-  failDocumentBodyLoad,
-  getDocumentBodyText,
-  updateDocumentBodyText,
-} from './document-body-state';
-import { loadDocumentBodyFromCrdt } from './mobile-document-body-crdt';
+  loadMobileEditorContent,
+  type MobileEditorContent,
+  persistMobileEditorUpdate,
+} from './mobile-editor-content';
+import { moveAndPersistEpisode } from './mobile-episode-actions';
 import {
   createAndPersistBook,
   createAndPersistChapter,
   createAndPersistEpisode,
   createAndPersistQuickDraft,
   renameAndPersistActiveDocument,
-  saveAndPersistDocumentBody,
 } from './mobile-workspace-actions';
 import type {
   MobileWorkspaceScreen,
@@ -53,11 +48,11 @@ import {
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: This hook owns mobile workspace state wiring and exposes the app API.
 export function useMobileWorkspace(authToken: string | null): MobileWorkspaceState {
   const [store, setStore] = useState<MobileLocalStore | null>(null);
-  const [documentBodyStates, setDocumentBodyStates] = useState<DocumentBodyStates>({});
   const [clientId, setClientId] = useState<string | null>(null);
   const [pendingBodySaves, setPendingBodySaves] = useState<PendingBodySave[]>([]);
   const pendingBodySavesRef = useRef<PendingBodySave[]>([]);
   const pendingBodyRevisionRef = useRef(0);
+  const editorFlushes = useRef(new Map<string, () => Promise<boolean>>());
   const [session, setSession] = useState<MobileWorkspaceState['session']>(null);
   const [screen, setScreen] = useState<MobileWorkspaceScreen>('home');
   const [settingsReturnScreen, setSettingsReturnScreen] =
@@ -68,11 +63,11 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
 
   useLoadMobileWorkspace(store, setStore, setSession, setScreen, setStatus, setHasLoadedWorkspace);
   useLoadMobileClientId(store, setClientId, setStatus);
-  useLoadActiveDocumentBody(
+  const activeDocumentId = session?.activeDocumentId ?? null;
+  const activeDocumentBody = useLoadActiveDocumentBody(
     store,
-    session?.activeDocumentId ?? null,
+    screen === 'editor' ? activeDocumentId : null,
     syncRevision,
-    setDocumentBodyStates,
     setStatus,
   );
   const flushPendingBodySave = usePersistPendingBody({
@@ -86,7 +81,6 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
   useMobileAutoSync({
     authToken,
     clientId,
-    pendingBodySave: pendingBodySaves.length > 0,
     setSession,
     setStatus,
     setSyncRevision,
@@ -94,55 +88,67 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
   });
   usePersistMobileUiState({ hasLoadedWorkspace, screen, session, store });
 
-  const activeDocumentId = session?.activeDocumentId ?? null;
-  const activeDocumentBody = getDocumentBodyText(documentBodyStates, activeDocumentId);
+  const registerEditorFlush = useCallback((documentId: string, flush: () => Promise<boolean>) => {
+    editorFlushes.current.set(documentId, flush);
+    return () => {
+      if (editorFlushes.current.get(documentId) === flush) editorFlushes.current.delete(documentId);
+    };
+  }, []);
+  const recordDocumentUpdate = useCallback((documentId: string, updateBase64: string) => {
+    pendingBodyRevisionRef.current += 1;
+    const next = queuePendingBodySave(pendingBodySavesRef.current, {
+      createdAt: new Date().toISOString(),
+      documentId,
+      id: createLocalId('update'),
+      revision: pendingBodyRevisionRef.current,
+      updateBase64,
+    });
+    pendingBodySavesRef.current = next;
+    setPendingBodySaves(next);
+  }, []);
+  const openBook = useCallback((bookId: string) => {
+    setScreen('book');
+    setSession((current) => (current ? selectActiveBook(current, bookId) : current));
+  }, []);
+  const openDocument = useCallback((documentId: string) => {
+    setSession((current) => (current ? selectActiveDocument(current, documentId) : current));
+    setScreen('editor');
+  }, []);
+  const showHome = useCallback(() => setScreen('home'), []);
 
   return {
-    activeDocumentBody,
+    activeDocumentBody: clientId ? activeDocumentBody : null,
     clientId,
     createBook: () => void createAndPersistBook(store, session, setSession, setScreen, setStatus),
     createChapter: () => void createAndPersistChapter(store, session, setSession, setStatus),
     createEpisode: (chapterId) =>
-      void createAndPersistEpisode(store, session, chapterId, setSession, setScreen, setStatus),
-    flushActiveDocumentBody: () =>
-      activeDocumentId ? flushPendingBodySave(activeDocumentId) : Promise.resolve(true),
+      createAndPersistEpisode(store, session, chapterId, setSession, setStatus),
+    flushActiveDocumentBody: async () => {
+      if (!activeDocumentId) return true;
+      const flush = editorFlushes.current.get(activeDocumentId);
+      if (flush && !(await flush())) {
+        setStatus('Save failed');
+        return false;
+      }
+      return flushPendingBodySave(activeDocumentId);
+    },
     goBackToBook: () => setScreen(screen === 'settings' ? settingsReturnScreen : 'book'),
-    isActiveDocumentBodyEditable: canEditDocumentBody(documentBodyStates, activeDocumentId),
     isLoading: status === 'Loading local library',
-    openBook: (bookId) => {
-      setScreen('book');
-      setSession((current) => (current ? selectActiveBook(current, bookId) : current));
-    },
-    openDocument: (documentId) => {
-      setSession((current) => (current ? selectActiveDocument(current, documentId) : current));
-      setScreen('editor');
-    },
+    moveEpisode: (documentId, chapterId) =>
+      moveAndPersistEpisode(store, session, documentId, chapterId, setSession, setStatus),
+    openBook,
+    openDocument,
     openSettings: () => {
       setSettingsReturnScreen(screen === 'settings' ? 'home' : screen);
       setScreen('settings');
     },
     pendingBodySave: pendingBodySaves.length > 0,
-    saveActiveDocumentBody: (text) => {
-      const documentId = activeDocumentId;
-
-      if (!documentId || !canEditDocumentBody(documentBodyStates, documentId)) {
-        return;
-      }
-
-      pendingBodyRevisionRef.current += 1;
-      setDocumentBodyStates((states) => updateDocumentBodyText(states, documentId, text));
-      const nextPendingSaves = queuePendingBodySave(pendingBodySavesRef.current, {
-        documentId,
-        revision: pendingBodyRevisionRef.current,
-        text,
-      });
-      pendingBodySavesRef.current = nextPendingSaves;
-      setPendingBodySaves(nextPendingSaves);
-    },
+    recordDocumentUpdate,
+    registerEditorFlush,
     renameActiveDocumentTitle: (title) =>
       void renameAndPersistActiveDocument(store, session, title, setSession, setStatus),
     screen,
-    showHome: () => setScreen('home'),
+    showHome,
     session,
     settingsReturnScreen,
     startQuickDraft: () =>
@@ -156,7 +162,6 @@ export function useMobileWorkspace(authToken: string | null): MobileWorkspaceSta
 function useMobileAutoSync({
   authToken,
   clientId,
-  pendingBodySave,
   setSession,
   setStatus,
   setSyncRevision,
@@ -164,7 +169,6 @@ function useMobileAutoSync({
 }: {
   authToken: string | null;
   clientId: string | null;
-  pendingBodySave: boolean;
   setSession: Dispatch<SetStateAction<MobileWorkspaceState['session']>>;
   setStatus: (status: MobileWorkspaceStatus) => void;
   setSyncRevision: (update: (revision: number) => number) => void;
@@ -173,14 +177,14 @@ function useMobileAutoSync({
   const isSyncingRef = useRef(false);
 
   useEffect(() => {
-    if (!store || !clientId || !authToken || pendingBodySave) {
+    if (!store || !clientId || !authToken) {
       return;
     }
 
     let isCancelled = false;
 
-    async function sync() {
-      if (isSyncingRef.current || !store || !clientId || !authToken) {
+    const sync = async () => {
+      if (isSyncingRef.current) {
         return;
       }
 
@@ -188,11 +192,12 @@ function useMobileAutoSync({
       setStatus('Syncing');
 
       try {
-        await syncMobileWorkspace({ clientId, store, token: authToken });
+        const result = await syncMobileWorkspace({ clientId, store, token: authToken });
         await reloadMobileSession(store, setSession);
 
         if (!isCancelled) {
-          setSyncRevision((revision) => revision + 1);
+          const bodyChanges = result.pulledSnapshots + result.pulledUpdates;
+          setSyncRevision((revision) => revision + Math.min(1, bodyChanges));
           setStatus('Synced');
         }
       } catch {
@@ -202,7 +207,7 @@ function useMobileAutoSync({
       } finally {
         isSyncingRef.current = false;
       }
-    }
+    };
 
     void sync();
     const intervalId = globalThis.setInterval(sync, 15_000);
@@ -217,7 +222,7 @@ function useMobileAutoSync({
       globalThis.clearInterval(intervalId);
       subscription.remove();
     };
-  }, [authToken, clientId, pendingBodySave, setSession, setStatus, setSyncRevision, store]);
+  }, [authToken, clientId, setSession, setStatus, setSyncRevision, store]);
 }
 
 async function syncNow(
@@ -402,13 +407,10 @@ function usePersistPendingBody({
         return existingPromise;
       }
 
-      const savePromise = saveAndPersistDocumentBody(
-        store,
-        clientId,
-        pendingSave.documentId,
-        pendingSave.text,
-        setStatus,
-      )
+      if (!store || !clientId) {
+        return Promise.reject(new Error('Document persistence is not ready'));
+      }
+      const savePromise = persistMobileEditorUpdate(store, clientId, pendingSave)
         .then(() => {
           const nextPendingSaves = completePendingBodySave(
             pendingBodySavesRef.current,
@@ -416,6 +418,10 @@ function usePersistPendingBody({
           );
           pendingBodySavesRef.current = nextPendingSaves;
           setPendingBodySaves(nextPendingSaves);
+        })
+        .catch((error) => {
+          setStatus('Save failed');
+          throw error;
         })
         .finally(() => {
           inFlightSavesRef.current.delete(pendingSave.revision);
@@ -427,21 +433,21 @@ function usePersistPendingBody({
     [clientId, pendingBodySavesRef, setPendingBodySaves, setStatus, store],
   );
 
+  const pendingSave = pendingBodySaves[0];
   useEffect(() => {
-    const pendingSave = pendingBodySaves[0];
-
     if (!pendingSave) {
       return;
     }
 
-    const timeoutId = globalThis.setTimeout(() => {
+    const timer = globalThis.setInterval(() => {
       void persistPendingSave(pendingSave).catch(() => {
-        // Keep the document-scoped save in memory so a later retry cannot lose the text.
+        // Keep this incremental update queued for retry.
       });
-    }, 700);
+    }, 500);
+    void persistPendingSave(pendingSave).catch(() => {});
 
-    return () => globalThis.clearTimeout(timeoutId);
-  }, [pendingBodySaves, persistPendingSave]);
+    return () => globalThis.clearInterval(timer);
+  }, [pendingSave, persistPendingSave]);
 
   return (documentId: string) =>
     flushPendingBodySaves(documentId, () => pendingBodySavesRef.current, persistPendingSave);
@@ -457,9 +463,9 @@ function useLoadActiveDocumentBody(
   store: MobileLocalStore | null,
   documentId: string | null,
   syncRevision: number,
-  setDocumentBodyStates: Dispatch<SetStateAction<DocumentBodyStates>>,
   setStatus: (status: MobileWorkspaceStatus) => void,
 ) {
+  const [body, setBody] = useState<MobileEditorContent | null>(null);
   useEffect(() => {
     void syncRevision;
 
@@ -470,29 +476,19 @@ function useLoadActiveDocumentBody(
     const currentStore = store;
     const currentDocumentId = documentId;
     let isCancelled = false;
-    setDocumentBodyStates((states) => beginDocumentBodyLoad(states, currentDocumentId));
-
-    async function loadBody() {
-      const body = await loadDocumentBodyFromCrdt(currentStore, currentDocumentId);
-
-      if (!isCancelled) {
-        setDocumentBodyStates((states) =>
-          completeDocumentBodyLoad(states, currentDocumentId, body),
-        );
-      }
-    }
-
-    void loadBody().catch(() => {
-      if (!isCancelled) {
-        setDocumentBodyStates((states) => failDocumentBodyLoad(states, currentDocumentId));
-        setStatus('Save failed');
-      }
-    });
+    void loadMobileEditorContent(currentStore, currentDocumentId)
+      .then((content) => {
+        if (!isCancelled) setBody(content);
+      })
+      .catch(() => {
+        if (!isCancelled) setStatus('Save failed');
+      });
 
     return () => {
       isCancelled = true;
     };
-  }, [documentId, setDocumentBodyStates, setStatus, store, syncRevision]);
+  }, [documentId, setStatus, store, syncRevision]);
+  return body?.documentId === documentId ? body : null;
 }
 
 function useLoadMobileWorkspace(

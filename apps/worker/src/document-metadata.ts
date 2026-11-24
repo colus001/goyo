@@ -69,7 +69,8 @@ export async function upsertDocumentMetadata(
         kind = excluded.kind,
         sort_order = excluded.sort_order,
         updated_at = excluded.updated_at,
-        archived_at = excluded.archived_at;
+        archived_at = excluded.archived_at
+      WHERE excluded.updated_at > documents.updated_at;
     `)
       .bind(
         documentId,
@@ -126,8 +127,7 @@ export async function listDocuments(env: EnvWithDocumentsDatabase, auth: SyncAut
     SELECT id, book_id, chapter_id, title, kind, sort_order, created_at, updated_at, archived_at
     FROM documents
     WHERE owner_id = ? AND archived_at IS NULL
-    ORDER BY updated_at DESC
-    LIMIT 100;
+    ORDER BY updated_at DESC, id ASC;
   `)
     .bind(auth.ownerId)
     .all<DocumentMetadataRow>();
@@ -183,7 +183,7 @@ function validateDocumentMetadataBody(
       kind: body.kind,
       order: body.order,
       title: body.title,
-      updatedAt: body.updatedAt,
+      updatedAt: new Date(body.updatedAt).toISOString(),
     },
   };
 }

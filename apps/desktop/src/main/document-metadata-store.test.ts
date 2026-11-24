@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createDocumentMetadata, type LocalDocumentStore } from '@writer/core';
+import { createBookMetadata, createDocumentMetadata, type LocalDocumentStore } from '@writer/core';
 import Database from 'better-sqlite3';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createDesktopLocalStore, type DesktopLocalStore } from './document-metadata-store';
@@ -37,6 +37,35 @@ describe.skipIf(!canRunNativeSqliteTests)('desktop local metadata store initiali
     expect(listDocumentIndexes(path)).toEqual(
       expect.arrayContaining(['documents_active_list_idx', 'documents_archived_list_idx']),
     );
+  });
+});
+
+describe.skipIf(!canRunNativeSqliteTests)('writing coach conversations', () => {
+  it('keeps notes and turns scoped to their book and persists them across connections', () => {
+    const { store, path } = createTestStoreWithPath();
+    const now = '2026-06-12T10:00:00.000Z';
+    store.saveBook(createBookMetadata({ id: 'book_a', now }));
+    store.saveBook(createBookMetadata({ id: 'book_b', now }));
+    const session = store.writingCoach.create('book_a');
+    const turn = {
+      id: 'turn_1',
+      question: 'How do these scenes compare?',
+      answer: 'The second changes the pacing.',
+      attachments: [{ id: 'scene_1', title: 'Opening' }],
+    };
+    expect(store.writingCoach.saveContext('book_b', session.id, 'Wrong book')).toBe(false);
+    expect(store.writingCoach.saveContext('book_a', session.id, 'A quiet essay')).toBe(true);
+    expect(store.writingCoach.appendTurn('book_a', session.id, turn)).toBe(true);
+
+    const reopened = createDesktopLocalStore(path);
+    temporaryStores.push(reopened);
+    expect(reopened.writingCoach.list('book_b')).toEqual([]);
+    expect(reopened.writingCoach.get('book_a', session.id)).toEqual({
+      id: session.id,
+      title: turn.question,
+      context: 'A quiet essay',
+      turns: [turn],
+    });
   });
 });
 

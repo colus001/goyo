@@ -7,7 +7,9 @@ future browser app.
 ## Status
 
 This project is in early preview. The desktop app, sync API, release automation,
-and landing site are still changing quickly.
+and landing site are still changing quickly. The Expo mobile app has an internal
+iPhone/iPad TestFlight build; physical-device validation and public-beta safety
+work are still in progress.
 
 Important limitations:
 
@@ -45,9 +47,41 @@ your Worker before pushing or pulling document updates. Rotate
 desktop Settings.
 
 You can switch between Local-only, Self-hosted Worker, and Goyo Cloud at any
-time from Settings. Local-only writing never leaves the device.
+time from Settings. Local-only disables manuscript sync; it does not disable
+explicit actions such as sending a text to the writing coach.
+
+## Desktop Writing Coach
+
+In Goyo, open **Settings → AI Providers** and connect **ChatGPT** or
+**OpenRouter** in your browser. Then open a book and choose an account and a
+model in **Writing coach**. ChatGPT uses eligible usage from your ChatGPT plan;
+OpenRouter uses your own OpenRouter credits. Neither requires pasting an API key.
+**OpenCode Go** connects directly with your subscriber API key and loads the
+current Go model catalog. OpenCode itself does not need to be installed or running.
+
+**Direct API providers** offers compatible presets from `models.dev` and accepts
+manual endpoints for OpenAI Chat Completions and Responses, Anthropic Messages,
+and Gemini GenerateContent. Local Ollama and LM Studio endpoints can be connected
+without a key. If a provider does not expose model discovery, enter model IDs
+manually. The provider catalog does not imply support for every provider-specific
+OAuth, cloud identity, or API protocol.
+
+**Cloud accounts** uses OpenCode's published MIT-licensed `@opencode/ai` provider
+modules without starting OpenCode. Amazon Bedrock uses the AWS credential chain
+or a named SSO profile; Vertex AI uses Google Application Default Credentials
+(`gcloud auth application-default login`); Azure OpenAI uses the Entra session
+from `az login`. Enter the model or Azure deployment IDs when connecting. This
+setup does not enumerate or verify your cloud deployments; the provider checks
+your credentials and access on the first request.
+
+Select a document and ask about it in Writing coach. Sending shares the question,
+optional book notes, recent turns about that document, and its current text with
+the selected provider directly. The Goyo server does not handle these requests.
+Conversations are saved locally; Goyo does not save separate manuscript copies.
 
 ## Releases
+
+### Desktop
 
 Desktop release automation is configured through GitHub Actions. Tagged releases
 use `apps/desktop/package.json` as the desktop version source of truth.
@@ -72,6 +106,22 @@ If you build Goyo from source yourself:
 - **Linux**: AppImage and `.deb` artifacts are unsigned by default. Most
   distributions accept them without further steps.
 
+### iPhone and iPad / TestFlight
+
+`apps/mobile` uses Expo and EAS Build/Submit, independently of desktop release
+tags. One signed iOS archive supports iPhone and iPad. Builds and submissions are
+currently manual, not triggered by commits or pushes.
+
+- [iOS / TestFlight release runbook](apps/mobile/RELEASE.md): account/project IDs,
+  signing versus submission credentials, environments, build/upload/status
+  commands, tester setup, and troubleshooting.
+- [Mobile public-beta checklist](apps/mobile/PUBLIC_BETA_MVP.md): writing safety,
+  account isolation, synchronization, accessibility, and device verification gates.
+
+The mobile `build` script only typechecks; `pnpm build` does not create an `.ipa`.
+Use the EAS workflow in the release runbook. Keep testing to disposable writing
+until the safety gates have been verified.
+
 ## Workspace
 
 This repository uses pnpm and Turborepo.
@@ -80,6 +130,7 @@ This repository uses pnpm and Turborepo.
   source of truth for the published desktop version. The other workspace
   packages use their own versions; do not assume they are kept in lockstep.
 - `apps/landing`: Public marketing site, downloads, and product information.
+- `apps/mobile`: Expo React Native iPhone/iPad app, SQLite storage, and EAS release configuration.
 - `apps/web`: Goyo Cloud product web app for login, account status, and future billing.
 - `apps/worker`: Cloudflare Worker sync, auth, and future billing API.
 - `packages/core`: Platform-agnostic writing, sync, recovery, and domain logic.
@@ -106,6 +157,7 @@ Run one target:
 ```sh
 pnpm dev:desktop
 pnpm dev:landing
+pnpm dev:mobile
 pnpm dev:web
 pnpm dev:worker
 ```

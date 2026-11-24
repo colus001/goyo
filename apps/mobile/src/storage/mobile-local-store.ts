@@ -34,7 +34,6 @@ export interface MobileAppUiState {
 
 export interface MobileLocalStore {
   appendDocumentUpdate(update: DocumentUpdateRecord): Promise<void>;
-  enqueueSyncItem(item: SyncQueueItem): Promise<void>;
   getDocumentBody(documentId: string): Promise<string>;
   getDocumentSnapshot(snapshotId: string): Promise<DocumentSnapshotRecord | null>;
   getLatestDocumentSnapshot(documentId: string): Promise<DocumentSnapshotRecord | null>;
@@ -44,13 +43,12 @@ export interface MobileLocalStore {
   listChapters(): Promise<ChapterMetadata[]>;
   listDocuments(): Promise<DocumentMetadata[]>;
   listDocumentUpdates(documentId: string): Promise<DocumentUpdateRecord[]>;
-  listDocumentUpdatesAfter(documentId: string, updateId: string): Promise<DocumentUpdateRecord[]>;
   listPendingSyncItems(): Promise<SyncQueueItem[]>;
   markSyncItemAttempted(itemId: string, attemptedAt: string): Promise<void>;
   markSyncItemCompleted(itemId: string, completedAt: string): Promise<void>;
   saveBook(book: BookMetadata): Promise<void>;
   saveChapter(chapter: ChapterMetadata): Promise<void>;
-  saveDocumentBody(documentId: string, text: string, updatedAt: string): Promise<void>;
+  saveLocalDocumentUpdate(update: DocumentUpdateRecord, item: SyncQueueItem): Promise<void>;
   saveDocumentSnapshot(snapshot: DocumentSnapshotRecord): Promise<void>;
   saveMobileAppUiState(state: MobileAppUiState): Promise<void>;
   saveSyncClientId(clientId: string): Promise<void>;
@@ -166,7 +164,6 @@ async function migrate(database: MobileDatabase): Promise<void> {
 function createMobileLocalStore(database: MobileDatabase): MobileLocalStore {
   return {
     appendDocumentUpdate: (update) => appendDocumentUpdate(database, update),
-    enqueueSyncItem: (item) => enqueueSyncItem(database, item),
     getDocumentBody: (documentId) => getDocumentBody(database, documentId),
     getDocumentSnapshot: (snapshotId) => getDocumentSnapshot(database, snapshotId),
     getLatestDocumentSnapshot: (documentId) => getLatestDocumentSnapshot(database, documentId),
@@ -175,8 +172,6 @@ function createMobileLocalStore(database: MobileDatabase): MobileLocalStore {
     listBooks: () => listBooks(database),
     listChapters: () => listChapters(database),
     listDocumentUpdates: (documentId) => listDocumentUpdates(database, documentId),
-    listDocumentUpdatesAfter: (documentId, updateId) =>
-      listDocumentUpdatesAfter(database, documentId, updateId),
     listDocuments: () => listDocuments(database),
     listPendingSyncItems: () => listPendingSyncItems(database),
     markSyncItemAttempted: (itemId, attemptedAt) =>
@@ -186,8 +181,11 @@ function createMobileLocalStore(database: MobileDatabase): MobileLocalStore {
     saveBook: (book) => saveBook(database, book),
     saveChapter: (chapter) => saveChapter(database, chapter),
     saveDocument: (document) => saveDocument(database, document),
-    saveDocumentBody: (documentId, text, updatedAt) =>
-      saveDocumentBody(database, documentId, text, updatedAt),
+    saveLocalDocumentUpdate: (update, item) =>
+      database.withExclusiveTransactionAsync(async (transaction) => {
+        await appendDocumentUpdate(transaction, update);
+        await enqueueSyncItem(transaction, item);
+      }),
     saveDocumentSnapshot: (snapshot) => saveDocumentSnapshot(database, snapshot),
     saveMobileAppUiState: (state) => saveMobileAppUiState(database, state),
     saveSyncClientId: (clientId) => saveSyncClientId(database, clientId),
@@ -320,7 +318,8 @@ async function saveDocument(database: MobileDatabase, document: DocumentMetadata
         kind = excluded.kind,
         sort_order = excluded.sort_order,
         updated_at = excluded.updated_at,
-        archived_at = excluded.archived_at;
+        archived_at = excluded.archived_at
+      WHERE excluded.updated_at >= documents.updated_at;
     `,
     document.id,
     document.bookId,
@@ -331,26 +330,6 @@ async function saveDocument(database: MobileDatabase, document: DocumentMetadata
     document.createdAt,
     document.updatedAt,
     document.archivedAt,
-  );
-}
-
-async function saveDocumentBody(
-  database: MobileDatabase,
-  documentId: string,
-  text: string,
-  updatedAt: string,
-): Promise<void> {
-  await database.runAsync(
-    `
-      INSERT INTO document_bodies (document_id, text, updated_at)
-      VALUES (?, ?, ?)
-      ON CONFLICT(document_id) DO UPDATE SET
-        text = excluded.text,
-        updated_at = excluded.updated_at;
-    `,
-    documentId,
-    text,
-    updatedAt,
   );
 }
 
@@ -493,17 +472,6 @@ async function listDocumentUpdates(
   );
 
   return rows.map(documentUpdateFromRow);
-}
-
-async function listDocumentUpdatesAfter(
-  database: MobileDatabase,
-  documentId: string,
-  updateId: string,
-): Promise<DocumentUpdateRecord[]> {
-  const updates = await listDocumentUpdates(database, documentId);
-  const updateIndex = updates.findIndex((update) => update.id === updateId);
-
-  return updateIndex === -1 ? updates : updates.slice(updateIndex + 1);
 }
 
 async function getLatestDocumentSnapshot(

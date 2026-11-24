@@ -69,6 +69,11 @@ async function pullMobileWorkspaceMetadata(
   store: MobileLocalStore,
   connection: MobileSyncConnection,
 ) {
+  const [remoteBooks, remoteChapters, remoteDocuments] = await Promise.all([
+    fetchRemoteBooks(connection),
+    fetchRemoteChapters(connection),
+    fetchRemoteDocuments(connection),
+  ]);
   const [localBooks, localChapters, localDocuments] = await Promise.all([
     store.listBooks(),
     store.listChapters(),
@@ -77,11 +82,6 @@ async function pullMobileWorkspaceMetadata(
   const localBooksById = new Map(localBooks.map((book) => [book.id, book]));
   const localChaptersById = new Map(localChapters.map((chapter) => [chapter.id, chapter]));
   const localDocumentsById = new Map(localDocuments.map((document) => [document.id, document]));
-  const [remoteBooks, remoteChapters, remoteDocuments] = await Promise.all([
-    fetchRemoteBooks(connection),
-    fetchRemoteChapters(connection),
-    fetchRemoteDocuments(connection),
-  ]);
   let pulledBooks = 0;
   let pulledChapters = 0;
   let pulledDocuments = 0;

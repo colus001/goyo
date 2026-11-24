@@ -19,6 +19,7 @@ import type { AppSettings } from '../shared/app-settings';
 import { DEFAULT_APP_SETTINGS, normalizeAppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
 import { DEFAULT_APP_UI_STATE_ID } from '../shared/app-ui-state';
+import { createWritingCoachStore } from './writing-coach-store';
 
 const DEFAULT_BOOK_ID = 'book_default';
 
@@ -117,6 +118,7 @@ interface SerializedDocumentSnapshotRecord extends Omit<DocumentSnapshotRecord, 
 }
 
 export interface DesktopLocalStore extends LocalDocumentStore {
+  writingCoach: ReturnType<typeof createWritingCoachStore>;
   appendDocumentUpdate(update: SerializedDocumentUpdateRecord): void;
   close(): void;
   enqueueSyncItem(item: SyncQueueItem): void;
@@ -527,6 +529,7 @@ export function createDesktopLocalStore(userDataPath: string): DesktopLocalStore
       updated_at = excluded.updated_at;
   `);
   return {
+    writingCoach: createWritingCoachStore(database),
     appendDocumentUpdate(update) {
       appendDocumentUpdateStatement.run({
         ...update,

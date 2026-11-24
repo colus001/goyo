@@ -9,6 +9,8 @@ export interface WritingShellProps {
   activeBookId?: string;
   bookAccentColor?: string;
   bookTitle?: string;
+  companionControl?: ReactNode;
+  companionPanel?: ReactNode;
   books?: Array<{
     accentColor: string;
     id: string;
@@ -80,6 +82,7 @@ export function WritingShell(props: WritingShellProps): ReactElement {
         activeMoveTarget={getActiveMoveTarget(normalizedProps)}
         bookTitle={normalizedProps.bookTitle}
         breadcrumbSegments={normalizedProps.breadcrumbSegments}
+        companionControl={normalizedProps.companionControl}
         isSidebarCollapsed={isSidebarCollapsed}
         onCreateChapter={normalizedProps.onCreateChapter}
         onCreateDocument={normalizedProps.onCreateDocument}
@@ -143,6 +146,7 @@ function WritingShellBody({
   books,
   chapters,
   children,
+  companionPanel,
   documents,
   expandedChapterIds,
   isSidebarCollapsed,
@@ -202,12 +206,15 @@ function WritingShellBody({
         expandedChapterIds={expandedChapterIds}
       />
 
-      <section
-        className="h-full min-h-0 overflow-y-auto bg-[var(--goyo-paper)]"
-        aria-label="Writing surface"
-      >
-        {children ?? <EmptyWritingSurface />}
-      </section>
+      <div className="flex min-h-0 min-w-0">
+        <section
+          className="h-full min-h-0 min-w-0 flex-1 overflow-y-auto bg-[var(--goyo-paper)]"
+          aria-label="Writing surface"
+        >
+          {children ?? <EmptyWritingSurface />}
+        </section>
+        {companionPanel}
+      </div>
     </div>
   );
 }

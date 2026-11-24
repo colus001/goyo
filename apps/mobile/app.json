@@ -3,16 +3,39 @@
     "name": "Goyo",
     "slug": "goyo-mobile",
     "version": "0.1.1",
-    "orientation": "portrait",
+    "icon": "../../assets/logo.png",
+    "orientation": "default",
     "scheme": "goyo",
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "kim.seokjun.goyo.mobile",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "kim.seokjun.goyo.mobile"
     },
-    "plugins": []
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#365b7b",
+          "image": "../../assets/logo.png",
+          "imageWidth": 180
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2930dfa7-a189-41db-852c-7d04049de5c1"
+      }
+    },
+    "owner": "colus001"
   }
 }

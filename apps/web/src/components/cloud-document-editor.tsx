@@ -107,6 +107,7 @@ function CloudWritingSurface({
         focusOnMount
         initialSnapshot={cloudDocument.initialSnapshot}
         initialUpdates={cloudDocument.initialUpdates}
+        key={documentId}
         onDocumentUpdate={cloudDocument.onDocumentUpdate}
         onWordCountChange={onWordCountChange}
         ref={editorRef}

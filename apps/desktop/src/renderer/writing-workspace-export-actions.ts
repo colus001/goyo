@@ -47,7 +47,9 @@ export function exportActiveDocument(
   });
 }
 
-async function loadDocumentExportContent(documentId: string) {
+export async function loadDocumentExportContent(
+  documentId: string,
+): Promise<{ html: string; markdown: string; plainText: string }> {
   const snapshot = await window.writerDesktop.documentSnapshots.getLatest(documentId);
   const updates = snapshot?.lastUpdateId
     ? await window.writerDesktop.documentUpdates.listAfter(documentId, snapshot.lastUpdateId)

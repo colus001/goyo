@@ -1,5 +1,9 @@
 # Goyo Mobile Public Beta MVP TODO
 
+For project IDs, signing, repeatable build/submission commands, TestFlight setup,
+and troubleshooting, see the [iOS release runbook](RELEASE.md). A successful
+internal TestFlight upload does not complete the public-beta release gate below.
+
 ## Goal
 
 The public beta must safely support this core journey:
@@ -215,37 +219,53 @@ Data collection disclosures must cover:
 
 ## P1: iPhone, iPad, and Accessibility
 
+- [x] Enable portrait and landscape orientations.
+- [x] Share chapter and episode navigation between the fixed sidebar and compact menu.
+- [x] Use a collapsible 300 pt sidebar when the app window is at least 1100 pt wide; use an overlay menu below that width, including narrow multitasking windows.
+- [x] Preserve the mounted route/editor and local chapter expansion state when changing navigation layouts.
 - [ ] Verify the primary flow on iPhone portrait.
 - [ ] Verify iPad portrait and landscape.
 - [ ] Verify iPad Split View and Stage Manager sizes.
 - [ ] Prevent the drawer and editor from overlapping at narrow widths.
-- [ ] Limit the writing column width on large screens.
+- [x] Limit the writing column width on large screens.
 - [ ] Keep the title and body visible above the software keyboard.
 - [ ] Verify basic hardware keyboard behavior.
-- [ ] Apply safe-area insets throughout the app.
+- [x] Apply safe-area insets throughout the app.
 - [ ] Support maximum Dynamic Type sizes.
 - [ ] Maintain minimum 44x44 pt touch targets.
 - [ ] Add VoiceOver labels and heading roles.
 - [ ] Manage VoiceOver focus for menus and modal interfaces.
 - [ ] Prepare App Store screenshots for iPhone and iPad.
 
+### Adaptive Navigation Manual Checks
+
+- [ ] On a wide iPad window, collapse and reopen the sidebar without navigating away from the editor.
+- [ ] In portrait and narrow multitasking windows, open the menu, select an episode, and confirm pending writing is saved before navigation and the menu closes.
+- [ ] Rotate and resize while typing; confirm the title, body, selection, and cursor remain intact.
+- [ ] Expand multiple chapters, select another chapter's episode, and confirm unrelated chapters stay expanded.
+- [ ] Close the compact menu using its close button, outside touch, and VoiceOver escape gesture.
+- [ ] Verify hardware Escape dismissal and VoiceOver focus on physical iPad; native modal request-close handling still requires device validation.
+- [ ] Check long book titles, maximum Dynamic Type, safe areas, and the software keyboard on both orientations.
+
 ## P1: Distribution Readiness
 
-- [ ] Confirm the permanent bundle identifier.
-- [ ] Create the EAS project and connect its project ID.
-- [ ] Add preview and production profiles to `eas.json`.
-- [ ] Configure automatic iOS build number increments.
-- [ ] Provide a 1024x1024 App Store icon.
-- [ ] Provide splash and launch assets.
+- [x] Confirm the permanent bundle identifier (`kim.seokjun.goyo.mobile`).
+- [x] Create the EAS project and connect its project ID (`@colus001/goyo-mobile`).
+- [x] Add preview (simulator) and production (App Store) profiles to `eas.json`.
+- [x] Configure automatic iOS build number increments.
+- [x] Provide a 1024x1024 App Store icon (shared `assets/logo.png`).
+- [x] Provide splash and launch assets.
 - [ ] Separate development, preview, and production API environments.
 - [ ] Verify production email delivery.
 - [ ] Verify production D1 migrations.
-- [ ] Run `expo-doctor` successfully.
-- [ ] Produce a production bundle.
-- [ ] Produce an EAS iOS archive.
+- [x] Run `expo-doctor` successfully (SDK 57, 21 checks passed).
+- [x] Produce a production iOS JavaScript/Hermes bundle.
+- [x] Complete first-time Apple signing setup with `eas credentials:configure-build --platform ios --profile production` in an interactive terminal.
+- [x] Produce an EAS iOS archive (`0.1.1 (4)`, build `f3a09c3f-3e97-4ac0-bff8-fe7ad576328c`).
+- [x] Configure EAS Submit credentials and upload `0.1.1 (4)` to App Store Connect app `6824169958`.
 - [ ] Verify installation on physical iPhone and iPad devices.
 - [ ] Verify that TestFlight upgrades preserve existing SQLite data.
-- [ ] Write a mobile release runbook.
+- [x] Write a mobile release runbook (`RELEASE.md`).
 - [ ] Define public beta rollback and incident response procedures.
 
 ## Public Beta Release Gate

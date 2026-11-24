@@ -1,4 +1,12 @@
-import { createContext, type PropsWithChildren, useContext, useState } from 'react';
+import {
+  createContext,
+  type PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+import { useWindowDimensions } from 'react-native';
 import { type MobileAuthState, useMobileAuth } from './auth/use-mobile-auth';
 import type { MobileWorkspaceState } from './workspace/mobile-workspace-types';
 import { useMobileWorkspace } from './workspace/use-mobile-workspace';
@@ -6,8 +14,11 @@ import { useMobileWorkspace } from './workspace/use-mobile-workspace';
 interface MobileAppContextValue {
   auth: MobileAuthState;
   closeMenu(): void;
+  expandedChapterIds: Record<string, boolean>;
   isMenuOpen: boolean;
-  openMenu(): void;
+  isSidebarVisible: boolean;
+  toggleMenu(): void;
+  setChapterExpanded(chapterId: string, expanded: boolean): void;
   workspace: MobileWorkspaceState;
 }
 
@@ -16,6 +27,21 @@ const MobileAppContext = createContext<MobileAppContextValue | null>(null);
 export function MobileAppProvider({ children }: PropsWithChildren) {
   const auth = useMobileAuth();
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [expandedChapterIds, setExpandedChapterIds] = useState<Record<string, boolean>>({});
+  const setChapterExpanded = useCallback((chapterId: string, expanded: boolean) => {
+    setExpandedChapterIds((current) =>
+      current[chapterId] === expanded ? current : { ...current, [chapterId]: expanded },
+    );
+  }, []);
+  const { width } = useWindowDimensions();
+  const isWideWindow = width >= 1100;
+  const isSidebarVisible = isWideWindow && !isSidebarCollapsed;
+  useEffect(() => {
+    if (isWideWindow) {
+      setMenuOpen(false);
+    }
+  }, [isWideWindow]);
   const workspace = useMobileWorkspace(auth.token);
 
   return (
@@ -23,8 +49,18 @@ export function MobileAppProvider({ children }: PropsWithChildren) {
       value={{
         auth,
         closeMenu: () => setMenuOpen(false),
+        expandedChapterIds,
         isMenuOpen,
-        openMenu: () => setMenuOpen(true),
+        isSidebarVisible,
+        toggleMenu: () => {
+          if (isWideWindow) {
+            setSidebarCollapsed((collapsed) => !collapsed);
+            setMenuOpen(false);
+          } else {
+            setMenuOpen((open) => !open);
+          }
+        },
+        setChapterExpanded,
         workspace,
       }}
     >

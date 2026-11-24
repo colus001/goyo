@@ -13,7 +13,6 @@ import {
   selectActiveBook,
 } from '@writer/core';
 import type { MobileLocalStore } from '../storage/mobile-local-store';
-import { saveDocumentBodyAsCrdtUpdate } from './mobile-document-body-crdt';
 import type { MobileWorkspaceScreen, MobileWorkspaceStatus } from './mobile-workspace-types';
 
 type SetSession = (session: DocumentSession) => void;
@@ -116,16 +115,21 @@ export async function createAndPersistEpisode(
   store: MobileLocalStore | null,
   session: DocumentSession | null,
   chapterId: string | null,
-  setSession: SetSession,
-  setScreen: SetScreen,
+  setSession: (update: (current: DocumentSession | null) => DocumentSession | null) => void,
   setStatus: SetStatus,
-): Promise<void> {
+): Promise<string | null> {
   if (
     !store ||
     !session ||
-    (chapterId && !session.chapters.some((chapter) => chapter.id === chapterId))
+    (chapterId &&
+      !session.chapters.some(
+        (chapter) =>
+          chapter.id === chapterId &&
+          chapter.bookId === session.activeBookId &&
+          !chapter.archivedAt,
+      ))
   ) {
-    return;
+    return null;
   }
 
   setStatus('Saving');
@@ -133,11 +137,12 @@ export async function createAndPersistEpisode(
 
   try {
     await store.saveDocument(document);
-    setSession(addDocumentToSession(session, document));
-    setScreen('editor');
+    setSession((current) => addDocumentToSession(current ?? session, document));
     setStatus('Ready');
+    return document.id;
   } catch {
     setStatus('Save failed');
+    return null;
   }
 }
 
@@ -174,29 +179,6 @@ export async function renameAndPersistActiveDocument(
     setStatus('Ready');
   } catch {
     setStatus('Save failed');
-  }
-}
-
-export async function saveAndPersistDocumentBody(
-  store: MobileLocalStore | null,
-  clientId: string | null,
-  documentId: string,
-  text: string,
-  setStatus: SetStatus,
-): Promise<void> {
-  if (!store || !clientId) {
-    setStatus('Save failed');
-    throw new Error('Document persistence is not ready');
-  }
-
-  setStatus('Saving');
-
-  try {
-    await saveDocumentBodyAsCrdtUpdate(store, clientId, documentId, text);
-    setStatus('Ready');
-  } catch (error) {
-    setStatus('Save failed');
-    throw error;
   }
 }
 

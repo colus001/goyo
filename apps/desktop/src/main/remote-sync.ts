@@ -26,6 +26,7 @@ import {
   testRemoteSyncConnection,
 } from '@writer/shared';
 import type { DesktopLocalStore } from './document-metadata-store';
+import { pullRemoteWorkspaceMetadata } from './remote-workspace-metadata';
 import { isSyncItemReadyForRetry } from './sync-retry';
 
 export interface SyncConnectionSettings {
@@ -376,6 +377,7 @@ export async function synchronizeRemoteDocuments(
   const context = createSyncRunContext();
   const pushOptions = { ...options, context };
   const pullOptions = { context };
+  await pullRemoteWorkspaceMetadata(store, connection);
   const updatePush = await pushPendingDocumentUpdates(store, connection, pushOptions);
   const snapshotPush = await pushPendingDocumentSnapshots(store, connection, pushOptions);
   const updatePull = await pullRemoteDocumentUpdates(store, connection, pullOptions);

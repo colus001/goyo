@@ -9,6 +9,7 @@ import type {
 } from '@writer/core';
 import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
+import type { WritingCoachApi } from '../shared/writing-coach';
 
 type RestoreCloudProgressPhase =
   | 'books'
@@ -28,6 +29,7 @@ interface RestoreCloudProgress {
 declare global {
   interface Window {
     writerDesktop: {
+      writingCoach: WritingCoachApi;
       appUiState: {
         get: () => Promise<AppUiState | null>;
         save: (state: AppUiState) => Promise<void>;

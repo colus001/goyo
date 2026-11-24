@@ -43,6 +43,7 @@ import type {
   WritingWorkspaceState,
 } from './document-workspace-types';
 import { useRestoreCloudProgress } from './restore-cloud-progress';
+import { useRefreshWorkspace } from './use-refresh-workspace';
 import { useRemoteSync } from './use-remote-sync';
 import { useLoadSyncClientId } from './use-sync-client-id';
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: This hook assembles the workspace API from local state and action wiring.
@@ -60,12 +61,14 @@ export function useWritingWorkspace(): WritingWorkspaceState {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('Loading local documents');
   const [syncProgressLabel, setSyncProgressLabel] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('Sync idle');
+  const [syncRevision, setSyncRevision] = useState(0);
   const activeDocument = session ? getActiveDocumentOrNull(session) : null;
   const activeChapter = session ? getActiveChapterOrNull(session) : null;
   const activeBook = session ? getActiveBook(session) : null;
 
   useLoadDocumentContent(
     activeDocument?.id ?? null,
+    syncRevision,
     setDocumentSnapshots,
     setDocumentUpdates,
     setSaveStatus,
@@ -80,7 +83,8 @@ export function useWritingWorkspace(): WritingWorkspaceState {
     setHasLoadedWorkspace,
   );
   useLoadSyncClientId(setClientId, setSaveStatus);
-  useRemoteSync(setSyncStatus);
+  useRemoteSync(setSyncStatus, setSyncRevision);
+  useRefreshWorkspace(hasLoadedWorkspace ? syncRevision : 0, setSession);
   useRestoreCloudProgress(setSyncProgressLabel);
   usePersistAppUiState({
     expandedChapterIds,
@@ -258,26 +262,22 @@ function usePersistAppUiState({
 
 function useLoadDocumentContent(
   documentId: string | null,
+  syncRevision: number,
   setDocumentSnapshots: Dispatch<SetStateAction<DocumentSnapshotMap>>,
   setDocumentUpdates: Dispatch<SetStateAction<DocumentUpdateMap>>,
   setSaveStatus: (saveStatus: SaveStatus) => void,
 ) {
   useEffect(() => {
-    if (!documentId) {
-      return;
-    }
-
+    void syncRevision;
+    if (!documentId) return;
     const loadedDocumentId = documentId;
     let isCancelled = false;
 
     async function loadDocumentContent() {
-      const snapshot = await window.writerDesktop.documentSnapshots.getLatest(loadedDocumentId);
-      const updates = snapshot?.lastUpdateId
-        ? await window.writerDesktop.documentUpdates.listAfter(
-            loadedDocumentId,
-            snapshot.lastUpdateId,
-          )
-        : await window.writerDesktop.documentUpdates.list(loadedDocumentId);
+      const [snapshot, updates] = await Promise.all([
+        window.writerDesktop.documentSnapshots.getLatest(loadedDocumentId),
+        window.writerDesktop.documentUpdates.list(loadedDocumentId),
+      ]);
 
       if (!isCancelled) {
         setDocumentSnapshots((current) => ({
@@ -296,5 +296,5 @@ function useLoadDocumentContent(
     return () => {
       isCancelled = true;
     };
-  }, [documentId, setDocumentSnapshots, setDocumentUpdates, setSaveStatus]);
+  }, [documentId, setDocumentSnapshots, setDocumentUpdates, setSaveStatus, syncRevision]);
 }

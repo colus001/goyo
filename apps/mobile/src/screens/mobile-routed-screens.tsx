@@ -5,19 +5,22 @@ import {
   QUICK_DRAFTS_INBOX_CHAPTER_ID,
 } from '@writer/core';
 import { APP_NAME } from '@writer/shared';
+import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMobileApp } from '../mobile-app-context';
+import { MobileEpisodeBody } from './mobile-episode-body';
+import { MobileEpisodePlacement } from './mobile-episode-placement';
 import { styles } from './mobile-library-styles';
 import { CloudSummaryCard } from './mobile-settings-screen';
 
@@ -42,14 +45,13 @@ interface EditorScreenProps {
 
 export function HomeScreen({ onOpenBook, onOpenDocument, onOpenSettings }: HomeScreenProps) {
   const { auth, workspace } = useMobileApp();
+  const { showHome } = workspace;
   const books = workspace.session?.books ?? [];
   const recentDocuments = [...(workspace.session?.documents ?? [])]
     .sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
     .slice(0, 3);
 
-  useEffect(() => {
-    workspace.showHome();
-  }, [workspace]);
+  useFocusEffect(useCallback(() => showHome(), [showHome]));
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -99,21 +101,39 @@ export function HomeScreen({ onOpenBook, onOpenDocument, onOpenSettings }: HomeS
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: This screen owns its route and creation controls.
 export function BookScreen({ bookId, onOpenDocument, onOpenLibrary }: BookScreenProps) {
   const { workspace } = useMobileApp();
+  const { openBook } = workspace;
+  const [isCreatingEpisode, setCreatingEpisode] = useState(false);
   const activeBookId = bookId ? decodeURIComponent(bookId) : null;
   const activeBook = workspace.session?.books.find((book) => book.id === activeBookId);
+  const hasBook = Boolean(activeBook);
   const chapters =
     workspace.session?.chapters.filter((chapter) => chapter.bookId === activeBookId) ?? [];
   const documents =
     workspace.session?.documents.filter((document) => document.bookId === activeBookId) ?? [];
   const chapterlessDocuments = documents.filter((document) => document.chapterId === null);
 
-  useEffect(() => {
-    if (activeBookId) {
-      workspace.openBook(activeBookId);
+  useFocusEffect(
+    useCallback(() => {
+      if (activeBookId && hasBook) openBook(activeBookId);
+    }, [activeBookId, hasBook, openBook]),
+  );
+
+  async function addEpisode(chapterId: string | null) {
+    if (isCreatingEpisode) return;
+    setCreatingEpisode(true);
+    try {
+      const documentId = await workspace.createEpisode(chapterId);
+      if (documentId) {
+        workspace.openDocument(documentId);
+        onOpenDocument(documentId);
+      }
+    } finally {
+      setCreatingEpisode(false);
     }
-  }, [activeBookId, workspace]);
+  }
 
   if (!activeBook || !activeBookId) {
     return (
@@ -147,6 +167,7 @@ export function BookScreen({ bookId, onOpenDocument, onOpenLibrary }: BookScreen
           chapterCount={chapters.length}
           documentCount={documents.length}
           isQuickDrafts={activeBook.id === QUICK_DRAFTS_BOOK_ID}
+          onAddEpisode={() => void addEpisode(null)}
           title={activeBook.title}
           workspace={workspace}
         />
@@ -155,28 +176,32 @@ export function BookScreen({ bookId, onOpenDocument, onOpenLibrary }: BookScreen
           chapterlessDocuments={chapterlessDocuments}
           chapters={chapters}
           documents={documents}
+          onAddEpisode={(chapterId) => void addEpisode(chapterId)}
           onOpenDocument={(documentId) => {
             workspace.openDocument(documentId);
             onOpenDocument(documentId);
           }}
-          workspace={workspace}
         />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: This screen owns editing and flush-before-navigation.
 export function EditorScreen({
   documentId,
   onBackToBook,
   onOpenLibrary,
   onOpenSettings,
 }: EditorScreenProps) {
-  const { auth, workspace } = useMobileApp();
+  const { workspace } = useMobileApp();
+  const { openDocument } = workspace;
   const activeDocumentId = documentId ? decodeURIComponent(documentId) : null;
   const activeDocument = workspace.session?.documents.find(
     (document) => document.id === activeDocumentId,
   );
+  const hasDocument = Boolean(activeDocument);
+  const activeBook = workspace.session?.books.find((book) => book.id === activeDocument?.bookId);
 
   async function leaveEditor(navigate: () => void) {
     if (await workspace.flushActiveDocumentBody()) {
@@ -184,11 +209,11 @@ export function EditorScreen({
     }
   }
 
-  useEffect(() => {
-    if (activeDocumentId) {
-      workspace.openDocument(activeDocumentId);
-    }
-  }, [activeDocumentId, workspace]);
+  useFocusEffect(
+    useCallback(() => {
+      if (activeDocumentId && hasDocument) openDocument(activeDocumentId);
+    }, [activeDocumentId, hasDocument, openDocument]),
+  );
 
   if (!activeDocument) {
     return (
@@ -207,23 +232,44 @@ export function EditorScreen({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.editorShell}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.editorContent}>
           <View style={styles.editorTopRow}>
             <View style={styles.actionRowCompact}>
               <MenuButton />
               <Pressable
+                accessibilityLabel={`Back to ${activeBook?.title ?? 'book'}`}
                 accessibilityRole="button"
                 onPress={() => void leaveEditor(() => onBackToBook(activeDocument.bookId))}
                 style={styles.secondaryButton}
               >
-                <Text style={styles.secondaryButtonText}>Back</Text>
+                <Text numberOfLines={1} style={styles.secondaryButtonText}>
+                  {activeBook?.title ?? 'Back'}
+                </Text>
               </Pressable>
             </View>
-            <StatusPill status={workspace.status} />
+            <Pressable
+              accessibilityLabel={`Open sync settings. ${workspace.status}`}
+              accessibilityRole="button"
+              onPress={() => void leaveEditor(onOpenSettings)}
+            >
+              <StatusPill status={workspace.status} />
+            </Pressable>
           </View>
 
           <View style={styles.editorCard}>
             <Text style={styles.cardLabel}>{activeDocument.kind}</Text>
+            {activeDocument.kind === 'episode' &&
+              activeDocument.bookId !== QUICK_DRAFTS_BOOK_ID && (
+                <MobileEpisodePlacement
+                  chapters={workspace.session?.chapters ?? []}
+                  document={activeDocument}
+                  key={activeDocument.id}
+                  onMove={async (chapterId) =>
+                    (await workspace.flushActiveDocumentBody()) &&
+                    workspace.moveEpisode(activeDocument.id, chapterId)
+                  }
+                />
+              )}
             <TextInput
               onChangeText={workspace.renameActiveDocumentTitle}
               placeholder={getEditorTitlePlaceholder(activeDocument.kind)}
@@ -231,24 +277,9 @@ export function EditorScreen({
               style={styles.titleInput}
               value={activeDocument.title}
             />
-            <TextInput
-              editable={workspace.isActiveDocumentBodyEditable}
-              multiline
-              onChangeText={workspace.saveActiveDocumentBody}
-              placeholder={
-                workspace.isActiveDocumentBodyEditable ? 'Start writing...' : 'Loading writing...'
-              }
-              placeholderTextColor="#958678"
-              style={styles.bodyInput}
-              value={workspace.activeDocumentBody}
-            />
-            <Text style={styles.editorMetaText}>
-              {formatWordCount(workspace.activeDocumentBody)} ·{' '}
-              {workspace.pendingBodySave ? 'Saving soon' : 'Saved locally'}
-            </Text>
+            <MobileEpisodeBody documentId={activeDocument.id} workspace={workspace} />
           </View>
-          <CloudSummaryCard auth={auth} onOpenSettings={() => void leaveEditor(onOpenSettings)} />
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -326,12 +357,14 @@ function BookSummaryCard({
   chapterCount,
   documentCount,
   isQuickDrafts,
+  onAddEpisode,
   title,
   workspace,
 }: {
   chapterCount: number;
   documentCount: number;
   isQuickDrafts: boolean;
+  onAddEpisode: () => void;
   title: string;
   workspace: ReturnType<typeof useMobileApp>['workspace'];
 }) {
@@ -346,7 +379,7 @@ function BookSummaryCard({
         )}
         <ActionButton
           label={isQuickDrafts ? 'New draft' : 'New episode'}
-          onPress={() => workspace.createEpisode(null)}
+          onPress={onAddEpisode}
           variant="secondary"
         />
       </View>
@@ -359,8 +392,8 @@ function WritingUnitsSection({
   chapterlessDocuments,
   chapters,
   documents,
+  onAddEpisode,
   onOpenDocument,
-  workspace,
 }: {
   activeBookId: string;
   chapterlessDocuments: NonNullable<
@@ -368,8 +401,8 @@ function WritingUnitsSection({
   >['documents'];
   chapters: NonNullable<ReturnType<typeof useMobileApp>['workspace']['session']>['chapters'];
   documents: NonNullable<ReturnType<typeof useMobileApp>['workspace']['session']>['documents'];
+  onAddEpisode(chapterId: string): void;
   onOpenDocument(documentId: string): void;
-  workspace: ReturnType<typeof useMobileApp>['workspace'];
 }) {
   const isQuickDrafts = activeBookId === QUICK_DRAFTS_BOOK_ID;
 
@@ -389,8 +422,8 @@ function WritingUnitsSection({
           documents={documents.filter((document) => document.chapterId === chapter.id)}
           isQuickDrafts={isQuickDrafts}
           key={chapter.id}
+          onAddEpisode={() => onAddEpisode(chapter.id)}
           onOpenDocument={onOpenDocument}
-          workspace={workspace}
         />
       ))}
       {documents.length === 0 ? <Text style={styles.emptyText}>No episodes yet.</Text> : null}
@@ -402,25 +435,21 @@ function ChapterWritingUnits({
   chapter,
   documents,
   isQuickDrafts,
+  onAddEpisode,
   onOpenDocument,
-  workspace,
 }: {
   chapter: NonNullable<ReturnType<typeof useMobileApp>['workspace']['session']>['chapters'][number];
   documents: NonNullable<ReturnType<typeof useMobileApp>['workspace']['session']>['documents'];
   isQuickDrafts: boolean;
+  onAddEpisode(): void;
   onOpenDocument(documentId: string): void;
-  workspace: ReturnType<typeof useMobileApp>['workspace'];
 }) {
   return (
     <View style={styles.chapterCard}>
       <View style={styles.chapterHeaderRow}>
         <Text style={styles.chapterTitle}>{chapter.title}</Text>
         {isQuickDrafts ? null : (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => workspace.createEpisode(chapter.id)}
-            style={styles.inlineButton}
-          >
+          <Pressable accessibilityRole="button" onPress={onAddEpisode} style={styles.inlineButton}>
             <Text style={styles.inlineButtonText}>Add episode</Text>
           </Pressable>
         )}
@@ -509,13 +538,14 @@ function StatusPill({ status }: { status: string }) {
 }
 
 function MenuButton() {
-  const { openMenu } = useMobileApp();
+  const { isMenuOpen, isSidebarVisible, toggleMenu } = useMobileApp();
 
   return (
     <Pressable
-      accessibilityLabel="Open navigation menu"
+      accessibilityLabel={isSidebarVisible ? 'Hide sidebar' : 'Open navigation menu'}
       accessibilityRole="button"
-      onPress={openMenu}
+      accessibilityState={{ expanded: isSidebarVisible || isMenuOpen }}
+      onPress={toggleMenu}
       style={styles.menuButton}
     >
       <Text style={styles.menuButtonText}>☰</Text>
@@ -529,12 +559,6 @@ function formatBookSummary(chapterCount: number, documentCount: number): string 
 
 function getEditorTitlePlaceholder(kind: string): string {
   return kind === 'draft' ? 'Untitled draft' : 'Untitled episode';
-}
-
-function formatWordCount(text: string): string {
-  const words = text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
-
-  return `${words} words`;
 }
 
 function getDocumentTitle(title: string, chapterId: string): string {

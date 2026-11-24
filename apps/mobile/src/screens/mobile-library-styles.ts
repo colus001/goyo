@@ -2,6 +2,15 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
+  appShell: {
+    backgroundColor: '#f6efe5',
+    flex: 1,
+    flexDirection: 'row',
+  },
+  appMain: {
+    flex: 1,
+    minWidth: 0,
+  },
   actionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -11,6 +20,7 @@ export const styles = StyleSheet.create({
   actionRowCompact: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexShrink: 1,
     gap: 8,
   },
   bookAccent: {
@@ -100,9 +110,12 @@ export const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   content: {
+    alignSelf: 'center',
     gap: 24,
+    maxWidth: 820,
     padding: 24,
     paddingBottom: 40,
+    width: '100%',
   },
   documentRow: {
     alignItems: 'center',
@@ -119,13 +132,9 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bodyInput: {
-    color: '#4d433b',
-    fontSize: 17,
-    lineHeight: 27,
-    minHeight: 360,
-    paddingHorizontal: 0,
-    paddingTop: 20,
-    textAlignVertical: 'top',
+    backgroundColor: '#fffaf1',
+    flex: 1,
+    minHeight: 0,
   },
   authInput: {
     backgroundColor: '#fbf4ea',
@@ -143,7 +152,17 @@ export const styles = StyleSheet.create({
     borderColor: '#eadfce',
     borderRadius: 28,
     borderWidth: 1,
-    padding: 22,
+    flex: 1,
+    minHeight: 0,
+    padding: 16,
+  },
+  editorContent: {
+    alignSelf: 'center',
+    flex: 1,
+    gap: 12,
+    maxWidth: 820,
+    padding: 12,
+    width: '100%',
   },
   editorMetaText: {
     color: '#9b8d80',
@@ -157,13 +176,18 @@ export const styles = StyleSheet.create({
   editorTopRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     justifyContent: 'space-between',
+  },
+  episodeDestinations: {
+    maxHeight: 150,
   },
   drawerContent: {
     gap: 8,
     padding: 18,
     paddingBottom: 36,
-    paddingTop: 64,
+    paddingTop: 18,
   },
   drawerEmptyText: {
     color: '#8d7d70',
@@ -188,6 +212,7 @@ export const styles = StyleSheet.create({
     borderColor: '#eadfce',
     borderRadius: 16,
     borderWidth: 1,
+    minHeight: 44,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -195,6 +220,41 @@ export const styles = StyleSheet.create({
     color: '#2c241f',
     fontSize: 16,
     fontWeight: '800',
+  },
+  drawerItemSelected: {
+    backgroundColor: '#efe2d1',
+    borderColor: '#d8c2a8',
+  },
+  drawerEpisode: {
+    marginLeft: 12,
+  },
+  drawerChapter: {
+    gap: 8,
+  },
+  drawerChapterHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 44,
+    paddingHorizontal: 12,
+  },
+  drawerChapterText: {
+    color: '#6f4f31',
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  drawerClose: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 12,
+  },
+  sidebar: {
+    backgroundColor: '#f6efe5',
+    borderColor: '#eadfce',
+    borderRightWidth: 1,
+    width: 300,
   },
   drawerMeta: {
     color: '#7c7167',
@@ -241,6 +301,8 @@ export const styles = StyleSheet.create({
   inlineButton: {
     backgroundColor: '#efe2d1',
     borderRadius: 999,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
@@ -293,6 +355,7 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     width: 320,
+    maxWidth: '86%',
   },
   primaryButton: {
     backgroundColor: '#2c241f',
@@ -322,6 +385,7 @@ export const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: '#efe2d1',
     borderRadius: 999,
+    flexShrink: 1,
     paddingHorizontal: 18,
     paddingVertical: 12,
   },

@@ -17,14 +17,15 @@ describe('pending body saves', () => {
     ]);
   });
 
-  it('replaces only the pending text for the edited document', () => {
+  it('keeps every update, even when a later update edits the same document', () => {
     const documentA = createPendingSave('document-a', 'Older A', 1);
     const documentB = createPendingSave('document-b', 'Text for B', 2);
     const newerDocumentA = createPendingSave('document-a', 'Newer A', 3);
 
     expect(queuePendingBodySave([documentA, documentB], newerDocumentA)).toEqual([
-      newerDocumentA,
+      documentA,
       documentB,
+      newerDocumentA,
     ]);
   });
 
@@ -46,7 +47,7 @@ describe('pending body save flush', () => {
       'document-a',
       () => pendingSaves,
       async (pendingSave) => {
-        persistedTexts.push(pendingSave.text);
+        persistedTexts.push(pendingSave.updateBase64);
         pendingSaves = completePendingBodySave(pendingSaves, pendingSave);
 
         if (pendingSave.revision === 1) {
@@ -77,6 +78,16 @@ describe('pending body save flush', () => {
   });
 });
 
-function createPendingSave(documentId: string, text: string, revision: number): PendingBodySave {
-  return { documentId, revision, text };
+function createPendingSave(
+  documentId: string,
+  updateBase64: string,
+  revision: number,
+): PendingBodySave {
+  return {
+    createdAt: '2026-11-24T12:00:00.000Z',
+    documentId,
+    id: `update_${revision}`,
+    revision,
+    updateBase64,
+  };
 }

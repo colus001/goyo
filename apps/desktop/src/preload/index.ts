@@ -10,8 +10,10 @@ import type {
 import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron';
 import type { AppSettings } from '../shared/app-settings';
 import type { AppUiState } from '../shared/app-ui-state';
+import { writingCoachApi } from './writing-coach';
 
 const desktopApi = {
+  writingCoach: writingCoachApi,
   appUiState: {
     get: () => ipcRenderer.invoke('appUiState:get') as Promise<AppUiState | null>,
     save: (state: AppUiState) => ipcRenderer.invoke('appUiState:save', state) as Promise<void>,

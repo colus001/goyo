@@ -38,6 +38,7 @@ export {
   selectActiveChapter,
   selectActiveDocument,
 } from './document-session';
+export { moveEpisodeToChapter } from './document-session-placement';
 export type { ReorderDocumentDirection } from './document-session-reorder';
 export { reorderChapter, reorderDocument } from './document-session-reorder';
 export {
