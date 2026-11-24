@@ -1,7 +1,7 @@
 {
   "name": "@writer/desktop",
   "private": true,
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Distraction-free long-form writing desktop app.",
   "author": {
     "name": "Seokjun Kim",
@@ -91,6 +91,9 @@
       "target": [
         "nsis"
       ]
+    },
+    "appImage": {
+      "compression": "xz"
     },
     "linux": {
       "category": "Office",

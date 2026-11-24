@@ -22,6 +22,7 @@
     "@writer/editor": "workspace:*",
     "@writer/shared": "workspace:*",
     "expo": "57.0.34",
+    "expo-build-properties": "~57.0.24",
     "expo-constants": "~57.0.25",
     "expo-linking": "~57.0.14",
     "expo-router": "^57.0.32",

@@ -106,16 +106,61 @@ jobs:
             exit 1
           fi
 
-      - name: Package signed macOS desktop
+      - name: Set up temporary macOS signing keychain
         if: matrix.name == 'macOS'
-        run: pnpm --filter @writer/desktop ${{ matrix.script }}
+        shell: bash
         env:
-          CI: 'true'
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          keychain="$RUNNER_TEMP/goyo-signing.keychain-db"
+          certificate="$(mktemp "$RUNNER_TEMP/goyo-certificate.XXXXXX")"
+          trap 'rm -f "$certificate"' EXIT
+          keychain_password="$(openssl rand -hex 32)"
+          echo "::add-mask::$keychain_password"
+
+          # Persist the original search list for the cleanup step, one path per line.
+          security list-keychains -d user | sed -E 's/^[[:space:]]*"//; s/"$//' > "$RUNNER_TEMP/goyo-keychains.txt"
+          original_keychains=()
+          while IFS= read -r path; do
+            original_keychains+=("$path")
+          done < "$RUNNER_TEMP/goyo-keychains.txt"
+
+          printf '%s' "$CSC_LINK" | base64 -D > "$certificate"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$certificate" -f pkcs12 -k "$keychain" -P "$CSC_KEY_PASSWORD" -T /usr/bin/codesign -T /usr/bin/productbuild
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" "${original_keychains[@]}"
+          security find-identity -v -p codesigning "$keychain" | grep -F 'Developer ID Application:'
+
+      - name: Package signed macOS desktop
+        if: matrix.name == 'macOS'
+        run: pnpm --filter @writer/desktop ${{ matrix.script }} --config.forceCodeSigning=true
+        env:
+          CI: 'true'
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Clean up temporary macOS signing keychain
+        if: ${{ always() && matrix.name == 'macOS' }}
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/goyo-keychains.txt" ]; then
+            original_keychains=()
+            while IFS= read -r path; do
+              original_keychains+=("$path")
+            done < "$RUNNER_TEMP/goyo-keychains.txt"
+            security list-keychains -d user -s "${original_keychains[@]}"
+            rm -f "$RUNNER_TEMP/goyo-keychains.txt"
+          fi
+          if [ -f "$RUNNER_TEMP/goyo-signing.keychain-db" ]; then
+            security delete-keychain "$RUNNER_TEMP/goyo-signing.keychain-db"
+          fi
 
       - name: Package desktop
         if: matrix.name != 'macOS'
@@ -138,41 +183,15 @@ jobs:
 
       - name: Upload to R2
         shell: bash
+        working-directory: apps/worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
-          cd apps/worker
-          VERSION=$(node -p "require('../desktop/package.json').version")
-          for f in ../desktop/dist/*; do
-            if [ -f "$f" ]; then
-              base=$(basename "$f")
-              case "$base" in
-                *.dmg)
-                  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.dmg --file "$f" --remote
-                  npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/v${VERSION}/${base}" --file "$f" --remote
-                  ;;
-                *.exe)
-                  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo-Setup.exe --file "$f" --remote
-                  npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/v${VERSION}/${base}" --file "$f" --remote
-                  ;;
-                *.AppImage)
-                  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.AppImage --file "$f" --remote
-                  npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/v${VERSION}/${base}" --file "$f" --remote
-                  ;;
-                *.deb)
-                  npx wrangler --config wrangler.jsonc r2 object put goyo-releases/releases/Goyo.deb --file "$f" --remote
-                  npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/v${VERSION}/${base}" --file "$f" --remote
-                  ;;
-                *.blockmap)
-                  npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/v${VERSION}/${base}" --file "$f" --remote
-                  ;;
-                *.yml)
-                  npx wrangler --config wrangler.jsonc r2 object put "goyo-releases/releases/${base}" --file "$f" --remote
-                  ;;
-              esac
-            fi
-          done
+          bash ../../.github/scripts/upload-desktop-release.sh \
+            ../desktop/dist "$(node -p "require('../desktop/package.json').version")"
 
   release:
     name: Create GitHub release
